@@ -41,6 +41,8 @@ dev = [
     "pytest",
     "pyright==1.1.304",
     "scikit-learn",
+    "nbformat==5.8.0",
+    "plotly"
 ]
 8bit = [
     "bitsandbytes",
