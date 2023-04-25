@@ -16,9 +16,11 @@ class ReporterConfig(Serializable):
     """
     Args:
         seed: The random seed to use. Defaults to 42.
+        ensemble: Whether to use an ensemble of reporters. Defaults to False.
     """
 
     seed: int = 42
+    ensemble: bool = False
 
 
 class Reporter(nn.Module, ABC):
