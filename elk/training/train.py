@@ -20,6 +20,26 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 
 
+import os, csv
+# Specify the filename
+
+# Function to write to CSV
+def write_to_csv(data, filename):
+    # Check if the file exists
+    file_exists = os.path.isfile(filename)
+    
+    # Open the CSV file in append mode
+    with open(filename, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        
+        # If file doesn't exist, write the header
+        if not file_exists:
+            writer.writerow(data.keys())
+
+        # Write the rows
+        writer.writerow(data.values())
+
+
 @dataclass
 class Elicit(Run):
     """Full specification of a reporter training run."""
@@ -65,16 +85,19 @@ class Elicit(Run):
         (first_train_h, train_gt, _), *rest = train_dict.values()
         (_, v, k, d) = first_train_h.shape
 
+        ds_name = list(train_dict.keys())[0]
 
-        U, S, V = torch.pca_lowrank(first_train_h)
-        tpc = (first_train_h @ V[..., :1]).squeeze(-1)
+        filename = f'res.csv'
+
+        def get_tpc(hiddens):
+            U, S, V = torch.pca_lowrank(hiddens)
+            return (hiddens @ V[..., :1]).squeeze(-1)
 
         # no norm
-        scores = tpc.argmax(dim=-1)
-        ntrue = repeat(train_gt, "n -> n v", v=v)
-        accuracy = (scores == ntrue).float().mean()
-        print(f'===== layer {layer} =====')
-        print('no norm accuracy', accuracy.item())
+        def no_norm(x, gt):
+            scores = get_tpc(x).argmax(dim=-1)
+            y_true = repeat(gt, "n -> n v", v=v)
+            return (scores == y_true).float().mean()
 
         # correct norm
         def norm(x):
@@ -84,15 +107,22 @@ class Elicit(Run):
             avg_norm = std.mean(dim=dims, keepdim=True)
             return x_centered / avg_norm
 
-        scores = norm(tpc).argmax(dim=-1)
-        accuracy = (scores == ntrue).float().mean()
-        print('correct norm accuracy', accuracy.item())
+        def correct_norm(x, gt):
+            scores = norm(get_tpc(x)).argmax(dim=-1)
+            y_true = repeat(gt, "n -> n v", v=v)
+            return (scores == y_true).float().mean()
+        # print('correct norm accuracy', five_sf(accuracy.item()))
+        
 
         # incorrect norm
-        tpc_wrong = rearrange(tpc, 'n v c -> (n v) c')
-        scores = norm(tpc_wrong).argmax(dim=-1)
-        accuracy = (scores == ntrue.flatten()).float().mean()
-        print('incorrect norm accuracy', accuracy.item())
+        def incorrect_norm(x, gt):
+            tpc_wrong = rearrange(get_tpc(x), 'n v c -> (n v) c')
+            scores = norm(tpc_wrong).argmax(dim=-1)
+            y_true = repeat(gt, "n -> (n v)", v=v)
+            return (scores == y_true).float().mean()
+        
+        
+        
 
         # print("first_train_h.shape", first_train_h.shape)
         # print("train_gt.shape", train_gt.shape)
@@ -165,6 +195,9 @@ class Elicit(Run):
             lr_models = []
 
         row_bufs = defaultdict(list)
+        res = {}
+        res['dataset'] = ds_name
+        res['layer'] = layer
         for ds_name in val_dict:
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
@@ -172,51 +205,59 @@ class Elicit(Run):
 
             val_credences = reporter(val_h)
             train_credences = reporter(train_h)
+            res['no norm accuracy'] = no_norm(val_h, val_gt).item()
+            res['correct norm accuracy'] = correct_norm(val_h, val_gt).item()
+            res['incorrect norm accuracy'] = incorrect_norm(val_h, val_gt).item()
             for mode in ("none", "partial", "full"):
+                eval_res = evaluate_preds(val_gt, val_credences, mode)
+                res[f'eval_acc_{mode}'] = eval_res.accuracy.estimate
                 row_bufs["eval"].append(
                     {
                         **meta,
                         "ensembling": mode,
-                        **evaluate_preds(val_gt, val_credences, mode).to_dict(),
+                        **eval_res.to_dict(),
                         "train_loss": train_loss,
                     }
                 )
-
+                train_eval = evaluate_preds(train_gt, train_credences, mode)
                 row_bufs["train_eval"].append(
                     {
                         **meta,
                         "ensembling": mode,
-                        **evaluate_preds(train_gt, train_credences, mode).to_dict(),
+                        **train_eval.to_dict(),
                         "train_loss": train_loss,
                     }
                 )
 
-                if val_lm_preds is not None:
-                    row_bufs["lm_eval"].append(
-                        {
-                            **meta,
-                            "ensembling": mode,
-                            **evaluate_preds(val_gt, val_lm_preds, mode).to_dict(),
-                        }
-                    )
+                # if val_lm_preds is not None:
+                #     row_bufs["lm_eval"].append(
+                #         {
+                #             **meta,
+                #             "ensembling": mode,
+                #             **evaluate_preds(val_gt, val_lm_preds, mode).to_dict(),
+                #         }
+                #     )
 
-                if train_lm_preds is not None:
-                    row_bufs["train_lm_eval"].append(
-                        {
-                            **meta,
-                            "ensembling": mode,
-                            **evaluate_preds(train_gt, train_lm_preds, mode).to_dict(),
-                        }
-                    )
+                # if train_lm_preds is not None:
+                #     row_bufs["train_lm_eval"].append(
+                #         {
+                #             **meta,
+                #             "ensembling": mode,
+                #             **evaluate_preds(train_gt, train_lm_preds, mode).to_dict(),
+                #         }
+                #     )
 
-                for i, model in enumerate(lr_models):
-                    row_bufs["lr_eval"].append(
-                        {
-                            **meta,
-                            "ensembling": mode,
-                            "inlp_iter": i,
-                            **evaluate_preds(val_gt, model(val_h), mode).to_dict(),
-                        }
-                    )
+                # for i, model in enumerate(lr_models):
+                #     row_bufs["lr_eval"].append(
+                #         {
+                #             **meta,
+                #             "ensembling": mode,
+                #             "inlp_iter": i,
+                #             **evaluate_preds(val_gt, model(val_h), mode).to_dict(),
+                #         }
+                #     )
+
+        # write res to csv
+        write_to_csv(res, filename)
 
         return {k: pd.DataFrame(v) for k, v in row_bufs.items()}
