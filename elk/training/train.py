@@ -64,6 +64,45 @@ class Elicit(Run):
 
         (first_train_h, train_gt, _), *rest = train_dict.values()
         (_, v, k, d) = first_train_h.shape
+
+
+        U, S, V = torch.pca_lowrank(first_train_h)
+        tpc = (first_train_h @ V[..., :1]).squeeze(-1)
+
+        # no norm
+        scores = tpc.argmax(dim=-1)
+        ntrue = repeat(train_gt, "n -> n v", v=v)
+        accuracy = (scores == ntrue).float().mean()
+        print(f'===== layer {layer} =====')
+        print('no norm accuracy', accuracy.item())
+
+        # correct norm
+        def norm(x):
+            x_centered = x - x.mean(dim=0)
+            std = torch.linalg.norm(x_centered, dim=0) / x_centered.shape[0] ** 0.5
+            dims = tuple(range(1, std.dim()))
+            avg_norm = std.mean(dim=dims, keepdim=True)
+            return x_centered / avg_norm
+
+        scores = norm(tpc).argmax(dim=-1)
+        accuracy = (scores == ntrue).float().mean()
+        print('correct norm accuracy', accuracy.item())
+
+        # incorrect norm
+        tpc_wrong = rearrange(tpc, 'n v c -> (n v) c')
+        scores = norm(tpc_wrong).argmax(dim=-1)
+        accuracy = (scores == ntrue.flatten()).float().mean()
+        print('incorrect norm accuracy', accuracy.item())
+
+        # print("first_train_h.shape", first_train_h.shape)
+        # print("train_gt.shape", train_gt.shape)
+        # print("U.shape", U.shape)
+        # print("S.shape", S.shape)
+        # print("V.shape", V.shape)
+        # print("ntrue.shape", ntrue.shape)
+        # print("tpc.shape", tpc.shape)
+        # print("scores.shape", scores.shape)
+
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
 

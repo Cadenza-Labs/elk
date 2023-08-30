@@ -9,6 +9,8 @@ class BurnsNorm(nn.Module):
         super().__init__()
         self.scale: bool = scale
 
+
+
     def forward(self, x: Tensor) -> Tensor:
         """Normalizes per prompt template
         Args:
