@@ -18,6 +18,7 @@ from ..utils.typing import assert_type
 from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
+import torch.nn.functional as F
 
 
 import os, csv
@@ -89,7 +90,26 @@ class Elicit(Run):
 
         filename = f'res.csv'
 
-        d = 768
+        def f(hiddens: torch.Tensor):
+            h_pool = hiddens[..., 1, :] - hiddens[..., 0, :]
+            h_mean: torch.Tensor = h_pool.mean(dim=0)
+            avg = h_mean.mean(dim=0, keepdim=True)
+            h_mean_avg = torch.concatenate([h_mean, avg])
+            norms = torch.linalg.norm(h_mean, dim=-1)
+            # get pairwise cosine similarity
+            pairwise_similarity = F.cosine_similarity(h_mean.unsqueeze(1), h_mean.unsqueeze(0), dim=2)
+            # pretty print pairwise similarity
+            # print("pairwise_similarity.shape", pairwise_similarity.shape)
+            # import rich
+            # import pandas as pd
+            # df = pd.DataFrame(pairwise_similarity.detach().cpu().numpy())
+            # rich.print(df)
+
+        f(first_train_h)
+
+
+
+
         def get_tpc(hiddens):
             x_pos, x_neg = norm(hiddens[..., 1, :]), norm(hiddens[..., 0, :])
             C = x_pos - x_neg
@@ -99,6 +119,8 @@ class Elicit(Run):
         
         # correct norm
         def norm(x):
+            if x.dim() == 3:
+                breakpoint()
             x_centered = x - x.mean(dim=0)
             std = torch.linalg.norm(x_centered, dim=0) / x_centered.shape[0] ** 0.5
             dims = tuple(range(1, std.dim()))
@@ -122,9 +144,9 @@ class Elicit(Run):
             scores = tpc_wrong
             y_true = repeat(gt, "n -> (n v)", v=v)
             return (scores == y_true).float().mean()
-        
-        
-        
+
+        # correct_norm = correct_norm(first_train_h, train_gt)
+
 
         # print("first_train_h.shape", first_train_h.shape)
         # print("train_gt.shape", train_gt.shape)
@@ -210,54 +232,18 @@ class Elicit(Run):
             res['no norm accuracy'] = no_norm(val_h, val_gt).item()
             res['correct norm accuracy'] = correct_norm(val_h, val_gt).item()
             res['incorrect norm accuracy'] = incorrect_norm(val_h, val_gt).item()
-            # for mode in ("none", "partial", "full"):
-                # eval_res = evaluate_preds(val_gt, val_credences, mode)
-                # res[f'eval_acc_{mode}'] = eval_res.accuracy.estimate
-                # row_bufs["eval"].append(
-                #     {
-                #         **meta,
-                #         "ensembling": mode,
-                #         **eval_res.to_dict(),
-                #         "train_loss": train_loss,
-                #     }
-                # )
-                # train_eval = evaluate_preds(train_gt, train_credences, mode)
-                # row_bufs["train_eval"].append(
-                #     {
-                #         **meta,
-                #         "ensembling": mode,
-                #         **train_eval.to_dict(),
-                #         "train_loss": train_loss,
-                #     }
-                # )
 
-                # if val_lm_preds is not None:
-                #     row_bufs["lm_eval"].append(
-                #         {
-                #             **meta,
-                #             "ensembling": mode,
-                #             **evaluate_preds(val_gt, val_lm_preds, mode).to_dict(),
-                #         }
-                #     )
+            # Compute x_i
+            def incorrect_norm(x, gt):
+                x = rearrange(x, 'n v c d -> (n v) c d')
+                x = x - x.mean(dim=0)
+                y_true = repeat(gt, "n -> (n v)", v=v)
+                return (scores == y_true).float().mean()
+            pseudolabel_direction = get_tpc(train_h)
+            x_i = 1 - F.cosine_similarity(pseudolabel_direction, probe_direction, dim=1)
+            x_values.append(x_i)
+            y_i = correct_norm(val_h, val_gt).item() - incorrect_norm(val_h, val_gt).item()
 
-                # if train_lm_preds is not None:
-                #     row_bufs["train_lm_eval"].append(
-                #         {
-                #             **meta,
-                #             "ensembling": mode,
-                #             **evaluate_preds(train_gt, train_lm_preds, mode).to_dict(),
-                #         }
-                #     )
-
-                # for i, model in enumerate(lr_models):
-                #     row_bufs["lr_eval"].append(
-                #         {
-                #             **meta,
-                #             "ensembling": mode,
-                #             "inlp_iter": i,
-                #             **evaluate_preds(val_gt, model(val_h), mode).to_dict(),
-                #         }
-                #     )
 
         # write res to csv
         write_to_csv(res, filename)
