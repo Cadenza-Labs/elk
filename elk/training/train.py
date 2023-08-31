@@ -89,16 +89,14 @@ class Elicit(Run):
 
         filename = f'res.csv'
 
+        d = 768
         def get_tpc(hiddens):
-            U, S, V = torch.pca_lowrank(hiddens)
-            return (hiddens @ V[..., :1]).squeeze(-1)
-
-        # no norm
-        def no_norm(x, gt):
-            scores = get_tpc(x).argmax(dim=-1)
-            y_true = repeat(gt, "n -> n v", v=v)
-            return (scores == y_true).float().mean()
-
+            x_pos, x_neg = norm(hiddens[..., 1, :]), norm(hiddens[..., 0, :])
+            C = x_pos - x_neg
+            U, S, V = torch.pca_lowrank(C.flatten(end_dim=-2))
+            return (C @ V[..., :1]).squeeze(-1)
+            
+        
         # correct norm
         def norm(x):
             x_centered = x - x.mean(dim=0)
@@ -107,17 +105,21 @@ class Elicit(Run):
             avg_norm = std.mean(dim=dims, keepdim=True)
             return x_centered / avg_norm
 
-        def correct_norm(x, gt):
-            scores = norm(get_tpc(x)).argmax(dim=-1)
+        # no norm
+        def no_norm(x, gt):
+            scores = get_tpc(x).gt(0)
             y_true = repeat(gt, "n -> n v", v=v)
             return (scores == y_true).float().mean()
-        # print('correct norm accuracy', five_sf(accuracy.item()))
-        
 
-        # incorrect norm
+        def correct_norm(x, gt):
+            scores = get_tpc(x).gt(0)
+            y_true = repeat(gt, "n -> n v", v=v)
+            return (scores == y_true).float().mean()
+    
         def incorrect_norm(x, gt):
-            tpc_wrong = rearrange(get_tpc(x), 'n v c -> (n v) c')
-            scores = norm(tpc_wrong).argmax(dim=-1)
+            x = rearrange(x, 'n v c d -> (n v) c d')
+            tpc_wrong = get_tpc(x).gt(0)
+            scores = tpc_wrong
             y_true = repeat(gt, "n -> (n v)", v=v)
             return (scores == y_true).float().mean()
         
@@ -133,101 +135,101 @@ class Elicit(Run):
         # print("tpc.shape", tpc.shape)
         # print("scores.shape", scores.shape)
 
-        if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
-            raise ValueError("All datasets must have the same hidden state size")
+        # if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
+        #     raise ValueError("All datasets must have the same hidden state size")
 
-        # For a while we did support datasets with different numbers of classes, but
-        # we reverted this once we switched to ConceptEraser. There are a few options
-        # for re-enabling it in the future but they are somewhat complex and it's not
-        # clear that it's worth it.
-        if not all(other_h.shape[-2] == k for other_h, _, _ in rest):
-            raise ValueError("All datasets must have the same number of classes")
+        # # For a while we did support datasets with different numbers of classes, but
+        # # we reverted this once we switched to ConceptEraser. There are a few options
+        # # for re-enabling it in the future but they are somewhat complex and it's not
+        # # clear that it's worth it.
+        # if not all(other_h.shape[-2] == k for other_h, _, _ in rest):
+        #     raise ValueError("All datasets must have the same number of classes")
 
-        reporter_dir, lr_dir = self.create_models_dir(assert_type(Path, self.out_dir))
-        train_loss = None
+        # reporter_dir, lr_dir = self.create_models_dir(assert_type(Path, self.out_dir))
+        # train_loss = None
 
-        if isinstance(self.net, CcsConfig):
-            assert len(train_dict) == 1, "CCS only supports single-task training"
+        # if isinstance(self.net, CcsConfig):
+        #     assert len(train_dict) == 1, "CCS only supports single-task training"
 
-            reporter = CcsReporter(self.net, d, device=device, num_variants=v)
-            train_loss = reporter.fit(first_train_h)
-            labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
-            reporter.platt_scale(labels, first_train_h)
+        #     reporter = CcsReporter(self.net, d, device=device, num_variants=v)
+        #     train_loss = reporter.fit(first_train_h)
+        #     labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
+        #     reporter.platt_scale(labels, first_train_h)
 
-        elif isinstance(self.net, EigenFitterConfig):
-            fitter = EigenFitter(
-                self.net, d, num_classes=k, num_variants=v, device=device
-            )
+        # elif isinstance(self.net, EigenFitterConfig):
+        #     fitter = EigenFitter(
+        #         self.net, d, num_classes=k, num_variants=v, device=device
+        #     )
 
-            hidden_list, label_list = [], []
-            for ds_name, (train_h, train_gt, _) in train_dict.items():
-                (_, v, _, _) = train_h.shape
+        #     hidden_list, label_list = [], []
+        #     for ds_name, (train_h, train_gt, _) in train_dict.items():
+        #         (_, v, _, _) = train_h.shape
 
-                # Datasets can have different numbers of variants, so we need to
-                # flatten them here before concatenating
-                hidden_list.append(rearrange(train_h, "n v k d -> (n v k) d"))
-                label_list.append(
-                    to_one_hot(repeat(train_gt, "n -> (n v)", v=v), k).flatten()
-                )
-                fitter.update(train_h)
+        #         # Datasets can have different numbers of variants, so we need to
+        #         # flatten them here before concatenating
+        #         hidden_list.append(rearrange(train_h, "n v k d -> (n v k) d"))
+        #         label_list.append(
+        #             to_one_hot(repeat(train_gt, "n -> (n v)", v=v), k).flatten()
+        #         )
+        #         fitter.update(train_h)
 
-            reporter = fitter.fit_streaming()
-            reporter.platt_scale(
-                torch.cat(label_list),
-                torch.cat(hidden_list),
-            )
-        else:
-            raise ValueError(f"Unknown reporter config type: {type(self.net)}")
+        #     reporter = fitter.fit_streaming()
+        #     reporter.platt_scale(
+        #         torch.cat(label_list),
+        #         torch.cat(hidden_list),
+        #     )
+        # else:
+        #     raise ValueError(f"Unknown reporter config type: {type(self.net)}")
 
-        # Save reporter checkpoint to disk
-        torch.save(reporter, reporter_dir / f"layer_{layer}.pt")
+        # # Save reporter checkpoint to disk
+        # torch.save(reporter, reporter_dir / f"layer_{layer}.pt")
 
-        # Fit supervised logistic regression model
-        if self.supervised != "none":
-            lr_models = train_supervised(
-                train_dict,
-                device=device,
-                mode=self.supervised,
-            )
-            with open(lr_dir / f"layer_{layer}.pt", "wb") as file:
-                torch.save(lr_models, file)
-        else:
-            lr_models = []
+        # # Fit supervised logistic regression model
+        # if self.supervised != "none":
+        #     lr_models = train_supervised(
+        #         train_dict,
+        #         device=device,
+        #         mode=self.supervised,
+        #     )
+        #     with open(lr_dir / f"layer_{layer}.pt", "wb") as file:
+        #         torch.save(lr_models, file)
+        # else:
+        #     lr_models = []
 
-        row_bufs = defaultdict(list)
+        # row_bufs = defaultdict(list)
         res = {}
         res['dataset'] = ds_name
         res['layer'] = layer
         for ds_name in val_dict:
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
-            meta = {"dataset": ds_name, "layer": layer}
+            # meta = {"dataset": ds_name, "layer": layer}
 
-            val_credences = reporter(val_h)
-            train_credences = reporter(train_h)
+            # val_credences = reporter(val_h)
+            # train_credences = reporter(train_h)
             res['no norm accuracy'] = no_norm(val_h, val_gt).item()
             res['correct norm accuracy'] = correct_norm(val_h, val_gt).item()
             res['incorrect norm accuracy'] = incorrect_norm(val_h, val_gt).item()
-            for mode in ("none", "partial", "full"):
-                eval_res = evaluate_preds(val_gt, val_credences, mode)
-                res[f'eval_acc_{mode}'] = eval_res.accuracy.estimate
-                row_bufs["eval"].append(
-                    {
-                        **meta,
-                        "ensembling": mode,
-                        **eval_res.to_dict(),
-                        "train_loss": train_loss,
-                    }
-                )
-                train_eval = evaluate_preds(train_gt, train_credences, mode)
-                row_bufs["train_eval"].append(
-                    {
-                        **meta,
-                        "ensembling": mode,
-                        **train_eval.to_dict(),
-                        "train_loss": train_loss,
-                    }
-                )
+            # for mode in ("none", "partial", "full"):
+                # eval_res = evaluate_preds(val_gt, val_credences, mode)
+                # res[f'eval_acc_{mode}'] = eval_res.accuracy.estimate
+                # row_bufs["eval"].append(
+                #     {
+                #         **meta,
+                #         "ensembling": mode,
+                #         **eval_res.to_dict(),
+                #         "train_loss": train_loss,
+                #     }
+                # )
+                # train_eval = evaluate_preds(train_gt, train_credences, mode)
+                # row_bufs["train_eval"].append(
+                #     {
+                #         **meta,
+                #         "ensembling": mode,
+                #         **train_eval.to_dict(),
+                #         "train_loss": train_loss,
+                #     }
+                # )
 
                 # if val_lm_preds is not None:
                 #     row_bufs["lm_eval"].append(
@@ -260,4 +262,4 @@ class Elicit(Run):
         # write res to csv
         write_to_csv(res, filename)
 
-        return {k: pd.DataFrame(v) for k, v in row_bufs.items()}
+        return {}
