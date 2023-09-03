@@ -91,13 +91,23 @@ class Elicit(Run):
         filename = f'res.csv'
 
         def f(hiddens: torch.Tensor):
-            h_pool = hiddens[..., 1, :] - hiddens[..., 0, :]
-            h_mean: torch.Tensor = h_pool.mean(dim=0)
-            avg = h_mean.mean(dim=0, keepdim=True)
-            h_mean_avg = torch.concatenate([h_mean, avg])
-            norms = torch.linalg.norm(h_mean, dim=-1)
-            # get pairwise cosine similarity
-            pairwise_similarity = F.cosine_similarity(h_mean.unsqueeze(1), h_mean.unsqueeze(0), dim=2)
+            # hiddens is n v c d
+
+            # in ccs we subtract the pseudolabel direction
+            # which is the mean over n, giving n v c d -> v c d
+            h_mean = hiddens.mean(dim=0)  # v c d
+            pseudolabel_directions = h_mean[:, 0, :] - h_mean[:, 1, :]  # v d
+            avg = pseudolabel_directions.mean(dim=0, keepdim=True)  # 1 d
+            pseudolabel_directions_avg = torch.concatenate([pseudolabel_directions, avg])  # v+1 d
+            norms = torch.linalg.norm(pseudolabel_directions_avg, dim=-1)
+
+            # Compute pairwise cosine similarities
+            # normalized = pseudolabel_directions_avg / norms[:, None]
+            # cosine_similarities = torch.mm(normalized, normalized.T)
+
+            cosine_similarities = F.cosine_similarity(pseudolabel_directions_avg.unsqueeze(0),
+                                                      pseudolabel_directions_avg.unsqueeze(1),
+                                                      dim=-1)
             # pretty print pairwise similarity
             # print("pairwise_similarity.shape", pairwise_similarity.shape)
             # import rich
@@ -110,115 +120,65 @@ class Elicit(Run):
 
 
 
-        def get_tpc(hiddens):
-            x_pos, x_neg = norm(hiddens[..., 1, :]), norm(hiddens[..., 0, :])
-            C = x_pos - x_neg
-            U, S, V = torch.pca_lowrank(C.flatten(end_dim=-2))
-            return (C @ V[..., :1]).squeeze(-1)
+        def tpc_probe(hiddens, wrong=False):  # n v c d
+            # what is probe direction?
+            x_pos, x_neg = norm(hiddens[..., 1, :], wrong=wrong), norm(hiddens[..., 0, :], wrong=wrong)  # n v d
+            C = x_pos - x_neg  # n v d
+            U, S, V = torch.pca_lowrank(C.flatten(end_dim=-2))  # n v d
+            return (C @ V[..., :1]).squeeze(-1)  # n v
             
         
         # correct norm
-        def norm(x):
-            if x.dim() == 3:
-                breakpoint()
-            x_centered = x - x.mean(dim=0)
-            std = torch.linalg.norm(x_centered, dim=0) / x_centered.shape[0] ** 0.5
-            dims = tuple(range(1, std.dim()))
-            avg_norm = std.mean(dim=dims, keepdim=True)
-            return x_centered / avg_norm
+        def norm(x, wrong=False):
+            assert x.dim() == 3, "x must be n v d"
+            mean_dims = (0, 1) if wrong else 0  # if wrong select n and v else just n
+            x_centered = x - x.mean(dim=mean_dims)  # n v d  |  (n v) d
+            std = torch.linalg.norm(x_centered, dim=0) / x_centered.shape[0] ** 0.5  # v d  | d
+            std_dims = (0, 1) if wrong else 1  # (1)  |  ()
+            avg_norm = std.mean(dim=std_dims, keepdim=True)  # if wrong select d and v else just d
+            res = x_centered / avg_norm  # n v d
+            return res
 
-        # no norm
-        def no_norm(x, gt):
-            scores = get_tpc(x).gt(0)
+
+
+        def get_acc(x, gt, probe, wrong=False):
+            scores = probe(x, wrong=wrong).gt(0)
             y_true = repeat(gt, "n -> n v", v=v)
-            return (scores == y_true).float().mean()
+            return scores == y_true
 
-        def correct_norm(x, gt):
-            scores = get_tpc(x).gt(0)
-            y_true = repeat(gt, "n -> n v", v=v)
-            return (scores == y_true).float().mean()
-    
-        def incorrect_norm(x, gt):
-            x = rearrange(x, 'n v c d -> (n v) c d')
-            tpc_wrong = get_tpc(x).gt(0)
-            scores = tpc_wrong
-            y_true = repeat(gt, "n -> (n v)", v=v)
-            return (scores == y_true).float().mean()
+        #  4
+        # For normalization which isn't template-wise
+        # norm(first_train_h, wrong=True)
+        def expt_four(train_hiddens, val_hiddens):  # n v c d
+            x_neg, x_pos = norm(train_hiddens[:, :, 0, :], wrong=True), norm(train_hiddens[:, :, 1, :], wrong=True)  # n v d
 
-        # correct_norm = correct_norm(first_train_h, train_gt)
+            C_train = x_pos - x_neg  # n v d
+            U, S, V = torch.pca_lowrank(C_train.flatten(end_dim=-2))
+            probe_direction = V[..., 0]  # d
 
+            x_pos_val, x_neg_val = norm(val_hiddens[..., 0, :], wrong=True), norm(val_hiddens[..., 1, :], wrong=True)  # n v d
+            C_val = x_pos_val - x_neg_val
+            wrong_credences = (C_val @ V[..., :1]).unsqueeze(-1)  # n v
+            wrong_y = wrong_credences.gt(0).bool() == repeat(val_gt, "n -> n v", v=v).bool()  # n v
+            wrong_acc = wrong_y.float().mean(dim=0)  # v
 
-        # print("first_train_h.shape", first_train_h.shape)
-        # print("train_gt.shape", train_gt.shape)
-        # print("U.shape", U.shape)
-        # print("S.shape", S.shape)
-        # print("V.shape", V.shape)
-        # print("ntrue.shape", ntrue.shape)
-        # print("tpc.shape", tpc.shape)
-        # print("scores.shape", scores.shape)
+            right_credences = tpc_probe(train_hiddens, wrong=False)  # n v
+            y_true = repeat(val_gt, "n -> n v", v=v)  # n v
+            right_acc = (right_credences.gt(0) == y_true).float().mean(dim=0)
+            # [accuracy on this template with template - wise normalization]-
+            # [accuracy on this template without template-wise normalization]
+            y = right_acc - wrong_acc
 
-        # if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
-        #     raise ValueError("All datasets must have the same hidden state size")
+            new_pseudolabel_directions = (x_neg - x_pos).mean(dim=0)  # v d
+            # x_i = [1 - cosine of the angle between the pseudolabel direction and the probe direction]
+            x = 1 - F.cosine_similarity(new_pseudolabel_directions, probe_direction.unsqueeze(0))
+            
+            # plot y against x
 
-        # # For a while we did support datasets with different numbers of classes, but
-        # # we reverted this once we switched to ConceptEraser. There are a few options
-        # # for re-enabling it in the future but they are somewhat complex and it's not
-        # # clear that it's worth it.
-        # if not all(other_h.shape[-2] == k for other_h, _, _ in rest):
-        #     raise ValueError("All datasets must have the same number of classes")
+            # do linear regression
 
-        # reporter_dir, lr_dir = self.create_models_dir(assert_type(Path, self.out_dir))
-        # train_loss = None
+            breakpoint()
 
-        # if isinstance(self.net, CcsConfig):
-        #     assert len(train_dict) == 1, "CCS only supports single-task training"
-
-        #     reporter = CcsReporter(self.net, d, device=device, num_variants=v)
-        #     train_loss = reporter.fit(first_train_h)
-        #     labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
-        #     reporter.platt_scale(labels, first_train_h)
-
-        # elif isinstance(self.net, EigenFitterConfig):
-        #     fitter = EigenFitter(
-        #         self.net, d, num_classes=k, num_variants=v, device=device
-        #     )
-
-        #     hidden_list, label_list = [], []
-        #     for ds_name, (train_h, train_gt, _) in train_dict.items():
-        #         (_, v, _, _) = train_h.shape
-
-        #         # Datasets can have different numbers of variants, so we need to
-        #         # flatten them here before concatenating
-        #         hidden_list.append(rearrange(train_h, "n v k d -> (n v k) d"))
-        #         label_list.append(
-        #             to_one_hot(repeat(train_gt, "n -> (n v)", v=v), k).flatten()
-        #         )
-        #         fitter.update(train_h)
-
-        #     reporter = fitter.fit_streaming()
-        #     reporter.platt_scale(
-        #         torch.cat(label_list),
-        #         torch.cat(hidden_list),
-        #     )
-        # else:
-        #     raise ValueError(f"Unknown reporter config type: {type(self.net)}")
-
-        # # Save reporter checkpoint to disk
-        # torch.save(reporter, reporter_dir / f"layer_{layer}.pt")
-
-        # # Fit supervised logistic regression model
-        # if self.supervised != "none":
-        #     lr_models = train_supervised(
-        #         train_dict,
-        #         device=device,
-        #         mode=self.supervised,
-        #     )
-        #     with open(lr_dir / f"layer_{layer}.pt", "wb") as file:
-        #         torch.save(lr_models, file)
-        # else:
-        #     lr_models = []
-
-        # row_bufs = defaultdict(list)
         res = {}
         res['dataset'] = ds_name
         res['layer'] = layer
@@ -226,26 +186,15 @@ class Elicit(Run):
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
             # meta = {"dataset": ds_name, "layer": layer}
+            expt_four(first_train_h, val_h)
 
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
-            res['no norm accuracy'] = no_norm(val_h, val_gt).item()
-            res['correct norm accuracy'] = correct_norm(val_h, val_gt).item()
-            res['incorrect norm accuracy'] = incorrect_norm(val_h, val_gt).item()
-
-            # Compute x_i
-            def incorrect_norm(x, gt):
-                x = rearrange(x, 'n v c d -> (n v) c d')
-                x = x - x.mean(dim=0)
-                y_true = repeat(gt, "n -> (n v)", v=v)
-                return (scores == y_true).float().mean()
-            pseudolabel_direction = get_tpc(train_h)
-            x_i = 1 - F.cosine_similarity(pseudolabel_direction, probe_direction, dim=1)
-            x_values.append(x_i)
-            y_i = correct_norm(val_h, val_gt).item() - incorrect_norm(val_h, val_gt).item()
+            res['correct norm accuracy'] = get_acc(val_h, val_gt, probe=tpc_probe, wrong=False).float().mean().item()
+            res['incorrect norm accuracy'] = get_acc(val_h, val_gt, probe=tpc_probe, wrong=True).float().mean().item()
 
 
-        # write res to csv
+        #  write res to csv
         write_to_csv(res, filename)
 
         return {}
