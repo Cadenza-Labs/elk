@@ -149,7 +149,7 @@ class Elicit(Run):
         #  4
         # For normalization which isn't template-wise
         # norm(first_train_h, wrong=True)
-        def expt_four(train_hiddens, val_hiddens):  # n v c d
+        def expt_four(train_hiddens, val_hiddens, ds_name):  # n v c d
             x_neg, x_pos = norm(train_hiddens[:, :, 0, :], wrong=True), norm(train_hiddens[:, :, 1, :], wrong=True)  # n v d
 
             C_train = x_pos - x_neg  # n v d
@@ -158,7 +158,7 @@ class Elicit(Run):
 
             x_pos_val, x_neg_val = norm(val_hiddens[..., 0, :], wrong=True), norm(val_hiddens[..., 1, :], wrong=True)  # n v d
             C_val = x_pos_val - x_neg_val
-            wrong_credences = (C_val @ V[..., :1]).unsqueeze(-1)  # n v
+            wrong_credences = (C_val @ V[..., :1]).squeeze(-1)  # n v
             wrong_y = wrong_credences.gt(0).bool() == repeat(val_gt, "n -> n v", v=v).bool()  # n v
             wrong_acc = wrong_y.float().mean(dim=0)  # v
 
@@ -174,10 +174,31 @@ class Elicit(Run):
             x = 1 - F.cosine_similarity(new_pseudolabel_directions, probe_direction.unsqueeze(0))
             
             # plot y against x
+            import matplotlib.pyplot as plt
+            import numpy as np
+            plt.scatter(x.detach().cpu().numpy(), y.detach().cpu().numpy())
+            # add linear regression
+            m, b = np.polyfit(x.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
+            plt.plot(x.detach().cpu().numpy(), m*x.detach().cpu().numpy() + b)
+            # make dir
+            if not os.path.exists('expt'):
+                os.makedirs('expt')
+            plt.savefig(f'expt/e4_{ds_name}.png')
 
-            # do linear regression
+            # || phi ^ +-phi ^ +'||^2 / ||phi^+ - phi^+''||^2
+            phi_a = (x_pos + x_neg) / 2 + new_pseudolabel_directions / 2
+            phi_b = (x_pos + x_neg) / 2
+            z = torch.linalg.vector_norm(x_pos - phi_a, dim=(0,2)) / torch.linalg.vector_norm(x_pos - phi_b, dim=(0,2))
+            # plot y against z
+            plt.scatter(z.detach().cpu().numpy(), y.detach().cpu().numpy())
+            # add linear regression
+            m, b = np.polyfit(z.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
+            plt.plot(z.detach().cpu().numpy(), m*z.detach().cpu().numpy() + b)
+            plt.savefig(f'expt/e5_{ds_name}.png')
 
-            breakpoint()
+
+            
+
 
         res = {}
         res['dataset'] = ds_name
@@ -186,7 +207,7 @@ class Elicit(Run):
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
             # meta = {"dataset": ds_name, "layer": layer}
-            expt_four(first_train_h, val_h)
+            expt_four(first_train_h, val_h, ds_name)
 
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
