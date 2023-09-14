@@ -180,7 +180,7 @@ class Run(ABC, Serializable):
             df_buffers = defaultdict(list)
 
             try:
-                for df_dict in tqdm(mapper(func, layers), total=len(layers)):
+                for df_dict in tqdm(mapper(func, layers[-1:]), total=1):
                     for k, v in df_dict.items():
                         df_buffers[k].append(v)
             finally:
