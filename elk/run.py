@@ -179,8 +179,10 @@ class Run(ABC, Serializable):
             mapper = pool.imap_unordered if num_devices > 1 else map
             df_buffers = defaultdict(list)
 
+            layer_75 = layers[int(len(layers) * 0.75)]
+
             try:
-                for df_dict in tqdm(mapper(func, layers[-1:]), total=1):
+                for df_dict in tqdm(mapper(func, [layer_75]), total=1):
                     for k, v in df_dict.items():
                         df_buffers[k].append(v)
             finally:

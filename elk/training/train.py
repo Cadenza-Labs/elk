@@ -132,9 +132,6 @@ class Elicit(Run):
             y_true = repeat(gt, "n -> n v", v=v)
             return scores == y_true
 
-        #  4
-        # For normalization which isn't template-wise
-        # norm(first_train_h, wrong=True)
         def expt_4_5(train_hiddens, val_hiddens, ds_name):  # n v c d
             x_pos, x_neg = norm(train_hiddens[:, :, 1, :], wrong=True), norm(train_hiddens[:, :, 0, :],
                                                                              wrong=True)  # n v d
