@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import rich
+import json
 import torch
 import torch.nn.functional as F
 from einops import repeat
@@ -93,6 +94,8 @@ class Elicit(Run):
 
         filename = f'{expt_name}.csv'
 
+        to_save = {}
+
         def expt_2_3(hiddens: torch.Tensor):
             # hiddens is n v c d
             h_mean = hiddens.mean(dim=0)  # v c d
@@ -107,6 +110,8 @@ class Elicit(Run):
             # pretty print pairwise similarity
             rich.print(norms)
             rich.print(pd.DataFrame(cosine_similarities.detach().cpu().numpy()))
+            to_save['2_3_norms'] = norms.detach().cpu().numpy().tolist()
+            to_save['2_3_cosine_similarities'] = cosine_similarities.detach().cpu().numpy().tolist()
             return cosine_similarities
 
         e23 = expt_2_3(first_train_h)
@@ -153,14 +158,17 @@ class Elicit(Run):
             # [accuracy on this template with template - wise normalization]-
             # [accuracy on this template without template-wise normalization]
             y = right_acc - wrong_acc
+            to_save['4_5_y'] = y.detach().cpu().numpy().tolist()
 
             new_pseudolabel_directions = (x_neg - x_pos).mean(dim=0)  # v d
             # x_i = [1 - cosine of the angle between the pseudolabel direction and the probe direction]
             x = 1 - F.cosine_similarity(new_pseudolabel_directions, probe_direction.unsqueeze(0))
+            to_save['4_cos_pseudo_probe_x'] = x.detach().cpu().numpy().tolist()
 
             # plot y against x
             plt.scatter(x.detach().cpu().numpy(), y.detach().cpu().numpy())
             # add linear regression
+
             m, b = np.polyfit(x.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
             label4 = '(4): 1 - cos(pseudo_dir, probe_dir)'
             plt.plot(x.detach().cpu().numpy(), m * x.detach().cpu().numpy() + b, label=label4)
@@ -178,6 +186,7 @@ class Elicit(Run):
             z = ratios.mean(dim=0)
             # plot y against z
             plt.scatter(z.detach().cpu().numpy(), y.detach().cpu().numpy())
+            to_save['5_ratios_z'] = z.detach().cpu().numpy().tolist()
             # add linear regression
             m, b = np.polyfit(z.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
             label5 = '(5): ‖Φ⁺ - Φ⁺′‖²  / ‖Φ⁺ - Φ⁺″‖²'
@@ -204,10 +213,14 @@ class Elicit(Run):
 
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
-            res['correct norm accuracy'] = get_acc(val_h, val_gt, probe=tpc_probe, wrong=False).float().mean().item()
-            res['incorrect norm accuracy'] = get_acc(val_h, val_gt, probe=tpc_probe, wrong=True).float().mean().item()
+            to_save['correct_norm_accuracy'] = get_acc(val_h, val_gt, probe=tpc_probe, wrong=False).float().mean().item()
+            to_save['incorrect_norm_accuracy'] = get_acc(val_h, val_gt, probe=tpc_probe, wrong=True).float().mean().item()
 
         #  write res to csv
         write_to_csv(res, filename)
+
+        # write to_save
+        with open(f'expt/{expt_name}.json', 'w') as f:
+            json.dump(to_save, f, indent=4)
 
         return {}
