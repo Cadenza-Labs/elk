@@ -92,8 +92,6 @@ class Elicit(Run):
 
         expt_name = f"{model_name}_{ds_name}_layer_{layer}"
 
-        filename = f"{expt_name}.csv"
-
         to_save = {}
 
         def expt_2_3(hiddens: torch.Tensor):
@@ -124,7 +122,7 @@ class Elicit(Run):
             )
             return cosine_similarities
 
-        expt_2_3(first_train_h)
+        # expt_2_3(first_train_h)
 
         class TPCProbe:
             def __init__(self, probe_direction):
@@ -263,12 +261,12 @@ class Elicit(Run):
 
             plt.savefig(f"expt/{expt_name}.png")
 
-        res = {"dataset": ds_name, "layer": layer}
+        res = {"dataset": ds_name, "layer": layer, "model": model_name}
         for ds_name in val_dict:
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
             # meta = {"dataset": ds_name, "layer": layer}
-            expt_4_5(first_train_h, val_h, ds_name)
+            # expt_4_5(first_train_h, val_h, ds_name)
 
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
@@ -281,9 +279,30 @@ class Elicit(Run):
                 .mean()
                 .item()
             )
+            res["correct_norm_accuracy"] = to_save["correct_norm_accuracy"]
+            res["incorrect_norm_accuracy"] = to_save["incorrect_norm_accuracy"]
+
+        # make res into df row and append if exists else create
+        df = pd.DataFrame(res, index=[0])
+        by_layer_filename = "accs_by_norm.csv"
+        if os.path.exists(by_layer_filename):
+            # check if dataset, layer, model exists
+            existing = pd.read_csv(by_layer_filename)
+            if (
+                (existing["dataset"] == ds_name)
+                & (existing["layer"] == layer)
+                & (existing["model"] == model_name)
+            ).all():
+                # if not exists, append
+                df.to_csv(by_layer_filename, mode="a", header=False, index=False)
+            else:
+                print(f"{ds_name}, {layer}, {model_name} already exists in csv")
+        else:
+            df.to_csv(by_layer_filename, index=False)
+            df.columns = list(res.keys())
 
         #  write res to csv
-        write_to_csv(res, filename)
+        # write_to_csv(res, filename)
 
         # write to_save
         with open(f"expt/{expt_name}.json", "w") as f:
