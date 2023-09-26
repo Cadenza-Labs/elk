@@ -1,7 +1,6 @@
 """Main training loop."""
 
 import csv
-import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -284,16 +283,18 @@ class Elicit(Run):
 
         # make res into df row and append if exists else create
         df = pd.DataFrame(res, index=[0])
-        by_layer_filename = "accs_by_norm.csv"
+        by_layer_filename = Path("data/accs_by_norm.csv")
+        by_layer_filename.parent.mkdir(parents=True, exist_ok=True)
         if os.path.exists(by_layer_filename):
             # check if dataset, layer, model exists
-            existing = pd.read_csv(by_layer_filename)
-            if (
-                (existing["dataset"] == ds_name)
-                & (existing["layer"] == layer)
-                & (existing["model"] == model_name)
-            ).all():
-                # if not exists, append
+            existing_df = pd.read_csv(by_layer_filename)
+            # find row with same dataset, layer, model
+            existing_row = existing_df[
+                (existing_df["dataset"] == ds_name)
+                & (existing_df["layer"] == layer)
+                & (existing_df["model"] == model_name)
+            ]
+            if existing_row.empty:
                 df.to_csv(by_layer_filename, mode="a", header=False, index=False)
             else:
                 print(f"{ds_name}, {layer}, {model_name} already exists in csv")
@@ -305,7 +306,7 @@ class Elicit(Run):
         # write_to_csv(res, filename)
 
         # write to_save
-        with open(f"expt/{expt_name}.json", "w") as f:
-            json.dump(to_save, f, indent=4)
+        # with open(f"expt/{expt_name}.json", "w") as f:
+        #     json.dump(to_save, f, indent=4)
 
         return {}
