@@ -99,11 +99,15 @@ class Elicit(Run):
         def expt_2_3(hiddens: torch.Tensor):
             # hiddens is n v c d
             h_mean = hiddens.mean(dim=0)  # v c d
+            assert h_mean.shape == (v, k, d)
             pseudolabel_directions = h_mean[:, 1, :] - h_mean[:, 0, :]  # v d
+            assert pseudolabel_directions.shape == (v, d)
             pseudo_t_wise_avg = pseudolabel_directions.mean(dim=0, keepdim=True)  # 1 d
+            assert pseudo_t_wise_avg.shape == (1, d)
             pseudolabel_directions_avg = torch.concatenate(
                 [pseudolabel_directions, pseudo_t_wise_avg]
             )  # v+1 d
+            assert pseudolabel_directions_avg.shape == (v + 1, d)
 
             norms = torch.linalg.norm(pseudolabel_directions_avg, dim=-1)
             cosine_similarities = F.cosine_similarity(
@@ -128,37 +132,54 @@ class Elicit(Run):
 
             @classmethod
             def train(cls, train_hiddens: torch.Tensor, correct_norm=True):
+                n, v, c, d = train_hiddens.shape
                 wrong = not correct_norm
                 x_pos, x_neg = norm(train_hiddens[..., 1, :], wrong=wrong), norm(
                     train_hiddens[..., 0, :], wrong=wrong
                 )  # n v d
+                assert x_pos.shape == x_neg.shape == (n, v, d)
                 C = x_pos - x_neg  # n v d
-                U, S, V = torch.pca_lowrank(C.flatten(end_dim=-2))  # n v d
+                assert C.shape == (n, v, d)
+                _, _, V = torch.pca_lowrank(C.flatten(end_dim=-2))  # n v d
                 return cls(V[..., :1])
 
             def apply(self, hiddens: torch.Tensor, correct_norm=True):
+                n, v, c, d = hiddens.shape
                 wrong = not correct_norm
-                # hiddens is n v c d
                 hiddens.mean(dim=0)
                 x_pos, x_neg = norm(hiddens[..., 1, :], wrong=wrong), norm(
                     hiddens[..., 0, :], wrong=wrong
                 )  # n v d
+                assert x_pos.shape == x_neg.shape == (n, v, d)
 
                 C = x_pos - x_neg  # n v d
-                return (C @ self.probe_direction).squeeze(-1)  # n v
+                assert C.shape == (n, v, d)
+                logits = (C @ self.probe_direction).squeeze(-1)  # n v
+                assert logits.shape == (n, v)
+                return logits
 
         def norm(x, wrong=False):
             assert x.dim() == 3, "x must be n v d"
+            n, v, d = x.shape
             mean_dims = (0, 1) if wrong else 0  # if wrong select n and v else just n
             x_centered = x - x.mean(dim=mean_dims)  # n v d  |  (n v) d
+            assert x_centered.shape == (n, v, d)
             std = (
                 torch.linalg.norm(x_centered, dim=0) / x_centered.shape[0] ** 0.5
             )  # v d  | d
+            assert std.shape == (v, d)
             std_dims = (0, 1) if wrong else 1  # (1)  |  ()
-            avg_norm = std.mean(
-                dim=std_dims, keepdim=True
-            )  # if wrong select d and v else just d
-            return x_centered / avg_norm  # n v d
+            avg_norm = std.mean(dim=std_dims)  # if wrong select d and v else just d
+            if wrong:
+                assert avg_norm.shape == ()
+            else:
+                assert avg_norm.shape == (v,)
+            if wrong:
+                normed = x_centered / avg_norm
+            else:
+                normed = x_centered / avg_norm[:, None]
+            assert normed.shape == (n, v, d)
+            return normed  # n v d
 
         def get_acc(x_train, x_val, gt, correct_norm=True):
             probe = TPCProbe.train(x_train, correct_norm=correct_norm)
@@ -170,19 +191,7 @@ class Elicit(Run):
             x_pos, x_neg = norm(train_hiddens[:, :, 1, :], wrong=True), norm(
                 train_hiddens[:, :, 0, :], wrong=True
             )  # n v d
-
-            # C_train = x_pos - x_neg  # n v d
-            # U, S, V = torch.pca_lowrank(C_train.flatten(end_dim=-2))
-            # probe_direction = V[..., 0]  # d
-
             tpc_probe_wrong = TPCProbe.train(train_hiddens, correct_norm=False)
-
-            # x_pos_val, x_neg_val = norm(val_hiddens[..., 0, :], wrong=True), norm(
-            #     val_hiddens[..., 1, :], wrong=True
-            # )  # n v d
-            # C_val = x_pos_val - x_neg_val
-            # wrong_credences = (C_val @ V[..., :1]).squeeze(-1)  # n v
-
             wrong_credences = tpc_probe_wrong.apply(val_hiddens, correct_norm=False)
             wrong_y = (
                 wrong_credences.gt(0).bool() == repeat(val_gt, "n -> n v", v=v).bool()
@@ -193,9 +202,9 @@ class Elicit(Run):
             right_credences = tpc_probe_correct.apply(
                 train_hiddens, correct_norm=True
             )  # n v
-
             y_true = repeat(val_gt, "n -> n v", v=v)  # n v
             right_acc = (right_credences.gt(0) == y_true).float().mean(dim=0)
+
             # [accuracy on this template with template - wise normalization]-
             # [accuracy on this template without template-wise normalization]
             y = right_acc - wrong_acc
@@ -205,8 +214,9 @@ class Elicit(Run):
             # x_i = [1 - cosine of the angle between the
             # pseudolabel direction and the probe direction]
             x = 1 - F.cosine_similarity(
-                new_pseudolabel_directions, tpc_probe_wrong.probe_direction.unsqueeze(0)
+                new_pseudolabel_directions, tpc_probe_wrong.probe_direction.squeeze(-1)
             )
+            assert x.shape == (v,)
             to_save["4_cos_pseudo_probe_x"] = x.detach().cpu().numpy().tolist()
 
             # plot y against x
