@@ -210,9 +210,9 @@ class Elicit(Run):
             new_pseudolabel_directions = (x_pos - x_neg).mean(dim=0)  # v d
             # x_i = [1 - cosine of the angle between the
             # pseudolabel direction and the probe direction]
-            x = 1 - F.cosine_similarity(
+            x = F.cosine_similarity(
                 new_pseudolabel_directions, tpc_probe_wrong.probe_direction.squeeze(-1)
-            )
+            ).pow(2)
             assert x.shape == (v,)
             to_save["4_cos_pseudo_probe_x"] = x.detach().cpu().numpy().tolist()
 
@@ -221,7 +221,7 @@ class Elicit(Run):
             # add linear regression
 
             m, b = np.polyfit(x.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
-            label4 = "(4): 1 - cos(pseudo_dir, probe_dir)"
+            label4 = "(4): cos(pseudo_dir, probe_dir)^2"
             plt.plot(
                 x.detach().cpu().numpy(), m * x.detach().cpu().numpy() + b, label=label4
             )
