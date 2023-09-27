@@ -1,6 +1,7 @@
 """Main training loop."""
 
 import csv
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +10,6 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import rich
 import torch
 import torch.nn.functional as F
 from einops import repeat
@@ -89,7 +89,7 @@ class Elicit(Run):
         ds_name = list(train_dict.keys())[0]
         model_name = self.data.model.replace("/", "_")
 
-        expt_name = f"{model_name}_{ds_name}_layer_{layer}"
+        expt_name = f"{model_name}_{ds_name}_L{layer}"
 
         to_save = {}
 
@@ -113,15 +113,15 @@ class Elicit(Run):
                 dim=-1,
             )
             # pretty print pairwise similarity
-            rich.print(norms)
-            rich.print(pd.DataFrame(cosine_similarities.detach().cpu().numpy()))
+            # rich.print(norms)
+            # rich.print(pd.DataFrame(cosine_similarities.detach().cpu().numpy()))
             to_save["2_3_norms"] = norms.detach().cpu().numpy().tolist()
             to_save["2_3_cosine_similarities"] = (
                 cosine_similarities.detach().cpu().numpy().tolist()
             )
             return cosine_similarities
 
-        # expt_2_3(first_train_h)
+        expt_2_3(first_train_h)
 
         class TPCProbe:
             def __init__(self, probe_direction):
@@ -197,7 +197,7 @@ class Elicit(Run):
 
             tpc_probe_correct = TPCProbe.train(train_hiddens, correct_norm=True)
             right_credences = tpc_probe_correct.apply(
-                train_hiddens, correct_norm=True
+                val_hiddens, correct_norm=True
             )  # n v
             y_true = repeat(val_gt, "n -> n v", v=v)  # n v
             right_acc = (right_credences.gt(0) == y_true).float().mean(dim=0)
@@ -259,13 +259,14 @@ class Elicit(Run):
             plt.ylabel("[accuracy w/t-wise norm]-[accuracy wo/t-wise norm]")
 
             plt.savefig(f"expt/{expt_name}.png")
+            # clear
+            plt.clf()
 
         res = {"dataset": ds_name, "layer": layer, "model": model_name}
         for ds_name in val_dict:
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
-            # meta = {"dataset": ds_name, "layer": layer}
-            # expt_4_5(first_train_h, val_h, ds_name)
+            expt_4_5(first_train_h, val_h, ds_name)
 
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
@@ -302,11 +303,8 @@ class Elicit(Run):
             df.to_csv(by_layer_filename, index=False)
             df.columns = list(res.keys())
 
-        #  write res to csv
-        # write_to_csv(res, filename)
-
         # write to_save
-        # with open(f"expt/{expt_name}.json", "w") as f:
-        #     json.dump(to_save, f, indent=4)
+        with open(f"expt/{expt_name}.json", "w") as f:
+            json.dump(to_save, f, indent=4)
 
         return {}
