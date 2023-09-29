@@ -284,7 +284,7 @@ class Elicit(Run):
 
         # make res into df row and append if exists else create
         df = pd.DataFrame(res, index=[0])
-        by_layer_filename = Path("data/accs_by_norm.csv")
+        by_layer_filename = Path("data/4_accs_by_norm.csv")
         by_layer_filename.parent.mkdir(parents=True, exist_ok=True)
         if os.path.exists(by_layer_filename):
             # check if dataset, layer, model exists
