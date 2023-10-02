@@ -21,6 +21,42 @@ from .ccs_reporter import CcsConfig
 from .common import FitterConfig
 from .eigen_reporter import EigenFitterConfig
 
+
+def plot(x, y, z, model_name, ds_name, layer):
+    expt_name = f"{model_name}_{ds_name}_L{layer}"
+    # plot y against x
+    plt.scatter(x.detach().cpu().numpy(), y.detach().cpu().numpy())
+    # add linear regression
+
+    m, b = np.polyfit(x.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
+    label4 = "(4): cos(pseudo_dir, probe_dir)^2"
+    plt.plot(
+        x.detach().cpu().numpy(), m * x.detach().cpu().numpy() + b, label=label4
+    )
+
+    # add linear regression
+    m, b = np.polyfit(z.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
+    label5 = "(5): ‖Φ⁺ - Φ⁺′‖²  / ‖Φ⁺ - Φ⁺″‖²"
+
+    plt.scatter(z.detach().cpu().numpy(), y.detach().cpu().numpy())
+    plt.plot(
+        z.detach().cpu().numpy(), m * z.detach().cpu().numpy() + b, label=label5
+    )
+
+    # add legend
+    plt.legend()
+
+    # add title
+    plt.title(f"{model_name} | {ds_name} | layer {layer}")
+
+    # add axis labels
+    plt.xlabel("x")
+    plt.ylabel("[accuracy w/t-wise norm]-[accuracy wo/t-wise norm]")
+
+    plt.savefig(f"expt/{expt_name}.png")
+    # clear
+    plt.clf()
+
 # Specify the filename
 
 
@@ -216,15 +252,7 @@ class Elicit(Run):
             assert x.shape == (v,)
             to_save["4_cos_pseudo_probe_x"] = x.detach().cpu().numpy().tolist()
 
-            # plot y against x
-            plt.scatter(x.detach().cpu().numpy(), y.detach().cpu().numpy())
-            # add linear regression
 
-            m, b = np.polyfit(x.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
-            label4 = "(4): cos(pseudo_dir, probe_dir)^2"
-            plt.plot(
-                x.detach().cpu().numpy(), m * x.detach().cpu().numpy() + b, label=label4
-            )
             # make dir
             if not os.path.exists("expt"):
                 os.makedirs("expt")
@@ -239,28 +267,11 @@ class Elicit(Run):
             ) / torch.linalg.vector_norm(x_pos - Φ_b, dim=2)
             z = ratios.mean(dim=0)
             # plot y against z
-            plt.scatter(z.detach().cpu().numpy(), y.detach().cpu().numpy())
+
             to_save["5_ratios_z"] = z.detach().cpu().numpy().tolist()
-            # add linear regression
-            m, b = np.polyfit(z.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
-            label5 = "(5): ‖Φ⁺ - Φ⁺′‖²  / ‖Φ⁺ - Φ⁺″‖²"
-            plt.plot(
-                z.detach().cpu().numpy(), m * z.detach().cpu().numpy() + b, label=label5
-            )
 
-            # add legend
-            plt.legend()
+            # plot(x, y, z, model_name, ds_name, layer)
 
-            # add title
-            plt.title(f"{model_name} | {ds_name} | layer {layer}")
-
-            # add axis labels
-            plt.xlabel("x")
-            plt.ylabel("[accuracy w/t-wise norm]-[accuracy wo/t-wise norm]")
-
-            plt.savefig(f"expt/{expt_name}.png")
-            # clear
-            plt.clf()
 
         res = {"dataset": ds_name, "layer": layer, "model": model_name}
         for ds_name in val_dict:
