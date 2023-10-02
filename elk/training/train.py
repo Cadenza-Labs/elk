@@ -271,13 +271,11 @@ class Elicit(Run):
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
             to_save["correct_norm_accuracy"] = (
-                get_acc(train_h, val_h, val_gt, correct_norm=True).float().mean().item()
+                get_acc(train_h, val_h, val_gt, correct_norm=True).float().tolist()
             )
             to_save["incorrect_norm_accuracy"] = (
                 get_acc(train_h, val_h, val_gt, correct_norm=False)
-                .float()
-                .mean()
-                .item()
+                .float().tolist()
             )
             res["correct_norm_accuracy"] = to_save["correct_norm_accuracy"]
             res["incorrect_norm_accuracy"] = to_save["incorrect_norm_accuracy"]
