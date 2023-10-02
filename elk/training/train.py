@@ -91,12 +91,12 @@ class Elicit(Run):
     cross-validation. Defaults to "single", which means to train a single classifier
     on the training data. "cv" means to use cross-validation."""
 
-    out_dir: Path = Path("./data/")
+    out_dir_expt: Path = Path("./data/")
 
     def __post_init__(self):
         # make dir
-        if not os.path.exists(self.out_dir):
-            self.out_dir.mkdir(parents=True, exist_ok=True)
+        if not os.path.exists(self.out_dir_expt):
+            self.out_dir_expt.mkdir(parents=True, exist_ok=True)
 
     def create_models_dir(self, out_dir: Path):
         lr_dir = None
@@ -296,7 +296,7 @@ class Elicit(Run):
 
         # make res into df row and append if exists else create
         df = pd.DataFrame(res, index=[0])
-        by_layer_filename = self.out_dir / "accs_by_norm.csv"
+        by_layer_filename = self.out_dir_expt / "accs_by_norm.csv"
         by_layer_filename.parent.mkdir(parents=True, exist_ok=True)
         if os.path.exists(by_layer_filename):
             # check if dataset, layer, model exists
@@ -316,7 +316,7 @@ class Elicit(Run):
             df.columns = list(res.keys())
 
         # write to_save
-        with open(self.out_dir / f"{expt_name}.json", "w") as f:
+        with open(self.out_dir_expt / f"{expt_name}.json", "w") as f:
             json.dump(to_save, f, indent=4)
 
         return {}

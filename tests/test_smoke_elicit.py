@@ -19,7 +19,7 @@ def test_smoke_elicit_run_tiny_gpt2_ccs(tmp_path: Path):
         num_gpus=2,
         min_gpu_mem=min_mem,
         net=CcsConfig(),
-        out_dir=tmp_path,
+        out_dir_expt=tmp_path,
     )
     elicit.execute()
     # get the files in the tmp_path
@@ -50,7 +50,7 @@ def test_smoke_elicit_run_tiny_gpt2_eigen(tmp_path: Path):
         num_gpus=2,
         min_gpu_mem=min_mem,
         net=EigenFitterConfig(),
-        out_dir=tmp_path,
+        out_dir_expt=tmp_path,
     )
     elicit.execute()
     # get the files in the tmp_path

@@ -21,7 +21,7 @@ class Eval(Run):
 
     def __post_init__(self):
         # Set our output directory before super().execute() does
-        if not self.out_dir:
+        if not self.out_dir_expt:
             root = elk_reporter_dir() / self.source
             self.out_dir = root / "transfer" / "+".join(self.data.datasets)
 
