@@ -34,7 +34,7 @@ from .utils import (
 @dataclass
 class Run(ABC, Serializable):
     data: Extract
-    out_dir_expt: Path | None = None
+    out_dir: Path | None = None
     """Directory to save results to. If None, a directory will be created
     automatically."""
 
@@ -50,7 +50,7 @@ class Run(ABC, Serializable):
     debug: bool = False
     min_gpu_mem: int | None = None  # in bytes
     num_gpus: int = -1
-    out_dir_expt: Path | None = None
+    out_dir: Path | None = None
     disable_cache: bool = field(default=False, to_dict=False)
 
     def execute(
@@ -70,23 +70,23 @@ class Run(ABC, Serializable):
             for cfg in self.data.explode()
         ]
 
-        if self.out_dir_expt is None:
+        if self.out_dir is None:
             # Save in a memorably-named directory inside of
             # ELK_REPORTER_DIR/<model_name>/<dataset_name>
             ds_name = "+".join(self.data.datasets)
             root = elk_reporter_dir() / self.data.model / ds_name
 
-            self.out_dir_expt = memorably_named_dir(root)
+            self.out_dir = memorably_named_dir(root)
 
         # Print the output directory in bold with escape codes
-        print(f"Output directory at \033[1m{self.out_dir_expt}\033[0m")
-        self.out_dir_expt.mkdir(parents=True, exist_ok=True)
+        print(f"Output directory at \033[1m{self.out_dir}\033[0m")
+        self.out_dir.mkdir(parents=True, exist_ok=True)
 
         # save_dc_types really ought to be the default... We simply can't load
         # properly without this flag enabled.
-        save(self, self.out_dir_expt / "cfg.yaml", save_dc_types=True)
+        save(self, self.out_dir / "cfg.yaml", save_dc_types=True)
 
-        path = self.out_dir_expt / "fingerprints.yaml"
+        path = self.out_dir / "fingerprints.yaml"
         with open(path, "w") as meta_f:
             yaml.dump(
                 {
@@ -166,7 +166,7 @@ class Run(ABC, Serializable):
                 The int is the index of the layer.
             num_devices: The number of devices to use.
         """
-        self.out_dir_expt = assert_type(Path, self.out_dir_expt)
+        self.out_dir = assert_type(Path, self.out_dir)
 
         layers, *rest = [get_layer_indices(ds) for _, ds in self.datasets]
         assert all(x == layers for x in rest), "All datasets must have the same layers"
@@ -187,6 +187,6 @@ class Run(ABC, Serializable):
                 # Make sure the CSVs are written even if we crash or get interrupted
                 for name, dfs in df_buffers.items():
                     df = pd.concat(dfs).sort_values(by=["layer", "ensembling"])
-                    df.round(4).to_csv(self.out_dir_expt / f"{name}.csv", index=False)
+                    df.round(4).to_csv(self.out_dir / f"{name}.csv", index=False)
                 if self.debug:
-                    save_debug_log(self.datasets, self.out_dir_expt)
+                    save_debug_log(self.datasets, self.out_dir)
