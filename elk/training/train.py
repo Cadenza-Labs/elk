@@ -95,9 +95,7 @@ class Elicit(Run):
 
     def __post_init__(self):
         # make dir
-        if os.path.exists(self.out_dir):
-            raise ValueError("out_dir already exists")
-        else:
+        if not os.path.exists(self.out_dir):
             self.out_dir.mkdir(parents=True, exist_ok=True)
 
     def create_models_dir(self, out_dir: Path):
