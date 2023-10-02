@@ -91,6 +91,15 @@ class Elicit(Run):
     cross-validation. Defaults to "single", which means to train a single classifier
     on the training data. "cv" means to use cross-validation."""
 
+    out_dir: Path = Path("./data/")
+
+    def __post_init__(self):
+        # make dir
+        if os.path.exists(self.out_dir):
+            raise ValueError("out_dir already exists")
+        else:
+            self.out_dir.mkdir(parents=True, exist_ok=True)
+
     def create_models_dir(self, out_dir: Path):
         lr_dir = None
         lr_dir = out_dir / "lr_models"
@@ -253,10 +262,6 @@ class Elicit(Run):
             to_save["4_cos_pseudo_probe_x"] = x.detach().cpu().numpy().tolist()
 
 
-            # make dir
-            if not os.path.exists("expt"):
-                os.makedirs("expt")
-
             # ‖ phi ^ +-phi ^ +'‖^2 / ||phi^+ - phi^+''||^2
             Φ_a = (x_pos + x_neg) / 2 + new_pseudolabel_directions / 2
             Φ_b = (x_pos + x_neg) / 2
@@ -293,7 +298,7 @@ class Elicit(Run):
 
         # make res into df row and append if exists else create
         df = pd.DataFrame(res, index=[0])
-        by_layer_filename = Path("data/4_accs_by_norm.csv")
+        by_layer_filename = self.out_dir / "accs_by_norm.csv"
         by_layer_filename.parent.mkdir(parents=True, exist_ok=True)
         if os.path.exists(by_layer_filename):
             # check if dataset, layer, model exists
@@ -313,7 +318,7 @@ class Elicit(Run):
             df.columns = list(res.keys())
 
         # write to_save
-        with open(f"expt/{expt_name}.json", "w") as f:
+        with open(self.out_dir / f"{expt_name}.json", "w") as f:
             json.dump(to_save, f, indent=4)
 
         return {}
