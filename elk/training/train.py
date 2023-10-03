@@ -30,18 +30,14 @@ def plot(x, y, z, model_name, ds_name, layer):
 
     m, b = np.polyfit(x.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
     label4 = "(4): cos(pseudo_dir, probe_dir)^2"
-    plt.plot(
-        x.detach().cpu().numpy(), m * x.detach().cpu().numpy() + b, label=label4
-    )
+    plt.plot(x.detach().cpu().numpy(), m * x.detach().cpu().numpy() + b, label=label4)
 
     # add linear regression
     m, b = np.polyfit(z.detach().cpu().numpy(), y.detach().cpu().numpy(), 1)
     label5 = "(5): ‖Φ⁺ - Φ⁺′‖²  / ‖Φ⁺ - Φ⁺″‖²"
 
     plt.scatter(z.detach().cpu().numpy(), y.detach().cpu().numpy())
-    plt.plot(
-        z.detach().cpu().numpy(), m * z.detach().cpu().numpy() + b, label=label5
-    )
+    plt.plot(z.detach().cpu().numpy(), m * z.detach().cpu().numpy() + b, label=label5)
 
     # add legend
     plt.legend()
@@ -56,6 +52,7 @@ def plot(x, y, z, model_name, ds_name, layer):
     plt.savefig(f"expt/{expt_name}.png")
     # clear
     plt.clf()
+
 
 # Specify the filename
 
@@ -91,7 +88,7 @@ class Elicit(Run):
     cross-validation. Defaults to "single", which means to train a single classifier
     on the training data. "cv" means to use cross-validation."""
 
-    out_dir_expt: Path = Path("./data/")
+    out_dir_expt: Path = Path("./data/5_with_twise_accs/")
 
     def __post_init__(self):
         # make dir
@@ -259,7 +256,6 @@ class Elicit(Run):
             assert x.shape == (v,)
             to_save["4_cos_pseudo_probe_x"] = x.detach().cpu().numpy().tolist()
 
-
             # ‖ phi ^ +-phi ^ +'‖^2 / ||phi^+ - phi^+''||^2
             Φ_a = (x_pos + x_neg) / 2 + new_pseudolabel_directions / 2
             Φ_b = (x_pos + x_neg) / 2
@@ -275,7 +271,6 @@ class Elicit(Run):
 
             # plot(x, y, z, model_name, ds_name, layer)
 
-
         res = {"dataset": ds_name, "layer": layer, "model": model_name}
         for ds_name in val_dict:
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
@@ -288,32 +283,33 @@ class Elicit(Run):
                 get_acc(train_h, val_h, val_gt, correct_norm=True).float().tolist()
             )
             to_save["incorrect_norm_accuracy"] = (
-                get_acc(train_h, val_h, val_gt, correct_norm=False)
-                .float().tolist()
+                get_acc(train_h, val_h, val_gt, correct_norm=False).float().tolist()
             )
             res["correct_norm_accuracy"] = to_save["correct_norm_accuracy"]
             res["incorrect_norm_accuracy"] = to_save["incorrect_norm_accuracy"]
 
         # make res into df row and append if exists else create
-        df = pd.DataFrame(res, index=[0])
-        by_layer_filename = self.out_dir_expt / "accs_by_norm.csv"
-        by_layer_filename.parent.mkdir(parents=True, exist_ok=True)
-        if os.path.exists(by_layer_filename):
-            # check if dataset, layer, model exists
-            existing_df = pd.read_csv(by_layer_filename)
-            # find row with same dataset, layer, model
-            existing_row = existing_df[
-                (existing_df["dataset"] == ds_name)
-                & (existing_df["layer"] == layer)
-                & (existing_df["model"] == model_name)
-            ]
-            if existing_row.empty:
-                df.to_csv(by_layer_filename, mode="a", header=False, index=False)
+        # breakpoint()
+        def save_acc_df():
+            df = pd.DataFrame(res, index=[0])
+            by_layer_filename = self.out_dir_expt / "accs_by_norm.csv"
+            by_layer_filename.parent.mkdir(parents=True, exist_ok=True)
+            if os.path.exists(by_layer_filename):
+                # check if dataset, layer, model exists
+                existing_df = pd.read_csv(by_layer_filename)
+                # find row with same dataset, layer, model
+                existing_row = existing_df[
+                    (existing_df["dataset"] == ds_name)
+                    & (existing_df["layer"] == layer)
+                    & (existing_df["model"] == model_name)
+                ]
+                if existing_row.empty:
+                    df.to_csv(by_layer_filename, mode="a", header=False, index=False)
+                else:
+                    print(f"{ds_name}, {layer}, {model_name} already exists in csv")
             else:
-                print(f"{ds_name}, {layer}, {model_name} already exists in csv")
-        else:
-            df.to_csv(by_layer_filename, index=False)
-            df.columns = list(res.keys())
+                df.to_csv(by_layer_filename, index=False)
+                df.columns = list(res.keys())
 
         # write to_save
         with open(self.out_dir_expt / f"{expt_name}.json", "w") as f:
