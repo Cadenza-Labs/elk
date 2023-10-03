@@ -35,7 +35,7 @@ def setup_elicit(
         num_gpus=2,
         min_gpu_mem=min_mem,
         net=CcsConfig() if is_ccs else EigenFitterConfig(),
-        out_dir=tmp_path,
+        out_dir_expt=tmp_path,
     )
     elicit.execute()
     return elicit
@@ -53,7 +53,7 @@ def eval_run(elicit: Elicit, transfer_datasets: tuple[str, ...] = ()) -> float:
     """A single eval run; act and assert that expected files were created.
     Returns a reference time (in seconds) for file modification checking.
     """
-    tmp_path = elicit.out_dir
+    tmp_path = elicit.out_dir_expt
     extract = elicit.data
     assert tmp_path is not None
 
@@ -70,7 +70,7 @@ def eval_run(elicit: Elicit, transfer_datasets: tuple[str, ...] = ()) -> float:
 
 
 def eval_assert_files_created(elicit: Elicit, transfer_datasets: tuple[str, ...] = ()):
-    tmp_path = elicit.out_dir
+    tmp_path = elicit.out_dir_expt
     assert tmp_path is not None
 
     eval_dir = tmp_path / "transfer" / "+".join(transfer_datasets)

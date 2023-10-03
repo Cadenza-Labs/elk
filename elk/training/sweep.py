@@ -142,9 +142,9 @@ class Sweep:
                             run.net.neg_cov_weight = neg_cov_weight
 
                             # Add hyperparameter values to output directory if needed
-                            assert run.out_dir is not None
-                            run.out_dir /= f"var_weight={var_weight:.2f}"
-                            run.out_dir /= f"neg_cov_weight={neg_cov_weight:.2f}"
+                            assert run.out_dir_expt is not None
+                            run.out_dir_expt /= f"var_weight={var_weight:.2f}"
+                            run.out_dir_expt /= f"neg_cov_weight={neg_cov_weight:.2f}"
 
                         try:
                             run.execute()
@@ -162,13 +162,13 @@ class Sweep:
                                 if eval_dataset in train_datasets:
                                     continue
 
-                                assert run.out_dir is not None
+                                assert run.out_dir_expt is not None
                                 eval = Eval(
                                     data=replace(
                                         run.data, model=model, datasets=(eval_dataset,)
                                     ),
-                                    source=run.out_dir,
-                                    out_dir=run.out_dir / "transfer" / eval_dataset,
+                                    source=run.out_dir_expt,
+                                    out_dir=run.out_dir_expt / "transfer" / eval_dataset,
                                     num_gpus=run.num_gpus,
                                     min_gpu_mem=run.min_gpu_mem,
                                     skip_supervised=run.supervised == "none",
