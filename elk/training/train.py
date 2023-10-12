@@ -5,7 +5,7 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -225,22 +225,31 @@ class Elicit(Run):
             return scores == y_true
 
         def expt_6_svd(hiddens: torch.Tensor):
-            # hiddens is n v c d
-            h_mean = hiddens.mean(dim=0)  # v c d
-            assert h_mean.shape == (v, k, d)
-            x_pos = h_mean[:, 1, :]
-            x_neg = h_mean[:, 0, :]
-            pseudolabel_directions = x_pos - x_neg  # v d
-            normed_pseudolabel_directions = norm(x_pos) - norm(x_neg)
-            wrong_normed_pseudolabel_directions = norm(x_pos, wrong=True) - norm(
-                x_neg, wrong=True
-            )
-            assert pseudolabel_directions.shape == (v, d)
-            to_save["6_svd_no_norm"] = torch.linalg.svd(pseudolabel_directions)
-            to_save["6_svd_normed"] = torch.linalg.svd(normed_pseudolabel_directions)
-            to_save["6_svd_wrong_normed"] = torch.linalg.svd(
-                wrong_normed_pseudolabel_directions
-            )
+            @dataclass
+            class Expt:
+                hiddens: torch.Tensor
+                # fn is a function that takes a tensor and returns a tensor
+                fn: Callable[[torch.Tensor], torch.Tensor]
+                name: str
+
+                def run(self):
+                    x_pos = hiddens[:, :, 1, :]
+                    x_neg = hiddens[:, :, 0, :]
+                    pseudolabel_directions = (self.fn(x_pos) - self.fn(x_neg)).mean(
+                        dim=0
+                    )
+                    assert pseudolabel_directions.shape == (v, d)
+                    U, S, V = torch.linalg.svd(pseudolabel_directions)
+                    for prefix, M in zip("USV", (U, S, V)):
+                        to_save[f"6_svd_{self.name}_{prefix}"] = (
+                            M.detach().cpu().numpy().tolist()
+                        )
+
+                    breakpoint()
+
+            Expt(hiddens, lambda x: x, "no_norm").run()
+            Expt(hiddens, lambda x: norm(x, wrong=False), "correct_norm").run()
+            Expt(hiddens, lambda x: norm(x, wrong=True), "wrong_norm").run()
 
         def expt_4_5(train_hiddens, val_hiddens):  # n v c d
             x_pos, x_neg = norm(train_hiddens[:, :, 1, :], wrong=True), norm(
