@@ -88,7 +88,7 @@ class Elicit(Run):
     cross-validation. Defaults to "single", which means to train a single classifier
     on the training data. "cv" means to use cross-validation."""
 
-    out_dir_expt: Path = Path("./data/5_with_twise_accs/")
+    out_dir_expt: Path = Path("./out")
 
     def __post_init__(self):
         # make dir
@@ -132,7 +132,6 @@ class Elicit(Run):
         expt_name = f"{model_name}_{ds_name}_L{layer}"
 
         to_save = {}
-
 
         def expt_2_3(hiddens: torch.Tensor):
             # hiddens is n v c d
@@ -229,14 +228,19 @@ class Elicit(Run):
             # hiddens is n v c d
             h_mean = hiddens.mean(dim=0)  # v c d
             assert h_mean.shape == (v, k, d)
-            pseudolabel_directions = h_mean[:, 1, :] - h_mean[:, 0, :]  # v d
+            x_pos = h_mean[:, 1, :]
+            x_neg = h_mean[:, 0, :]
+            pseudolabel_directions = x_pos - x_neg  # v d
+            normed_pseudolabel_directions = norm(x_pos) - norm(x_neg)
+            wrong_normed_pseudolabel_directions = norm(x_pos, wrong=True) - norm(
+                x_neg, wrong=True
+            )
             assert pseudolabel_directions.shape == (v, d)
-            pseudolabel_svd = torch.linalg.svd(pseudolabel_directions)
-            to_save["6_svd_no_norm"] = pseudolabel_svd
-            pseudolabel_svd_normed = torch.linalg.svd(norm(pseudolabel_directions, wrong=False))
-            to_save["6_svd_normed"] = pseudolabel_svd_normed
-            pseudolabel_svd_wrong_normed = torch.linalg.svd(norm(pseudolabel_directions, wrong=True))
-            to_save["6_svd_wrong_normed"] = pseudolabel_svd_wrong_normed
+            to_save["6_svd_no_norm"] = torch.linalg.svd(pseudolabel_directions)
+            to_save["6_svd_normed"] = torch.linalg.svd(normed_pseudolabel_directions)
+            to_save["6_svd_wrong_normed"] = torch.linalg.svd(
+                wrong_normed_pseudolabel_directions
+            )
 
         def expt_4_5(train_hiddens, val_hiddens):  # n v c d
             x_pos, x_neg = norm(train_hiddens[:, :, 1, :], wrong=True), norm(
