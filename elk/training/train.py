@@ -133,6 +133,7 @@ class Elicit(Run):
 
         to_save = {}
 
+
         def expt_2_3(hiddens: torch.Tensor):
             # hiddens is n v c d
             h_mean = hiddens.mean(dim=0)  # v c d
@@ -224,7 +225,20 @@ class Elicit(Run):
             y_true = repeat(gt, "n -> n v", v=v)
             return scores == y_true
 
-        def expt_4_5(train_hiddens, val_hiddens, ds_name):  # n v c d
+        def expt_6_svd(hiddens: torch.Tensor):
+            # hiddens is n v c d
+            h_mean = hiddens.mean(dim=0)  # v c d
+            assert h_mean.shape == (v, k, d)
+            pseudolabel_directions = h_mean[:, 1, :] - h_mean[:, 0, :]  # v d
+            assert pseudolabel_directions.shape == (v, d)
+            pseudolabel_svd = torch.linalg.svd(pseudolabel_directions)
+            to_save["6_svd_no_norm"] = pseudolabel_svd
+            pseudolabel_svd_normed = torch.linalg.svd(norm(pseudolabel_directions, wrong=False))
+            to_save["6_svd_normed"] = pseudolabel_svd_normed
+            pseudolabel_svd_wrong_normed = torch.linalg.svd(norm(pseudolabel_directions, wrong=True))
+            to_save["6_svd_wrong_normed"] = pseudolabel_svd_wrong_normed
+
+        def expt_4_5(train_hiddens, val_hiddens):  # n v c d
             x_pos, x_neg = norm(train_hiddens[:, :, 1, :], wrong=True), norm(
                 train_hiddens[:, :, 0, :], wrong=True
             )  # n v d
@@ -275,7 +289,8 @@ class Elicit(Run):
         for ds_name in val_dict:
             val_h, val_gt, val_lm_preds = val_dict[ds_name]
             train_h, train_gt, train_lm_preds = train_dict[ds_name]
-            expt_4_5(first_train_h, val_h, ds_name)
+            expt_4_5(first_train_h, val_h)
+            expt_6_svd(first_train_h)
 
             # val_credences = reporter(val_h)
             # train_credences = reporter(train_h)
