@@ -239,13 +239,10 @@ class Elicit(Run):
                         dim=0
                     )
                     assert pseudolabel_directions.shape == (v, d)
-                    U, S, V = torch.linalg.svd(pseudolabel_directions)
-                    for prefix, M in zip("USV", (U, S, V)):
-                        to_save[f"6_svd_{self.name}_{prefix}"] = (
-                            M.detach().cpu().numpy().tolist()
-                        )
-
-                    breakpoint()
+                    U, S, V = torch.linalg.svd(pseudolabel_directions.T)
+                    to_save[f"6_{self.name}_singular_values"] = (
+                        S.detach().cpu().numpy().tolist()
+                    )
 
             Expt(hiddens, lambda x: x, "no_norm").run()
             Expt(hiddens, lambda x: norm(x, wrong=False), "correct_norm").run()
