@@ -194,6 +194,8 @@ def extract_hiddens(
         seed=cfg.seed,
     )
 
+    # here we have the contrast pairs
+
     layer_indices = cfg.layers or tuple(range(1, model.config.num_hidden_layers))
 
     global_max_examples = cfg.max_examples[0 if split_type == "train" else 1]
