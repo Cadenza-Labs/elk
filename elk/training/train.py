@@ -9,10 +9,13 @@ import torch
 from einops import rearrange, repeat
 from simple_parsing import subgroups
 
+from elk.utils.data_utils import PreparedData, prepare_data
+from elk.utils.gpu_utils import get_device
+
 from ..evaluation import Eval
 from ..metrics import evaluate_preds, to_one_hot
 from ..metrics.eval import LayerOutput
-from ..run import LayerApplied, PreparedData, Run
+from ..run import LayerApplied, Run
 from ..training.supervised import train_supervised
 from ..utils.types import PromptEnsembling
 from . import Classifier
@@ -228,10 +231,10 @@ class Elicit(Run):
         # None?
 
         self.make_reproducible(seed=self.net.seed + layer)
-        device = self.get_device(devices, world_size)
+        device = get_device(devices, world_size)
 
-        train_dict = self.prepare_data(device, layer, "train")
-        val_dict = self.prepare_data(device, layer, "val")
+        train_dict = prepare_data(self.datasets, device, layer, "train")
+        val_dict = prepare_data(self.datasets, device, layer, "val")
 
         (first_train_h, train_gt, _), *rest = train_dict.values()
         (_, v, k, d) = first_train_h.shape

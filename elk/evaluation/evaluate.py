@@ -1,11 +1,13 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 import pandas as pd
 import torch
 from simple_parsing.helpers import field
+
+from elk.utils.data_utils import prepare_data
+from elk.utils.gpu_utils import get_device
 
 from ..files import elk_reporter_dir
 from ..metrics import evaluate_preds
@@ -38,8 +40,8 @@ class Eval(Run):
         self, layer: int, devices: list[str], world_size: int, probe_per_prompt: bool
     ) -> LayerApplied:
         """Evaluate a single reporter on a single layer."""
-        device = self.get_device(devices, world_size)
-        val_output = self.prepare_data(device, layer, "val")
+        device = get_device(devices, world_size)
+        val_output = prepare_data(self.datasets, device, layer, "val")
 
         experiment_dir = elk_reporter_dir() / self.source
 
@@ -60,9 +62,7 @@ class Eval(Run):
 
         layer_outputs: list[LayerOutput] = []
 
-        def eval_all(
-            reporter: SingleReporter | MultiReporter
-        ):
+        def eval_all(reporter: SingleReporter | MultiReporter):
             for ds_name, (val_h, val_gt, val_lm_preds) in val_output.items():
                 meta = {"dataset": ds_name, "layer": layer}
                 val_credences = (
@@ -76,7 +76,9 @@ class Eval(Run):
                         {
                             **meta,
                             PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(val_gt, val_credences, prompt_ensembling).to_dict(),
+                            **evaluate_preds(
+                                val_gt, val_credences, prompt_ensembling
+                            ).to_dict(),
                         }
                     )
 
