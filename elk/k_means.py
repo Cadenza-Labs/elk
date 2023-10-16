@@ -1,6 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
 
+import torch
+from kmeans_pytorch import kmeans
 from simple_parsing.helpers import Serializable
 
 from elk.extraction import Extract, extract
@@ -11,6 +13,10 @@ from .utils import (
     select_usable_devices,
 )
 
+use_cuda = torch.cuda.is_available()
+dtype = torch.float32 if use_cuda else torch.float64
+device_id = "cuda:0" if use_cuda else "cpu"
+
 
 @dataclass
 class Kmeans(ABC, Serializable):
@@ -19,6 +25,14 @@ class Kmeans(ABC, Serializable):
     world_size: int = 1
     min_gpu_mem: int | None = None
     prompt_indices: tuple[int, ...] = ()
+
+    def apply(self, X, k=10):
+        cluster_ids, cluster_centers = kmeans(
+            X=X, num_clusters=k, distance="euclidean", device=torch.device("cuda:0")
+        )
+        print(cluster_ids)
+        print(cluster_centers)
+        breakpoint()
 
     def execute(self):
         datasets = [
@@ -36,14 +50,11 @@ class Kmeans(ABC, Serializable):
         train_dict = prepare_data(datasets, device, layer, "train")
         val_dict = prepare_data(datasets, device, layer, "val")
 
+        hiddens = train_dict["imdb"][0]
+        averaged_over_choices = hiddens.mean(dim=2)
+        n, v, d = averaged_over_choices.shape
+        reshaped = averaged_over_choices.view(n * v, d)
+        self.apply(X=reshaped, k=v)
+
         print("train_dict", train_dict)
         print("val_dict", val_dict)
-
-
-# X = np.array([[1, 2], [1, 4], [1, 0],
-#               [10, 2], [10, 4], [10, 0]])
-# kmeans = KMeans(n_clusters=2, random_state=0, n_init="auto").fit(X)
-
-# kmeans.labels_
-# kmeans.predict([[0, 0], [12, 3]])
-# kmeans.cluster_centers_
