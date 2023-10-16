@@ -231,6 +231,7 @@ class Elicit(Run):
                 # fn is a function that takes a tensor and returns a tensor
                 fn: Callable[[torch.Tensor], torch.Tensor]
                 name: str
+                normalize_pseudolabels: bool = False
 
                 def run(self):
                     x_pos = hiddens[:, :, 1, :]
@@ -238,6 +239,9 @@ class Elicit(Run):
                     pseudolabel_directions = (self.fn(x_pos) - self.fn(x_neg)).mean(
                         dim=0
                     )
+                    if self.normalize_pseudolabels:
+                        pseudolabel_directions = (pseudolabel_directions /
+                                                  torch.linalg.vector_norm(pseudolabel_directions, dim=-1))
                     assert pseudolabel_directions.shape == (v, d)
                     U, S, V = torch.linalg.svd(pseudolabel_directions.T)
                     to_save[f"6_{self.name}_singular_values"] = (
@@ -247,6 +251,7 @@ class Elicit(Run):
             Expt(hiddens, lambda x: x, "no_norm").run()
             Expt(hiddens, lambda x: norm(x, wrong=False), "correct_norm").run()
             Expt(hiddens, lambda x: norm(x, wrong=True), "wrong_norm").run()
+            Expt(hiddens, lambda x: x, "norm_pseodolabel", normalize_pseudolabels=True).run()
 
         def expt_4_5(train_hiddens, val_hiddens):  # n v c d
             x_pos, x_neg = norm(train_hiddens[:, :, 1, :], wrong=True), norm(
