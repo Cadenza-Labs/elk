@@ -37,6 +37,7 @@ def roc_auc(y_true: Tensor, y_pred: Tensor) -> Tensor:
             f"y_true and y_pred should have the same shape; "
             f"got {y_true.shape} and {y_pred.shape}"
         )
+
     if y_true.dim() not in (1, 2):
         raise ValueError("y_true and y_pred should be 1D or 2D tensors")
 

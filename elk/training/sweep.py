@@ -1,11 +1,10 @@
-from dataclasses import InitVar, dataclass, field, replace
+from dataclasses import InitVar, asdict, dataclass, field, replace
 
 import numpy as np
 import torch
 from datasets import get_dataset_config_info
 from transformers import AutoConfig
 
-from ..evaluation import Eval
 from ..files import memorably_named_dir, sweeps_dir
 from ..plotting.visualize import visualize_sweep
 from ..training.eigen_reporter import EigenFitterConfig
@@ -22,6 +21,8 @@ def assert_models_exist(model_names):
 def assert_datasets_exist(dataset_names):
     for dataset_name in dataset_names:
         ds_name, _, config_name = dataset_name.partition(":")
+        if not config_name:
+            config_name = None
         get_dataset_config_info(ds_name, config_name=config_name)
 
 
@@ -129,19 +130,19 @@ class Sweep:
                         data = replace(
                             self.run_template.data, model=model, datasets=train_datasets
                         )
-                        run = replace(self.run_template, data=data, out_dir=out_dir)
+                        elicit = replace(self.run_template, data=data, out_dir=out_dir)
                         if var_weight is not None and neg_cov_weight is not None:
-                            assert isinstance(run.net, EigenFitterConfig)
-                            run.net.var_weight = var_weight
-                            run.net.neg_cov_weight = neg_cov_weight
+                            assert isinstance(elicit.net, EigenFitterConfig)
+                            elicit.net.var_weight = var_weight
+                            elicit.net.neg_cov_weight = neg_cov_weight
 
                             # Add hyperparameter values to output directory if needed
-                            assert run.out_dir is not None
-                            run.out_dir /= f"var_weight={var_weight:.2f}"
-                            run.out_dir /= f"neg_cov_weight={neg_cov_weight:.2f}"
+                            assert elicit.out_dir is not None
+                            elicit.out_dir /= f"var_weight={var_weight:.2f}"
+                            elicit.out_dir /= f"neg_cov_weight={neg_cov_weight:.2f}"
 
                         try:
-                            run.execute()
+                            elicit.execute()
                         except torch.linalg.LinAlgError as e:
                             print(colorize(f"LinAlgError: {e}", "red"))
                             continue
@@ -156,18 +157,13 @@ class Sweep:
                                 if eval_dataset in train_datasets:
                                     continue
 
-                                assert run.out_dir is not None
-                                eval = Eval(
-                                    data=replace(
-                                        run.data, model=model, datasets=(eval_dataset,)
-                                    ),
-                                    source=run.out_dir,
-                                    out_dir=run.out_dir / "transfer" / eval_dataset,
-                                    num_gpus=run.num_gpus,
-                                    min_gpu_mem=run.min_gpu_mem,
-                                    skip_supervised=run.supervised == "none",
-                                )
-                                eval.execute(highlight_color="green")
+                                eval = elicit.make_eval(model, eval_dataset)
+                                try:
+                                    eval.execute(highlight_color="green")
+                                except Exception as e:
+                                    print(e)
+                                    print(asdict(eval))
+                                    continue
 
         if self.visualize:
             visualize_sweep(sweep_dir)
