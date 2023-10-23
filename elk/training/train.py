@@ -251,6 +251,19 @@ class Elicit(Run):
                     to_save[f"6_{self.name}_singular_values"] = (
                         S.detach().cpu().numpy().tolist()
                     )
+                    probe = TPCProbe.train(hiddens, correct_norm=True)
+                    probe_direction = probe.probe_direction.squeeze(-1)
+                    Q, R = torch.qr(pseudolabel_directions.T)
+                    projection = Q @ Q.T @ probe_direction
+                    # len(projection of the probe vector to the subspace spanned by the POST-NORMALIZATION
+                    # template-wise pseudolabel directions)^2 / len(probe vector)^2
+                    projection_len = torch.linalg.vector_norm(projection) ** 2
+                    probe_len = torch.linalg.vector_norm(probe_direction) ** 2
+                    to_save[f"6_{self.name}_z_projection_probe_ratio"] = (
+                        projection_len / probe_len
+                    ).detach().cpu().numpy().tolist()
+
+
 
             Expt(hiddens, lambda x: x, "no_norm").run()
             Expt(hiddens, lambda x: norm(x, wrong=False), "correct_norm").run()
