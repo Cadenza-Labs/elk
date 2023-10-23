@@ -33,6 +33,7 @@ from .utils import (
     select_usable_devices,
 )
 from .utils.types import PromptEnsembling
+from .utils.wandb_utils import wandb_save_probes
 
 PROMPT_ENSEMBLING = "prompt_ensembling"
 
@@ -167,6 +168,7 @@ class Run(ABC, Serializable):
             probe_per_prompt=self.probe_per_prompt,
         )
         self.apply_to_layers(func=func, num_devices=num_devices)
+        wandb_save_probes(self.out_dir)
 
     @abstractmethod
     def apply_to_layer(

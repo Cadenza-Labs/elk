@@ -8,6 +8,7 @@ from transformers import AutoConfig
 import wandb
 
 from ..files import memorably_named_dir, sweeps_dir
+from ..plotting.visualize import visualize_sweep
 from ..training.eigen_reporter import EigenFitterConfig
 from ..utils import colorize
 from ..utils.constants import BURNS_DATASETS
@@ -170,6 +171,4 @@ class Sweep:
                                     continue
         wandb.run.name = sweep_dir.__str__().split("/")[-1]
         if self.visualize:
-            from ..plotting.visualize import visualize_sweep
-
             visualize_sweep(sweep_dir)

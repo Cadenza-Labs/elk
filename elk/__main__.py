@@ -8,7 +8,7 @@ from elk.evaluation.evaluate import Eval
 from elk.plotting.command import Plot
 from elk.training.sweep import Sweep
 from elk.training.train import Elicit
-from elk.utils.wandb_utils import wandb_init_helper
+from elk.utils.wandb_init import wandb_init_helper
 
 
 @dataclass
