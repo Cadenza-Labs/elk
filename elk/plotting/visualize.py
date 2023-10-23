@@ -10,7 +10,9 @@ from plotly.subplots import make_subplots
 from rich.console import Console
 from rich.table import Table
 
+import wandb
 from elk.utils.types import PromptEnsembling
+from elk.utils.wandb_utils import find_run_details
 
 
 @dataclass
@@ -260,6 +262,18 @@ class ModelVisualization:
             score_type: The type of score to display.
             prompt_ensembling: The prompt_ensembling option to consider.
         """
+        if wandb.run is None:
+            run_details = find_run_details(
+                entity_name="da-zealots", run_name=sweep.name
+            )
+            if run_details is not None:
+                project_name, run_id = run_details[0], run_details[1]
+                wandb.init(
+                    entity="da-zealots", project=project_name, id=run_id, resume="allow"
+                )
+            else:
+                wandb.init(mode="disabled")
+                print(f"Sweep with name {sweep.name} not found in WandB.")
         df = self.df
         model_name = self.model_name
         layer_min, layer_max = df["layer"].min(), df["layer"].max()
@@ -275,8 +289,12 @@ class ModelVisualization:
                     layer, score_type=score_type, prompt_ensembling=prompt_ensembling
                 ).render(filtered)
                 fig.write_image(file=model_path / f"{layer}.png")
+                wandb.log(
+                    {f"Vis/transfer/{model_name}_layer_{layer}": wandb.Plotly(fig)}
+                )
         fig = TransferEvalTrend(dataset_names).render(df)
         fig.write_image(file=model_path / "transfer_eval_trend.png")
+        wandb.log({f"Vis/{model_name}_tranfer_eval_trend": wandb.Plotly(fig)})
 
     @staticmethod
     def _read_eval_csv(path, eval_dataset, train_dataset):

@@ -1,6 +1,6 @@
 from argparse import Namespace
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, Tuple
 
 import wandb
 from elk.evaluation.evaluate import Eval
@@ -33,7 +33,7 @@ def wandb_init_helper(
         wandb.init(mode="disabled")
 
 
-def find_run_id_by_name(entity_name: str, run_name: str) -> Optional[str]:
+def find_run_details(entity_name: str, run_name: str) -> Optional[Tuple[str, str]]:
     """
     Search through all projects of a given entity to find the run ID
     corresponding to a given run name.
@@ -59,7 +59,7 @@ def find_run_id_by_name(entity_name: str, run_name: str) -> Optional[str]:
 
         for run in runs:
             if run.name == run_name:
-                return run.id
+                return project_name, run.id
 
     # If no run found with the given name, return None
     return None
