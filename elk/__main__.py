@@ -9,6 +9,8 @@ from elk.plotting.command import Plot
 from elk.training.sweep import Sweep
 from elk.training.train import Elicit
 
+from .wandb_utils import wandb_init_helper
+
 
 @dataclass
 class Command:
@@ -24,6 +26,7 @@ def run():
     parser = ArgumentParser(add_help=False)
     parser.add_arguments(Command, dest="run")
     args = parser.parse_args()
+    wandb_init_helper(args.run.command, project_name="elk_test_experiment2")
     run: Command = args.run
     run.execute()
 

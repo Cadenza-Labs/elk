@@ -17,6 +17,8 @@ from simple_parsing.helpers.serialization import save
 from torch import Tensor
 from tqdm import tqdm
 
+import wandb
+
 from .debug_logging import save_debug_log
 from .extraction import Extract, extract
 from .extraction.dataset_name import DatasetDictWithName
@@ -81,6 +83,7 @@ def calculate_layer_outputs(layer_outputs: list[LayerOutput], out_path: Path):
     df_concat = pd.concat(dfs)
     df_concat.to_csv(out_path, index=False)
 
+
 PreparedData = dict[str, tuple[Tensor, Tensor, Tensor | None]]
 
 
@@ -108,6 +111,7 @@ class Run(ABC, Serializable):
     min_gpu_mem: int | None = None  # in bytes
     num_gpus: int = -1
     disable_cache: bool = field(default=False, to_dict=False)
+    wandb_tracking: bool = field(default=True, to_dict=False)
 
     def execute(
         self,
@@ -134,6 +138,8 @@ class Run(ABC, Serializable):
 
             self.out_dir = memorably_named_dir(root)
 
+        # Set wandb run name
+        wandb.run.name = self.out_dir.__str__().split("/")[-1]
         # Print the output directory in bold with escape codes
         print(f"Output directory at \033[1m{self.out_dir}\033[0m")
         self.out_dir.mkdir(parents=True, exist_ok=True)
@@ -261,9 +267,11 @@ class Run(ABC, Serializable):
                     # Save the CSV
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
+                    wandb.log({f"results_{name}": wandb.Table(dataframe=df)})
                 if self.debug:
                     save_debug_log(self.datasets, self.out_dir)
                 calculate_layer_outputs(
                     layer_outputs=layer_outputs,
-                    out_path=self.out_dir / "layer_ensembling.csv",
+                    out_path=self.out_dir
+                    / "layer_ensembling.csv",  # TODO: save this in wandb
                 )

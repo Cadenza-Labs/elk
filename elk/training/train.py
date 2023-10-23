@@ -9,6 +9,8 @@ import torch
 from einops import rearrange, repeat
 from simple_parsing import subgroups
 
+import wandb
+
 from ..evaluation import Eval
 from ..extraction import Extract
 from ..metrics import evaluate_preds, to_one_hot
@@ -160,6 +162,7 @@ class Elicit(Run):
     ) -> ReporterWithInfo:
         (first_train_h, train_gt, _), *rest = train_dict.values()  # TODO can remove?
         (_, v, k, d) = first_train_h.shape
+        wandb.config = {"class_no": k, "dim": d, "variant_no": v}
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
 
@@ -174,6 +177,7 @@ class Elicit(Run):
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
             reporter = CcsReporter(self.net, d, device=device, num_variants=v)
+            wandb.watch(reporter)
             train_loss = reporter.fit(first_train_h)
             labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
             reporter.platt_scale(labels, first_train_h)
