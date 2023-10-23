@@ -1,5 +1,6 @@
 from argparse import Namespace
 from copy import deepcopy
+from typing import Optional
 
 import wandb
 from elk.evaluation.evaluate import Eval
@@ -30,3 +31,35 @@ def wandb_init_helper(
             )
     else:
         wandb.init(mode="disabled")
+
+
+def find_run_id_by_name(entity_name: str, run_name: str) -> Optional[str]:
+    """
+    Search through all projects of a given entity to find the run ID
+    corresponding to a given run name.
+    This requires run names to be always unique.
+
+    Args:
+    - entity_name (str): Name of the entity (user/team).
+    - run_name (str): Name of the run.
+
+    Returns:
+    - str: run_id if found, otherwise None.
+    """
+
+    # Set up wandb API
+    api = wandb.Api()
+
+    # Iterate over all projects of the entity
+    for project in api.projects(entity=entity_name):
+        project_name = project.name
+
+        # Search for the run by name in the current project
+        runs = api.runs(path=f"{entity_name}/{project_name}")
+
+        for run in runs:
+            if run.name == run_name:
+                return run.id
+
+    # If no run found with the given name, return None
+    return None
