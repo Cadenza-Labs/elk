@@ -33,7 +33,7 @@ from .utils import (
     select_usable_devices,
 )
 from .utils.types import PromptEnsembling
-from .utils.wandb_utils import wandb_save_probes
+from .utils.wandb_utils import wandb_rename_run
 
 PROMPT_ENSEMBLING = "prompt_ensembling"
 
@@ -140,7 +140,8 @@ class Run(ABC, Serializable):
             self.out_dir = memorably_named_dir(root)
 
         # Set wandb run name
-        wandb.run.name = self.out_dir.__str__().split("/")[-1]
+        wandb.run.name = wandb_rename_run(self.out_dir)
+
         # Print the output directory in bold with escape codes
         print(f"Output directory at \033[1m{self.out_dir}\033[0m")
         self.out_dir.mkdir(parents=True, exist_ok=True)
@@ -168,7 +169,6 @@ class Run(ABC, Serializable):
             probe_per_prompt=self.probe_per_prompt,
         )
         self.apply_to_layers(func=func, num_devices=num_devices)
-        wandb_save_probes(self.out_dir)
 
     @abstractmethod
     def apply_to_layer(

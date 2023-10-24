@@ -18,6 +18,7 @@ from ..metrics.eval import LayerOutput
 from ..run import LayerApplied, PreparedData, Run
 from ..training.supervised import train_supervised
 from ..utils.types import PromptEnsembling
+from ..utils.wandb_utils import wandb_save_probe
 from . import Classifier
 from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
@@ -211,7 +212,7 @@ class Elicit(Run):
         # TODO have to change this
         out_dir.mkdir(parents=True, exist_ok=True)
         torch.save(reporter, out_dir / f"layer_{layer}.pt")
-
+        wandb_save_probe(out_dir / f"layer_{layer}.pt", model_type="reporters")
         return ReporterWithInfo(reporter, train_loss, prompt_index)
 
     def train_lr_model(self, train_dict, device, layer, out_dir) -> list[Classifier]:
@@ -225,6 +226,7 @@ class Elicit(Run):
             out_dir.mkdir(parents=True, exist_ok=True)
             with open(out_dir / f"layer_{layer}.pt", "wb") as file:
                 torch.save(lr_models, file)
+            wandb_save_probe(out_dir / f"layer_{layer}.pt", model_type="lr_models")
         else:
             lr_models = []
 

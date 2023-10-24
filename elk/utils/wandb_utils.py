@@ -32,9 +32,34 @@ def find_run_details(
     return None, None
 
 
-def wandb_save_probes(out_dir: Path) -> None:
+def wandb_save_probe(probe_path: Path, model_type: str) -> None:
     if wandb.run is not None:
-        for dir in ["lr_models", "reporters"]:
-            artifact = wandb.Artifact(dir, type="model")
-            artifact.add_dir(out_dir / dir)
-            wandb.run.log_artifact(artifact)
+        probe_name = (
+            get_model_name(probe_path) + "." + probe_path.name
+        )  # can break on windows
+        artifact = wandb.Artifact(probe_name, type=model_type)
+        artifact.add_file(probe_path)
+        wandb.run.log_artifact(artifact)
+
+
+def wandb_rename_run(out_dir: Path) -> Optional[str]:
+    "Highly hacky way to rename a run."
+    str_out_dir = str(out_dir)
+    if wandb.run is not None:
+        if "sweeps" in str_out_dir:
+            return str_out_dir.split("sweeps/")[-1].split("/")[0]
+        else:
+            return str_out_dir.split("/")[-1]
+
+
+def get_model_name(path: Path) -> str:
+    "Get the wandb name of a model from its local path."
+    if wandb.run is not None:
+        run_name = wandb.run.name
+        name = []
+        while ((name_part := path.parent.name) != run_name) and (name_part != ""):
+            name = name + [name_part]
+            path = path.parent
+        name = [run_name] + name
+        return ".".join(name)
+    raise ValueError("Wandb run is not running.")
