@@ -254,12 +254,14 @@ class Elicit(Run):
                     probe = TPCProbe.train(hiddens, correct_norm=True)
                     probe_direction = probe.probe_direction.squeeze(-1)
 
-                    Q, R = torch.qr(pseudolabel_directions.T)
+                    Q, R = torch.linalg.qr(pseudolabel_directions.T)
                     # top 3 right singular vectors
                     projection = Q @ Q.T @ probe_direction
                     other_projection = U[:3] @ U[:3].T @ probe_direction
                     # len(projection of the probe vector to the subspace spanned by the POST-NORMALIZATION
+                    # spanned by the POST-NORMALIZATION
                     # template-wise pseudolabel directions)^2 / len(probe vector)^2
+
                     projection_len = torch.linalg.vector_norm(projection) ** 2
                     other_projection_len = torch.linalg.vector_norm(other_projection) ** 2
                     probe_len = torch.linalg.vector_norm(probe_direction) ** 2
