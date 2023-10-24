@@ -1,5 +1,5 @@
-from pathlib import Path
-from typing import Optional, Tuple
+from pathlib import Path, PosixPath
+from typing import List, Literal, Optional, Tuple
 
 import wandb
 
@@ -63,3 +63,61 @@ def get_model_name(path: Path) -> str:
         name = [run_name] + name
         return ".".join(name)
     raise ValueError("Wandb run is not running.")
+
+
+def wandb_download_probe(
+    entity_name: str,
+    project_name: str,
+    run_name: str,
+    model_dir: Literal["lr_models", "reporters"],
+    layers: List[int],
+    artifact_path: Optional[str] = None,
+    model_name: Optional[str] = None,
+    dataset_name: Optional[str] = None,
+    verbose: int = 0,
+) -> PosixPath:
+    """
+    Downloads probes from specified project and run.
+    Requires model_name and dataset_name for sweeps.
+    """
+    assert len(layers) > 0, "List of layers cannot be empty."
+
+    # Find run_id of the run
+    api = wandb.Api()
+    _, run_id = find_run_details(entity_name, run_name)
+    if run_id is None:
+        raise ValueError(f"Run {run_name} not found.")
+    run = api.run(f"{entity_name}/{project_name}/{run_id}")
+
+    # Depending on the job type, change the probe_name
+    if run.job_type == "train":
+        probe_name = run_name + "." + model_dir + "." + "layer_{layer}.pt:latest"
+    elif run.job_type == "sweep":
+        assert model_name is not None, "model_name has to be specified for sweep runs"
+        assert (
+            dataset_name is not None
+        ), "dataset_name has to be specified for sweep runs"
+        probe_name = ".".join(
+            [
+                run_name,
+                model_dir,
+                dataset_name,
+                model_name,
+                "layer_{layer}.pt:latest",
+            ]
+        )
+    else:
+        raise ValueError("Job type not supported.")
+
+    # Download the probes in layers
+    for layer in layers:
+        artifact_name = f"{entity_name}/{project_name}/{probe_name.format(layer=layer)}"
+        artifact = api.artifact(artifact_name)
+        if artifact_path is None:
+            artifact_path = f"artifacts/{run_name}"
+        artifact_dir = PosixPath(artifact.download(artifact_path))
+        if verbose > 0:
+            print(
+                f"Probe {probe_name.format(layer=layer)} downloaded to {artifact_dir}."
+            )
+    return artifact_dir
