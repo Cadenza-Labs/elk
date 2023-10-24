@@ -4,18 +4,14 @@ from typing import Optional, Tuple
 import wandb
 
 
-def find_run_details(entity_name: str, run_name: str) -> Optional[Tuple[str, str]]:
+def find_run_details(
+    entity_name: str, run_name: str
+) -> Tuple[Optional[str], Optional[str]]:
     """
     Search through all projects of a given entity to find the run ID
     corresponding to a given run name.
-    This requires run names to be always unique.
-
-    Args:
-    - entity_name (str): Name of the entity (user/team).
-    - run_name (str): Name of the run.
-
-    Returns:
-    - str: run_id if found, otherwise None.
+    This requires run names to be ALWAYS unique,
+    which essentially requires all the experiments be run on the same machine.
     """
 
     # Set up wandb API
@@ -33,7 +29,7 @@ def find_run_details(entity_name: str, run_name: str) -> Optional[Tuple[str, str
                 return project_name, run.id
 
     # If no run found with the given name, return None
-    return None
+    return None, None
 
 
 def wandb_save_probes(out_dir: Path) -> None:

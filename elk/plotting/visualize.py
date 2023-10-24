@@ -263,11 +263,10 @@ class ModelVisualization:
             prompt_ensembling: The prompt_ensembling option to consider.
         """
         if wandb.run is None:
-            run_details = find_run_details(
+            project_name, run_id = find_run_details(
                 entity_name="da-zealots", run_name=sweep.name
             )
-            if run_details is not None:
-                project_name, run_id = run_details[0], run_details[1]
+            if run_id is not None:
                 wandb.init(
                     entity="da-zealots", project=project_name, id=run_id, resume="allow"
                 )
