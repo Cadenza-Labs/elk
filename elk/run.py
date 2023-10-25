@@ -33,7 +33,7 @@ from .utils import (
     select_usable_devices,
 )
 from .utils.types import PromptEnsembling
-from .utils.wandb_utils import wandb_rename_run
+from .utils.wandb_utils import wandb_rename_run, wandb_save_probes_dir
 
 PROMPT_ENSEMBLING = "prompt_ensembling"
 
@@ -174,6 +174,8 @@ class Run(ABC, Serializable):
             probe_per_prompt=self.probe_per_prompt,
         )
         self.apply_to_layers(func=func, num_devices=num_devices)
+        wandb_save_probes_dir(self.out_dir, "lr_models")
+        wandb_save_probes_dir(self.out_dir, "reporters")
 
     @abstractmethod
     def apply_to_layer(
@@ -274,8 +276,10 @@ class Run(ABC, Serializable):
                     # Save the CSV
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
-                    results_table_name = f"results_{self.data.model}_{'+'.join(self.data.datasets)}_{name}"
-                    wandb.log({results_table_name: wandb.Table(dataframe=df)})
+                    table_name = (
+                        f"{self.data.model}_{'+'.join(self.data.datasets)}_{name}"
+                    )
+                    wandb.log({"results_" + table_name: wandb.Table(dataframe=df)})
                 if self.debug:
                     save_debug_log(self.datasets, self.out_dir)
                 calculate_layer_outputs(

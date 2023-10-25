@@ -42,6 +42,15 @@ def wandb_save_probe(probe_path: Path, model_type: str) -> None:
         wandb.run.log_artifact(artifact)
 
 
+def wandb_save_probes_dir(out_dir: Path, model_dir: str) -> None:
+    if wandb.run is not None:
+        artifact_name = get_model_name(out_dir / model_dir)
+        print(f"Saving artifact with name {artifact_name}")
+        artifact = wandb.Artifact(artifact_name, type=model_dir)
+        artifact.add_dir(out_dir / model_dir)
+        wandb.run.log_artifact(artifact)
+
+
 def wandb_rename_run(out_dir: Path) -> Optional[str]:
     "Highly hacky way to rename a run."
     str_out_dir = str(out_dir)
