@@ -14,6 +14,8 @@ import wandb
 from elk.utils.types import PromptEnsembling
 from elk.utils.wandb_utils import find_run_details
 
+ENTITY_NAME = "da-zealots"  # temporary variable
+
 
 @dataclass
 class SweepByDsMultiplot:
@@ -264,11 +266,11 @@ class ModelVisualization:
         """
         if wandb.run is None:
             project_name, run_id = find_run_details(
-                entity_name="da-zealots", run_name=sweep.name
+                entity_name=ENTITY_NAME, run_name=sweep.name
             )
             if run_id is not None:
                 wandb.init(
-                    entity="da-zealots", project=project_name, id=run_id, resume="allow"
+                    entity=ENTITY_NAME, project=project_name, id=run_id, resume="allow"
                 )
             else:
                 wandb.init(mode="disabled")

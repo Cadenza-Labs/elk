@@ -25,7 +25,9 @@ class Plot:
     wandb_tracking: bool = True
     """Whether to add plots to the sweep run in wandb"""
 
-    # TODO: implement!
+    wandb_project_name: str | None = None
+    """The name of the wandb project to track the run in"""
+
     def execute(self):
         root_dir = sweeps_dir()
 

@@ -55,6 +55,9 @@ class Sweep:
     wandb_tracking: bool = True
     """Whether to track a wandb run"""
 
+    wandb_project_name: str | None = None
+    """The name of the wandb project to track the run in"""
+
     name: str | None = None
 
     # A bit of a hack to add all the command line arguments from Elicit
