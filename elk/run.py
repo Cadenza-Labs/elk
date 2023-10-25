@@ -83,6 +83,8 @@ def calculate_layer_outputs(layer_outputs: list[LayerOutput], out_path: Path):
 
     df_concat = pd.concat(dfs)
     df_concat.to_csv(out_path, index=False)
+    if wandb.run is not None:
+        wandb.log({"layer_ensembling": wandb.Table(dataframe=df_concat)})
 
 
 PreparedData = dict[str, tuple[Tensor, Tensor, Tensor | None]]
@@ -140,6 +142,8 @@ class Run(ABC, Serializable):
             self.out_dir = memorably_named_dir(root)
 
         # Set wandb run name
+        if wandb.run is None:
+            wandb.init(mode="disabled")
         wandb.run.name = wandb_rename_run(self.out_dir)
 
         # Print the output directory in bold with escape codes
@@ -269,11 +273,11 @@ class Run(ABC, Serializable):
                     # Save the CSV
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
-                    wandb.log({f"results_{name}": wandb.Table(dataframe=df)})
+                    results_table_name = f"results_{self.data.model}_{'+'.join(self.data.datasets)}_{name}"
+                    wandb.log({results_table_name: wandb.Table(dataframe=df)})
                 if self.debug:
                     save_debug_log(self.datasets, self.out_dir)
                 calculate_layer_outputs(
                     layer_outputs=layer_outputs,
-                    out_path=self.out_dir
-                    / "layer_ensembling.csv",  # TODO: save this in wandb
+                    out_path=self.out_dir / "layer_ensembling.csv",
                 )

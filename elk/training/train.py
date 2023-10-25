@@ -178,6 +178,8 @@ class Elicit(Run):
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
             reporter = CcsReporter(self.net, d, device=device, num_variants=v)
+            if wandb.run is None:
+                wandb.init(mode="disabled")
             wandb.watch(reporter)
             train_loss = reporter.fit(first_train_h)
             labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
