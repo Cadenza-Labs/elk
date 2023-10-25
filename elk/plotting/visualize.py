@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -13,8 +14,6 @@ from rich.table import Table
 import wandb
 from elk.utils.types import PromptEnsembling
 from elk.utils.wandb_utils import find_run_details
-
-ENTITY_NAME = "da-zealots"  # temporary variable
 
 
 @dataclass
@@ -265,12 +264,14 @@ class ModelVisualization:
             prompt_ensembling: The prompt_ensembling option to consider.
         """
         if wandb.run is None:
+            entity_name = os.getenv("WANDB_ENTITY")
+            assert entity_name is not None, "Please set a WANDB_ENTITY env variable"
             project_name, run_id = find_run_details(
-                entity_name=ENTITY_NAME, run_name=sweep.name
+                entity_name=entity_name, run_name=sweep.name
             )
             if run_id is not None:
                 wandb.init(
-                    entity=ENTITY_NAME, project=project_name, id=run_id, resume="allow"
+                    entity=entity_name, project=project_name, id=run_id, resume="allow"
                 )
             else:
                 wandb.init(mode="disabled")
