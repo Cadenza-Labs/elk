@@ -146,6 +146,7 @@ class Run(ABC, Serializable):
         if wandb.run is None:
             wandb.init(mode="disabled")
         wandb.run.name = wandb_rename_run(self.out_dir)
+        wandb.run.save()
 
         # Print the output directory in bold with escape codes
         print(f"Output directory at \033[1m{self.out_dir}\033[0m")
