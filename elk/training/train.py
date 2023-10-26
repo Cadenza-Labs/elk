@@ -253,7 +253,7 @@ class Elicit(Run):
                     to_save[f"6_{self.name}_singular_values"] = (
                         S.detach().cpu().numpy().tolist()
                     )
-                    probe = TPCProbe.train(hiddens, correct_norm=True)
+                    probe = TPCProbe.train(hiddens, correct_norm=False)
                     probe_direction = probe.probe_direction.squeeze(-1)
 
                     Q, R = torch.linalg.qr(pseudolabel_directions.T)
