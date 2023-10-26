@@ -55,7 +55,7 @@ class Sweep:
     wandb_tracking: bool = True
     """Whether to track a wandb run"""
 
-    wandb_project_name: str | None = None
+    wandb_project_name: str | None = "default_project"
     """The name of the wandb project to track the run in"""
 
     name: str | None = None

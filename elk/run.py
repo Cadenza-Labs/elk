@@ -115,7 +115,7 @@ class Run(ABC, Serializable):
     num_gpus: int = -1
     disable_cache: bool = field(default=False, to_dict=False)
     wandb_tracking: bool = field(default=True, to_dict=False)
-    wandb_project_name: str | None = field(default=None, to_dict=False)
+    wandb_project_name: str | None = field(default="default_project", to_dict=False)
 
     def execute(
         self,

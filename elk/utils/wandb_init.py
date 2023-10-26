@@ -14,10 +14,6 @@ def wandb_init_helper(args: Namespace) -> None:
     """
     project_name = args.wandb_project_name
     if args.wandb_tracking:
-        # Get project name
-        if project_name is None:
-            project_name = "default_project"
-
         # Get entity name
         entity_name = os.getenv("WANDB_ENTITY")
         assert entity_name is not None, "Please set a WANDB_ENTITY env variable"
