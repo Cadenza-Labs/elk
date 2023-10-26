@@ -32,19 +32,9 @@ def find_run_details(
     return None, None
 
 
-def wandb_save_probe(probe_path: Path, model_type: str) -> None:
-    if wandb.run is not None:
-        probe_name = (
-            get_model_name(probe_path) + "." + probe_path.name
-        )  # can break on windows
-        artifact = wandb.Artifact(probe_name, type=model_type)
-        artifact.add_file(probe_path)
-        wandb.run.log_artifact(artifact)
-
-
 def wandb_save_probes_dir(out_dir: Path, model_dir: str) -> None:
     if wandb.run is not None:
-        artifact_name = get_model_name(out_dir / model_dir) + "." + model_dir
+        artifact_name = get_artifact_dir(out_dir / model_dir)
         print(f"Saving artifact with name {artifact_name} and type {model_dir}")
         artifact = wandb.Artifact(artifact_name, type=model_dir)
         artifact.add_dir(out_dir / model_dir)
@@ -61,17 +51,23 @@ def wandb_rename_run(out_dir: Path) -> Optional[str]:
             return str_out_dir.split("/")[-1]
 
 
-def get_model_name(path: Path) -> str:
+def get_artifact_dir(path: Path, run_name: Optional[str] = None) -> str:
     "Get the wandb name of a model from its local path."
-    if wandb.run is not None:
-        run_name = wandb.run.name
-        name = []
-        while ((name_part := path.parent.name) != run_name) and (name_part != ""):
-            name = name + [name_part]
-            path = path.parent
-        name = [run_name] + name
-        return ".".join(name)
-    raise ValueError("Wandb run is not running.")
+
+    # If path contains suffix, remove it
+    path = path.with_suffix("")
+
+    if run_name is None:
+        if wandb.run is not None:
+            run_name = wandb.run.name
+        else:
+            raise ValueError("Wandb run is not running and not run_name provided.")
+    name = []
+    while ((name_part := path.name) != run_name) and (name_part != ""):
+        name = [name_part] + name
+        path = path.parent
+    name = [run_name] + name
+    return ".".join(name)
 
 
 def wandb_download_probe(

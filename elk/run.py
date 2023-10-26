@@ -33,7 +33,7 @@ from .utils import (
     select_usable_devices,
 )
 from .utils.types import PromptEnsembling
-from .utils.wandb_utils import wandb_rename_run, wandb_save_probes_dir
+from .utils.wandb_utils import get_artifact_dir, wandb_rename_run, wandb_save_probes_dir
 
 PROMPT_ENSEMBLING = "prompt_ensembling"
 
@@ -84,7 +84,8 @@ def calculate_layer_outputs(layer_outputs: list[LayerOutput], out_path: Path):
     df_concat = pd.concat(dfs)
     df_concat.to_csv(out_path, index=False)
     if wandb.run is not None:
-        wandb.log({"layer_ensembling": wandb.Table(dataframe=df_concat)})
+        table_name = get_artifact_dir(out_path)
+        wandb.log({table_name: wandb.Table(dataframe=df_concat)})
 
 
 PreparedData = dict[str, tuple[Tensor, Tensor, Tensor | None]]
@@ -146,7 +147,6 @@ class Run(ABC, Serializable):
         if wandb.run is None:
             wandb.init(mode="disabled")
         wandb.run.name = wandb_rename_run(self.out_dir)
-        wandb.run.save()
 
         # Print the output directory in bold with escape codes
         print(f"Output directory at \033[1m{self.out_dir}\033[0m")
@@ -278,10 +278,12 @@ class Run(ABC, Serializable):
                     # Save the CSV
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
-                    table_name = (
-                        f"{self.data.model}_{'+'.join(self.data.datasets)}_{name}"
-                    )
-                    wandb.log({"results_" + table_name: wandb.Table(dataframe=df)})
+
+                    # Save to WANDB
+                    if self.wandb_tracking:
+                        table_name = get_artifact_dir(self.out_dir) + "." + name
+                        print(f"adding table with name {table_name}")
+                        wandb.log({table_name: wandb.Table(dataframe=df)})
                 if self.debug:
                     save_debug_log(self.datasets, self.out_dir)
                 calculate_layer_outputs(
