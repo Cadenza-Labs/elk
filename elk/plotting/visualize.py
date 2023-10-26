@@ -265,7 +265,7 @@ class ModelVisualization:
         """
         if wandb.run is None:
             entity_name = os.getenv("WANDB_ENTITY")
-            assert entity_name is not None, "Please set a WANDB_ENTITY env variable"
+            assert entity_name is not None, "Please set a WANDB_ENTITY env variable."
             project_name, run_id = find_run_details(
                 entity_name=entity_name, run_name=sweep.name
             )

@@ -174,8 +174,9 @@ class Run(ABC, Serializable):
             probe_per_prompt=self.probe_per_prompt,
         )
         self.apply_to_layers(func=func, num_devices=num_devices)
-        wandb_save_probes_dir(self.out_dir, "lr_models")
-        wandb_save_probes_dir(self.out_dir, "reporters")
+        if self.__class__.__name__ != "Eval":  # hacky way
+            wandb_save_probes_dir(self.out_dir, "lr_models")
+            wandb_save_probes_dir(self.out_dir, "reporters")
 
     @abstractmethod
     def apply_to_layer(

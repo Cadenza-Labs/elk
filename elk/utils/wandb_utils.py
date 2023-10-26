@@ -44,8 +44,8 @@ def wandb_save_probe(probe_path: Path, model_type: str) -> None:
 
 def wandb_save_probes_dir(out_dir: Path, model_dir: str) -> None:
     if wandb.run is not None:
-        artifact_name = get_model_name(out_dir / model_dir)
-        print(f"Saving artifact with name {artifact_name}")
+        artifact_name = get_model_name(out_dir / model_dir) + "." + model_dir
+        print(f"Saving artifact with name {artifact_name} and type {model_dir}")
         artifact = wandb.Artifact(artifact_name, type=model_dir)
         artifact.add_dir(out_dir / model_dir)
         wandb.run.log_artifact(artifact)
