@@ -264,6 +264,15 @@ class Elicit(Run):
                         torch.linalg.vector_norm(other_projection) ** 2
                     )
                     probe_len = torch.linalg.vector_norm(probe_direction) ** 2
+
+                    indices = torch.arange(len(train_gt))
+                    trues = first_train_h[indices, :, train_gt.int(), :]
+                    falses = first_train_h[indices, :, train_gt.int(), :]
+
+                    truth = (norm(trues, wrong=True) - norm(trues, wrong=True)).mean(dim=0)
+                    truth_len = torch.linalg.vector_norm(truth) ** 2
+                    to_save[f"6_{self.name}_truth_len"] = truth_len.detach().cpu().numpy().tolist()
+
                     to_save[f"6_{self.name}_z_projection_probe_ratio"] = (
                         (projection_len / probe_len).detach().cpu().numpy().tolist()
                     )
@@ -369,6 +378,8 @@ class Elicit(Run):
             else:
                 df.to_csv(by_layer_filename, index=False)
                 df.columns = list(res.keys())
+
+
 
         # write to_save
         with open(self.out_dir_expt / f"{expt_name}.json", "w") as f:
