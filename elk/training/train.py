@@ -271,7 +271,7 @@ class Elicit(Run):
                         torch.arange(first_train_h.shape[0]), :, train_gt.int(), :
                     ]
                     falses = first_train_h[
-                        torch.arange(first_train_h.shape[0]), :, train_gt.int(), :
+                        torch.arange(first_train_h.shape[0]), :, (1 - train_gt).int(), :
                     ]
 
                     truth = (norm(trues, wrong=True) - norm(falses, wrong=True)).mean(
