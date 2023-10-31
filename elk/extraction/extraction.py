@@ -332,7 +332,6 @@ def extract_hiddens(
             out_record["model_logits"] = lm_logits
 
         num_yielded += 1
-        breakpoint()
         yield out_record
 
 
