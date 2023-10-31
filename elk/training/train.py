@@ -268,9 +268,22 @@ class Elicit(Run):
                     trues = first_train_h[:, :, train_gt.int(), :]
                     falses = first_train_h[:, :, (1 - train_gt).int(), :]
 
-                    truth = (norm(trues, wrong=True) - norm(falses, wrong=True)).mean(dim=0)
+                    truth = (norm(trues, wrong=True) - norm(falses, wrong=True)).mean(
+                        dim=0
+                    )
                     truth_len = torch.linalg.vector_norm(truth) ** 2
-                    to_save[f"6_{self.name}_truth_len"] = truth_len.detach().cpu().numpy().tolist()
+                    to_save[f"6_{self.name}_truth_len"] = (
+                        truth_len.detach().cpu().numpy().tolist()
+                    )
+                    to_save[f"6_{self.name}_projection_len"] = (
+                        projection_len.detach().cpu().numpy().tolist()
+                    )
+                    to_save[f"6_{self.name}_other_projection_len"] = (
+                        other_projection_len.detach().cpu().numpy().tolist()
+                    )
+                    to_save[f"6_{self.name}_probe_len"] = (
+                        probe_len.detach().cpu().numpy().tolist()
+                    )
 
                     to_save[f"6_{self.name}_z_projection_probe_ratio"] = (
                         (projection_len / probe_len).detach().cpu().numpy().tolist()
@@ -356,7 +369,6 @@ class Elicit(Run):
             res["incorrect_norm_accuracy"] = to_save["incorrect_norm_accuracy"]
 
         # make res into df row and append if exists else create
-        # breakpoint()
         def save_acc_df():
             df = pd.DataFrame(res, index=[0])
             by_layer_filename = self.out_dir_expt / "accs_by_norm.csv"
