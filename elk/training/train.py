@@ -196,6 +196,8 @@ class Elicit(Run):
                 return logits
 
         def norm(x, wrong=False):
+            if x.dim() != 3:
+                breakpoint()
             assert x.dim() == 3, "x must be n v d"
             n, v, d = x.shape
             mean_dims = (0, 1) if wrong else 0  # if wrong select n and v else just n
@@ -265,8 +267,12 @@ class Elicit(Run):
                     )
                     probe_len = torch.linalg.vector_norm(probe_direction) ** 2
 
-                    trues = first_train_h[:, :, train_gt.int(), :]
-                    falses = first_train_h[:, :, (1 - train_gt).int(), :]
+                    trues = first_train_h[
+                        torch.arange(first_train_h.shape[0]), :, train_gt.int(), :
+                    ]
+                    falses = first_train_h[
+                        torch.arange(first_train_h.shape[0]), :, train_gt.int(), :
+                    ]
 
                     truth = (norm(trues, wrong=True) - norm(falses, wrong=True)).mean(
                         dim=0
