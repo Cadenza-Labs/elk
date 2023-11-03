@@ -79,5 +79,9 @@ class Kmeans(ABC, Serializable):
         averaged_over_choices = hiddens.mean(dim=2)
         n, v, d = averaged_over_choices.shape
         reshaped = averaged_over_choices.view(n * v, d)
-        cluster_data = self.apply(X=reshaped, k=v)
-        print(cluster_data)
+        clusters = self.apply(X=reshaped, k=v)
+
+        print(clusters)
+        breakpoint()
+
+        # TODO: check template of each element in cluster
