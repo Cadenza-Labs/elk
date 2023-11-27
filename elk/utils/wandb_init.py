@@ -20,10 +20,10 @@ def wandb_init_helper(args: Namespace) -> None:
 
         if isinstance(args, Eval):
             args_serialized = args.to_dict()
-            args_serialized.out_dir = str(
-                args_serialized.out_dir
+            args_serialized["out_dir"] = str(
+                args_serialized["out_dir"]
             )  # .as_posix method would break on windows
-            args_serialized.source = str(args_serialized.source)
+            args_serialized["source"] = str(args_serialized["source"])
             wandb.init(
                 entity=entity_name,
                 project=project_name,
