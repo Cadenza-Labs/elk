@@ -22,6 +22,12 @@ class Plot:
     overwrite: bool = False
     """Whether to overwrite existing plots."""
 
+    wandb_tracking: bool = True
+    """Whether to add plots to the sweep run in wandb"""
+
+    wandb_project_name: str | None = "default_project"
+    """The name of the wandb project to track the run in"""
+
     def execute(self):
         root_dir = sweeps_dir()
 

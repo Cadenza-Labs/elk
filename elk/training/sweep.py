@@ -5,6 +5,8 @@ import torch
 from datasets import get_dataset_config_info
 from transformers import AutoConfig
 
+import wandb
+
 from ..files import memorably_named_dir, sweeps_dir
 from ..plotting.visualize import visualize_sweep
 from ..training.eigen_reporter import EigenFitterConfig
@@ -49,6 +51,12 @@ class Sweep:
 
     visualize: bool = False
     """Whether to generate visualizations of the results of the sweep."""
+
+    wandb_tracking: bool = True
+    """Whether to track a wandb run"""
+
+    wandb_project_name: str | None = "default_project"
+    """The name of the wandb project to track the run in"""
 
     name: str | None = None
 
@@ -164,6 +172,6 @@ class Sweep:
                                     print(e)
                                     print(asdict(eval))
                                     continue
-
+        wandb.run.name = sweep_dir.__str__().split("/")[-1]
         if self.visualize:
             visualize_sweep(sweep_dir)
