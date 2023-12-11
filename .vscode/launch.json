@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug elk",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/elk/__main__.py", // Path to your __main__.py
+        "args": ["elicit", "gpt2", "imdb", "--num_gpus", "1", "--net", "ccs", "--norm", "cluster"],
+        "console": "integratedTerminal",
+      }
+    ]
+  }
