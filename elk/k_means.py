@@ -26,7 +26,35 @@ class Kmeans(ABC, Serializable):
     min_gpu_mem: int | None = None
     prompt_indices: tuple[int, ...] = ()
 
-    def get_clusters(self, X: torch.Tensor, cluster_ids: list) -> dict:
+    def get_clusters_as_tensor(
+        self, X_original: torch.Tensor, cluster_ids: list
+    ) -> torch.Tensor:
+        # Determine the number of unique clusters
+        unique_clusters = list(set(cluster_ids))
+
+        # Create a list to store tensors for each cluster
+        cluster_tensors = []
+
+        # Iterate over each cluster
+        for unique_cluster_id in unique_clusters:
+            cluster_data = []
+
+            # Gather data for the current cluster
+            for idx, cluster_id in enumerate(cluster_ids):
+                if cluster_id == unique_cluster_id:
+                    cluster_data.append(X_original[idx])
+
+            # Stack all data points for the current cluster
+            cluster_tensor = torch.stack(cluster_data, dim=0)
+            # cluster_tensor = cluster_tensor.view(n, c, k, d)
+            print("cluster_tensor", cluster_tensor.shape)
+            cluster_tensors.append(cluster_tensor)
+
+        return cluster_tensors
+
+    def get_clusters(
+        self, X_averaged: torch.Tensor, X_original: torch.Tensor, cluster_ids: list
+    ) -> dict:
         """
         Create a dictionary where each key is a unique cluster ID and
         the associated value is a list of
@@ -46,18 +74,26 @@ class Kmeans(ABC, Serializable):
             clusters[unique_cluster_id] = []
 
         for idx, cluster_id in enumerate(cluster_ids):
-            clusters[cluster_id].append(X[idx])
+            original_pairs = (X_original[idx][0], X_original[idx][1])
+            clusters[cluster_id].append(
+                {
+                    "original_pairs": original_pairs,
+                    "averaged": X_averaged[idx],
+                }
+            )
 
         return clusters
 
-    def apply(self, X, k=10):
+    def apply(self, X_averaged, X_original, k=10):
         cluster_ids, cluster_centers = kmeans(
-            X=X,
+            X=X_averaged,
             num_clusters=k,
             distance="euclidean",
             device=torch.device("cuda:0"),  # TODO: make it work for more than one GPU
         )
-        self.get_clusters(X, cluster_ids.tolist())
+
+        # return self.get_clusters(X_averaged, X_original, cluster_ids.tolist())
+        return self.get_clusters_as_tensor(X_original, cluster_ids.tolist())
 
     def execute(self):
         datasets = [
@@ -76,12 +112,19 @@ class Kmeans(ABC, Serializable):
         prepare_data(datasets, device, layer, "val")
 
         hiddens = train_dict["imdb"][0]
-        averaged_over_choices = hiddens.mean(dim=2)
-        n, v, d = averaged_over_choices.shape
-        reshaped = averaged_over_choices.view(n * v, d)
-        clusters = self.apply(X=reshaped, k=v)
+        n, v, k, d = hiddens.shape
 
-        print(clusters)
+        # get rid of template dimensions,
+        # since we are creating the clusters as a replacement
+        hiddens = hiddens.view(n * v, k, d)
+
+        # average over the k dimensions
+        averaged_over_choices = hiddens.mean(dim=1)  # shape is (n * v, d)
+
+        self.apply(averaged_over_choices, hiddens, k=v)
+
         breakpoint()
+        exit()
+        # print(clusters)
 
         # TODO: check template of each element in cluster
