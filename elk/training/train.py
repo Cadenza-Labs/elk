@@ -228,11 +228,12 @@ class Elicit(Run):
                 clusters_test=clusters[dataset_key]["test"],
                 device=device,
             )
+            print("Start Training")
             train_loss = reporter.fit_by_clusters(hiddens)
-
+            print("train_loss", train_loss)
             # iterate over hiddens
+
             reporter.platt_scale_with_clusters(labels, hiddens)
-            reporter.training = False
 
         # Save reporter checkpoint to disk
         # TODO have to change this

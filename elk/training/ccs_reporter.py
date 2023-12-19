@@ -11,7 +11,7 @@ from concept_erasure import LeaceFitter
 from torch import Tensor
 from typing_extensions import override
 
-from ..normalization.cluster_norm import cluster_norm
+from ..normalization.cluster_norm import cluster_norm, split_clusters
 from ..parsing import parse_loss
 from ..utils.typing import assert_type
 from .common import FitterConfig
@@ -92,7 +92,6 @@ class CcsReporter(nn.Module, PlattMixin):
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
-        self.training = True
 
         self.config = cfg
         self.in_features = in_features
@@ -180,14 +179,11 @@ class CcsReporter(nn.Module, PlattMixin):
 
     def forward(self, x) -> Tensor:
         """Return the credence assigned to the hidden state `x`"""
-        if not self.training:
-            # at training time, normalization is
-            # handled before calling forward
-            if self.config.norm == "cluster":
-                x = cluster_norm(x)
-            else:
-                assert self.norm is not None, "Must call fit() before forward()"
-                x = self.norm(x)
+        if self.config.norm == "cluster":
+            x = cluster_norm(x)
+        else:
+            assert self.norm is not None, "Must call fit() before forward()"
+            x = self.norm(x)
 
         raw_scores = self.probe(x).squeeze(-1)
         platt_scaled_scores = raw_scores.mul(self.scale).add(self.bias).squeeze(-1)
@@ -217,9 +213,8 @@ class CcsReporter(nn.Module, PlattMixin):
         for i in range(self.config.num_tries):
             self.reset_parameters()
 
-            # TODO: We want to normalize first and then split...
-            # x_neg, x_pos = self.split_clusters(clusters)
-            x_neg, x_pos = cluster_norm(clusters)
+            x_neg, x_pos = split_clusters(clusters)
+
             loss = self.train_loop_lbfgs_by_clusters(x_neg, x_pos)
 
             if loss < best_loss:
@@ -293,21 +288,6 @@ class CcsReporter(nn.Module, PlattMixin):
         self.load_state_dict(best_state)
 
         return best_loss
-
-    # TODO: Is this still needed?
-    def split_clusters(
-        self, clusters: dict[str, Tensor]
-    ) -> tuple[list[Tensor], list[Tensor]]:
-        """Split the clusters into negative and positive clusters."""
-        x_neg = []
-        x_pos = []
-        for cluster_id, cluster in clusters.items():
-            x_neg_, x_pos_ = cluster.unbind(1)
-
-            x_neg.append(x_neg_)
-            x_pos.append(x_pos_)
-
-        return x_neg, x_pos
 
     def train_loop_adam(self, x_neg: Tensor, x_pos: Tensor) -> float:
         """Adam train loop, returning the final loss. Modifies params in-place."""

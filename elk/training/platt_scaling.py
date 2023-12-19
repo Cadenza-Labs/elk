@@ -4,7 +4,7 @@ from typing import Any
 import torch
 from torch import Tensor, nn, optim
 
-from elk.normalization.cluster_norm import cluster_norm
+from elk.normalization.cluster_norm import split_clusters
 
 
 class PlattMixin(ABC):
@@ -44,18 +44,18 @@ class PlattMixin(ABC):
 
         opt.step(closure)
 
-    def platt_scale_with_clusters(self, labels, hiddens, max_iter: int = 100):
+    def platt_scale_with_clusters(self, labels, clusters, max_iter: int = 100):
         opt = optim.LBFGS(
             [self.bias, self.scale],
             line_search_fn="strong_wolfe",
             max_iter=max_iter,
-            tolerance_change=torch.finfo(hiddens[0].dtype).eps,
-            tolerance_grad=torch.finfo(hiddens[0].dtype).eps,
+            tolerance_change=torch.finfo(clusters[0].dtype).eps,
+            tolerance_grad=torch.finfo(clusters[0].dtype).eps,
         )
 
-        x_neg, x_pos = cluster_norm(hiddens)
+        x_neg, x_pos = split_clusters(clusters)
 
-        hiddens = torch.cat([x_neg, x_pos], dim=0)
+        hiddens = x_neg + x_pos
 
         labels = torch.cat(list(labels.values()), dim=0)
         labels = torch.cat([labels, labels], dim=0)
