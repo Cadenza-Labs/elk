@@ -47,7 +47,6 @@ class Kmeans(ABC, Serializable):
             # Stack all data points for the current cluster
             cluster_tensor = torch.stack(cluster_data, dim=0)
             # cluster_tensor = cluster_tensor.view(n, c, k, d)
-            print("cluster_tensor", cluster_tensor.shape)
             cluster_tensors.append(cluster_tensor)
 
         return cluster_tensors

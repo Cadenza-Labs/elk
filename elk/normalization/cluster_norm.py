@@ -1,6 +1,5 @@
 import torch
 from torch import Tensor
-from tqdm import tqdm
 
 from elk.training.burns_norm import BurnsNorm
 
@@ -21,8 +20,7 @@ def split_clusters(clusters: dict[str, Tensor]) -> tuple[list[Tensor], list[Tens
 def cluster_norm(cluster):
     assert cluster[0].dim() == 2, "Expected shape (n, d)"
     xs = []
-    for hiddens in tqdm(cluster):
-        print("normalize by cluster")
+    for hiddens in cluster:
         # Add a new dimension at index 1 for the template
         # this leads to the shape (n, 1, d)
         hiddens = hiddens.unsqueeze(1)
