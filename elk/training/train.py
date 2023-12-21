@@ -10,6 +10,7 @@ from einops import rearrange, repeat
 from kmeans_pytorch import kmeans
 from simple_parsing import subgroups
 
+from elk.normalization.cluster_norm import split_clusters
 from elk.utils.data_utils import PreparedData, prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -88,6 +89,117 @@ def get_clusters(
     return clusters
 
 
+def evaluate_and_save_cluster(
+    train_loss: float | None,
+    reporter: SingleReporter | MultiReporter,
+    clusters: dict,
+    lr_models: list[Classifier],
+    layer: int,
+):
+    row_bufs = defaultdict(list)
+    layer_output = []
+
+    for ds_name, value in clusters.items():
+        val_cluster, val_labels, _ = (
+            value["test"]["hiddens"],
+            value["test"]["labels"],
+            value["test"]["lm_preds"],
+        )
+        train_cluster, _, _ = (
+            value["train"]["hiddens"],
+            value["train"]["labels"],
+            value["train"]["lm_preds"],
+        )
+        meta = {"dataset": ds_name, "layer": layer}
+
+        val_neg, val_pos = split_clusters(val_cluster)
+        val_credences_neg = reporter(val_neg)
+        val_credences_pos = reporter(val_pos)
+        val_credences = torch.stack(
+            (val_credences_neg, val_credences_pos), dim=1
+        )  # shape is (n, k) now, where k=2
+        val_credences = val_credences.unsqueeze(1)  # now shape is (n, v, k), where v=1
+
+        train_pos, train_neg = split_clusters(train_cluster)
+        train_credences_neg = reporter(train_neg)
+        train_credences_pos = reporter(train_pos)
+        train_credences = torch.stack((train_credences_neg, train_credences_pos), dim=1)
+        train_credences = train_credences.unsqueeze(1)
+
+        # Create a new dictionary to store the final result
+        val_labels = torch.cat(list(val_labels.values()), dim=0)
+        assert val_labels.dim() == 1, "Expected shape (n,)"
+
+        layer_output.append(
+            LayerOutput(
+                val_gt=val_labels.detach(),
+                val_credences=val_credences.detach(),
+                meta=meta,
+            )
+        )
+        PROMPT_ENSEMBLING = "prompt_ensembling"
+        for prompt_ensembling in PromptEnsembling.all():
+            row_bufs["eval"].append(
+                {
+                    **meta,
+                    PROMPT_ENSEMBLING: prompt_ensembling.value,
+                    **evaluate_preds(
+                        val_labels, val_credences, prompt_ensembling
+                    ).to_dict(),
+                    "train_loss": train_loss,
+                }
+            )
+            # row_bufs["train_eval"].append(
+            #     {
+            #         **meta,
+            #         PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #         **evaluate_preds(
+            #             train_gt,
+            #             train_credences,
+            #             prompt_ensembling
+            #         ).to_dict(),
+            #         "train_loss": train_loss,
+            #     }
+            # )
+
+            # if val_lm_preds is not None:
+            #     row_bufs["lm_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             **evaluate_preds(
+            #                 val_labels,
+            #                 val_lm_preds,
+            #                 prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
+
+            # if train_lm_preds is not None:
+            #     row_bufs["train_lm_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             **evaluate_preds(
+            #                 train_gt, train_lm_preds, prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
+            # for lr_model_num, model in enumerate(lr_models):
+            #     row_bufs["lr_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             "inlp_iter": lr_model_num,
+            #             **evaluate_preds(
+            #                 val_labels, model(val_h), prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
+
+    return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
+
+
 def evaluate_and_save(
     train_loss: float | None,
     reporter: SingleReporter | MultiReporter,
@@ -103,75 +215,72 @@ def evaluate_and_save(
         train_h, train_gt, train_lm_preds = train_dict[ds_name]
         meta = {"dataset": ds_name, "layer": layer}
 
-        def eval_all(reporter: SingleReporter | MultiReporter):
-            val_credences = reporter(val_h)
-            train_credences = reporter(train_h)
-            layer_output.append(
-                LayerOutput(
-                    val_gt=val_gt.detach(),
-                    val_credences=val_credences.detach(),
-                    meta=meta,
-                )
+        val_credences = reporter(val_h)
+        train_credences = reporter(train_h)
+        layer_output.append(
+            LayerOutput(
+                val_gt=val_gt.detach(),
+                val_credences=val_credences.detach(),
+                meta=meta,
             )
-            PROMPT_ENSEMBLING = "prompt_ensembling"
-            for prompt_ensembling in PromptEnsembling.all():
-                row_bufs["eval"].append(
+        )
+        PROMPT_ENSEMBLING = "prompt_ensembling"
+        for prompt_ensembling in PromptEnsembling.all():
+            row_bufs["eval"].append(
+                {
+                    **meta,
+                    PROMPT_ENSEMBLING: prompt_ensembling.value,
+                    **evaluate_preds(
+                        val_gt, val_credences, prompt_ensembling
+                    ).to_dict(),
+                    "train_loss": train_loss,
+                }
+            )
+
+            row_bufs["train_eval"].append(
+                {
+                    **meta,
+                    PROMPT_ENSEMBLING: prompt_ensembling.value,
+                    **evaluate_preds(
+                        train_gt, train_credences, prompt_ensembling
+                    ).to_dict(),
+                    "train_loss": train_loss,
+                }
+            )
+
+            if val_lm_preds is not None:
+                row_bufs["lm_eval"].append(
                     {
                         **meta,
                         PROMPT_ENSEMBLING: prompt_ensembling.value,
                         **evaluate_preds(
-                            val_gt, val_credences, prompt_ensembling
+                            val_gt, val_lm_preds, prompt_ensembling
                         ).to_dict(),
-                        "train_loss": train_loss,
                     }
                 )
 
-                row_bufs["train_eval"].append(
+            if train_lm_preds is not None:
+                row_bufs["train_lm_eval"].append(
                     {
                         **meta,
                         PROMPT_ENSEMBLING: prompt_ensembling.value,
                         **evaluate_preds(
-                            train_gt, train_credences, prompt_ensembling
+                            train_gt, train_lm_preds, prompt_ensembling
                         ).to_dict(),
-                        "train_loss": train_loss,
                     }
                 )
 
-                if val_lm_preds is not None:
-                    row_bufs["lm_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                val_gt, val_lm_preds, prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
-
-                if train_lm_preds is not None:
-                    row_bufs["train_lm_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                train_gt, train_lm_preds, prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
-
-                for lr_model_num, model in enumerate(lr_models):
-                    row_bufs["lr_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            "inlp_iter": lr_model_num,
-                            **evaluate_preds(
-                                val_gt, model(val_h), prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
-
-        eval_all(reporter)
+            for lr_model_num, model in enumerate(lr_models):
+                row_bufs["lr_eval"].append(
+                    {
+                        **meta,
+                        PROMPT_ENSEMBLING: prompt_ensembling.value,
+                        "inlp_iter": lr_model_num,
+                        **evaluate_preds(
+                            val_gt, model(val_h), prompt_ensembling
+                        ).to_dict(),
+                    }
+                )
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -228,9 +337,7 @@ class Elicit(Run):
                 clusters_test=clusters[dataset_key]["test"],
                 device=device,
             )
-            print("Start Training")
             train_loss = reporter.fit_by_clusters(hiddens)
-            print("train_loss", train_loss)
             # iterate over hiddens
 
             reporter.platt_scale_with_clusters(labels, hiddens)
@@ -365,6 +472,13 @@ class Elicit(Run):
             reporter_train_result = self.cluster_train_and_save_reporter(
                 device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
             )
+
+            maybe_multi_reporter = reporter_train_result.model
+            train_loss = reporter_train_result.train_loss
+
+            return evaluate_and_save_cluster(
+                train_loss, maybe_multi_reporter, clusters_by_dataset, [], layer
+            )
         else:
             if probe_per_prompt:
                 (first_train_h, train_gt, _), *rest = train_dict.values()
@@ -418,7 +532,7 @@ class Elicit(Run):
                 train_dict, device, layer, self.out_dir / "lr_models"
             )
 
-        # TODO: Make it work for clusters
-        return evaluate_and_save(
-            train_loss, maybe_multi_reporter, train_dict, val_dict, lr_models, layer
-        )
+            # TODO: Make it work for clusters
+            return evaluate_and_save(
+                train_loss, maybe_multi_reporter, train_dict, val_dict, lr_models, layer
+            )
