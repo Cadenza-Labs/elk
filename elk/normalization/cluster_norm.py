@@ -17,16 +17,16 @@ def split_clusters(clusters: dict[str, Tensor]) -> tuple[list[Tensor], list[Tens
     return x_neg, x_pos
 
 
-def cluster_norm(cluster):
-    assert cluster[0].dim() == 2, "Expected shape (n, d)"
+def cluster_norm(clusters):
+    assert clusters[0].dim() == 2, "Expected shape (n, d)"
     xs = []
-    for hiddens in cluster:
+    for cluster in clusters:
         # Add a new dimension at index 1 for the template
         # this leads to the shape (n, 1, d)
-        hiddens = hiddens.unsqueeze(1)
+        cluster = cluster.unsqueeze(1)
 
         norm = BurnsNorm()
-        hiddens_normalized = norm(hiddens)
+        hiddens_normalized = norm(cluster)
 
         xs.append(hiddens_normalized)
 

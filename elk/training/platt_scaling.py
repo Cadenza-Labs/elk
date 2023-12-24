@@ -58,7 +58,9 @@ class PlattMixin(ABC):
         hiddens = x_neg + x_pos
 
         labels = torch.cat(list(labels.values()), dim=0)
-        labels = torch.cat([labels, labels], dim=0)
+        labels = torch.cat(
+            [labels, labels], dim=0
+        )  # TODO: probably switch the labels for x_neg
         assert labels.dim() == 1, "Expected shape (n,)"
 
         # (_, v, k, d) = first_train_h.shape

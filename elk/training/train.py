@@ -44,7 +44,7 @@ def get_clusters(
     cluster_ids, cluster_centers = kmeans(
         X=x_averaged_over_choices,
         num_clusters=num_clusters,
-        distance="euclidean",
+        distance="euclidean",  # TODO: try cosine distance, and others...
         device=torch.device("cuda:0"),  # TODO: make it work for more than one GPU
     )
 
@@ -105,11 +105,11 @@ def evaluate_and_save_cluster(
             value["test"]["labels"],
             value["test"]["lm_preds"],
         )
-        train_cluster, _, _ = (
-            value["train"]["hiddens"],
-            value["train"]["labels"],
-            value["train"]["lm_preds"],
-        )
+        # train_cluster, _, _ = (
+        #     value["train"]["hiddens"],
+        #     value["train"]["labels"],
+        #     value["train"]["lm_preds"],
+        # )
         meta = {"dataset": ds_name, "layer": layer}
 
         val_neg, val_pos = split_clusters(val_cluster)
@@ -120,11 +120,14 @@ def evaluate_and_save_cluster(
         )  # shape is (n, k) now, where k=2
         val_credences = val_credences.unsqueeze(1)  # now shape is (n, v, k), where v=1
 
-        train_pos, train_neg = split_clusters(train_cluster)
-        train_credences_neg = reporter(train_neg)
-        train_credences_pos = reporter(train_pos)
-        train_credences = torch.stack((train_credences_neg, train_credences_pos), dim=1)
-        train_credences = train_credences.unsqueeze(1)
+        # train_pos, train_neg = split_clusters(train_cluster)
+        # train_credences_neg = reporter(train_neg)
+        # train_credences_pos = reporter(train_pos)
+        # train_credences = torch.stack(
+        # (train_credences_neg, train_credences_pos),
+        # dim=1
+        # )
+        # train_credences = train_credences.unsqueeze(1)
 
         # Create a new dictionary to store the final result
         val_labels = torch.cat(list(val_labels.values()), dim=0)
@@ -375,7 +378,7 @@ class Elicit(Run):
                 _,
             ), *rest = train_dict.values()  # TODO can remove?
             (_, v, k, d) = first_train_h.shape
-            reporter = CcsReporter(self.net, d, device=device, num_variants=v)
+            reporter = CcsReporter(self.net, d, device=device)
             train_loss = reporter.fit(first_train_h)
 
             labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
