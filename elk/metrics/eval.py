@@ -198,6 +198,7 @@ def calc_eval_results(
         calibrated accuracies, calibrated errors, and AUROC.
     """
     acc = calc_accuracies(y_logits, y_true, prompt_ensembling)
+
     pooled_logits = (
         y_logits[..., 1]
         if prompt_ensembling == PromptEnsembling.NONE
@@ -205,7 +206,9 @@ def calc_eval_results(
     )
     pos_probs = torch.sigmoid(pooled_logits)
     if num_classes == 2:
-        cal_acc, cal_thresh = calc_calibrated_accuracies(y_true=y_true, pos_probs=pos_probs)
+        cal_acc, cal_thresh = calc_calibrated_accuracies(
+            y_true=y_true, pos_probs=pos_probs
+        )
     else:
         cal_acc, cal_thresh = None, None
     cal_err = (

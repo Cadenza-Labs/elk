@@ -102,6 +102,8 @@ class CcsReporter(nn.Module, PlattMixin):
 
         hidden_size = cfg.hidden_size or 4 * in_features // 3
 
+        self.training = True
+
         self.norm = None
         self.probe = nn.Sequential(
             nn.Linear(
@@ -178,8 +180,8 @@ class CcsReporter(nn.Module, PlattMixin):
         """Return the credence assigned to the hidden state `x`."""
         assert self.norm is not None, "Must call fit() before forward()"
         raw_scores = self.probe(self.norm(x)).squeeze(-1)
-        platt_scaled_scores = raw_scores.mul(self.scale).add(self.bias).squeeze(-1)
-        return platt_scaled_scores
+
+        return raw_scores
 
     def loss(self, logit0: Tensor, logit1: Tensor) -> Tensor:
         """Return the loss of the reporter on the contrast pair (x0, x1).
