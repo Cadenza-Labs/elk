@@ -237,10 +237,11 @@ def extract_hiddens(
         )
         text_questions = []
 
-        if k % 2 == 0:
-            append = ". banana"
-        else:
-            append = ". shed"
+        append = ""
+        # if k % 2 == 0:
+        #     append = ". banana"
+        # else:
+        #     append = ". shed"
 
         # Iterate over variants
         for i, record in enumerate(example["prompts"]):
@@ -252,9 +253,6 @@ def extract_hiddens(
 
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
-
-                if target is not None:
-                    target += append
 
                 encoding = tokenizer(
                     text,
@@ -268,8 +266,9 @@ def extract_hiddens(
                 if is_enc_dec:
                     answer = labels = assert_type(Tensor, encoding.labels)
                 else:
+                    print("choice['answer'] + append", choice["answer"] + append)
                     encoding2 = tokenizer(
-                        choice["answer"],
+                        choice["answer"] + append,
                         # Don't include [CLS] and [SEP] in the answer
                         add_special_tokens=False,
                         return_tensors="pt",
