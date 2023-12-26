@@ -1,5 +1,6 @@
 """Main training loop."""
 
+import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, replace
 from typing import Literal
@@ -7,7 +8,9 @@ from typing import Literal
 import pandas as pd
 import torch
 from einops import rearrange, repeat
+from matplotlib import pyplot as plt
 from simple_parsing import subgroups
+from sklearn.decomposition import PCA
 
 from ..evaluation import Eval
 from ..extraction import Extract
@@ -111,6 +114,25 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
+def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
+    assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
+
+    pca = PCA(n_components=2)
+    reduced_data = pca.fit_transform(hiddens.cpu().numpy())
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(
+        reduced_data[:, 0], reduced_data[:, 1], c=labels.cpu().numpy(), cmap="viridis"
+    )
+    plt.xlabel("PCA Component 1")
+    plt.ylabel("PCA Component 2")
+    plt.title("PCA of Hidden Activations")
+
+    path = pathlib.Path(f"./pca_visualizations/{plot_name}.png")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path)
+
+
 @dataclass
 class Elicit(Run):
     """Full specification of a reporter training run."""
@@ -177,7 +199,31 @@ class Elicit(Run):
             train_loss = reporter.fit(first_train_h)
             reporter.training = False
 
-            # labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
+            # # PCA Visualizations
+            # # ... before normalization
+            # flattened_hiddens = rearrange(first_train_h,
+            # 'n v k d -> (n k v) d', v=v, k=k)
+            # flattened_labels = train_gt.repeat(v, k).flatten()
+
+            # create_pca_visualizations(hiddens=flattened_hiddens,
+            # labels=flattened_labels, plot_name=f"before_norm_{layer}")
+            # # ... and after normalization
+            # norm = BurnsNorm()
+            # hiddens_neg, hiddens_pos = first_train_h.unbind(2)
+            # normalized_hiddens_neg = norm(hiddens_neg)
+            # normalized_hiddens_pos = norm(hiddens_pos)
+            # normalized_h = torch.stack((normalized_hiddens_neg,
+            # normalized_hiddens_pos), dim=2)
+            # flattened_hiddens = rearrange(normalized_h,
+            # 'n v k d -> (n k v) d', v=v, k=k)
+            # breakpoint()
+
+            # create_pca_visualizations(hiddens=flattened_hiddens,
+            # labels=flattened_labels, plot_name=f"after_norm_{layer}")
+
+            # # Platt Scaling
+            # labels = repeat(to_one_hot(train_gt, k),
+            # "n k -> n v k", v=v)
             # reporter.platt_scale(labels, first_train_h)
 
         elif isinstance(self.net, EigenFitterConfig):

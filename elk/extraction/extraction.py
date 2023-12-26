@@ -211,7 +211,7 @@ def extract_hiddens(
     if rank == world_size - 1:
         max_examples += global_max_examples % world_size
 
-    for example in prompt_ds:
+    for k, example in enumerate(prompt_ds):
         # Check if we've yielded enough examples
         if num_yielded >= max_examples:
             break
@@ -237,6 +237,11 @@ def extract_hiddens(
         )
         text_questions = []
 
+        if k % 2 == 0:
+            append = ". banana"
+        else:
+            append = ". shed"
+
         # Iterate over variants
         for i, record in enumerate(example["prompts"]):
             variant_questions = []
@@ -247,6 +252,10 @@ def extract_hiddens(
 
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
+
+                if target is not None:
+                    target += append
+
                 encoding = tokenizer(
                     text,
                     # Keep [CLS] and [SEP] for BERT-style models
@@ -285,6 +294,7 @@ def extract_hiddens(
                 inputs: dict[str, Tensor | None] = dict(input_ids=ids.long())
                 if is_enc_dec or has_lm_preds:
                     inputs["labels"] = labels
+
                 outputs = model(**inputs, output_hidden_states=True)
 
                 # Compute the log probability of the answer tokens if available

@@ -7,7 +7,7 @@ templates:
 
 
       ||| {{ answer_choices
-      [label] }}. banana'
+      [label] }}'
     metadata: !TemplateMetadata
       choices_in_prompt: false
       languages:
@@ -16,20 +16,4 @@ templates:
       - Accuracy
       original_task: true
     name: Movie Expressed Sentiment 2
-    reference: ''
-  eb771ab2-d2b4-4be6-a569-64086983abee: !Template
-    answer_choices: 0 ||| 1
-    id: eb771ab2-d2b4-4be6-a569-64086983abee
-    jinja: 'Consider the following example:  '''''' {{text}} ''''''
-
-      Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
-      this example is ||| {{ answer_choices[label] }}. shed'
-    metadata: !TemplateMetadata
-      choices_in_prompt: true
-      languages:
-      - en
-      metrics:
-      - Accuracy
-      original_task: true
-    name: burns_1
     reference: ''
