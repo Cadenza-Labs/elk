@@ -251,6 +251,8 @@ def extract_hiddens(
             for j, choice in enumerate(record):
                 text = choice["question"]
 
+                choice["answer"] = choice["answer"] + append
+
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
 
@@ -266,9 +268,8 @@ def extract_hiddens(
                 if is_enc_dec:
                     answer = labels = assert_type(Tensor, encoding.labels)
                 else:
-                    print("choice['answer'] + append", choice["answer"] + append)
                     encoding2 = tokenizer(
-                        choice["answer"] + append,
+                        choice["answer"],
                         # Don't include [CLS] and [SEP] in the answer
                         add_special_tokens=False,
                         return_tensors="pt",
