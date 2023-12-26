@@ -239,10 +239,10 @@ def extract_hiddens(
         text_questions = []
 
         append = ""
-        if k % 2 == 0:
-            append = ". banana"
-        else:
-            append = ". shed"
+        # if k % 2 == 0:
+        #     append = ". banana"
+        # else:
+        #     append = ". shed"
 
         # Iterate over variants
         for i, record in enumerate(example["prompts"]):
