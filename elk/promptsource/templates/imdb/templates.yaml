@@ -1,25 +1,8 @@
 dataset: imdb
 templates:
-  02ff2949-0f45-4d97-941e-6fa4c0afbc2d: !Template
+  eb781ab2-d2b4-4be6-a569-64086983abee: !Template
     answer_choices: negative ||| positive
-    id: 02ff2949-0f45-4d97-941e-6fa4c0afbc2d
-    jinja: 'The following movie review expresses what sentiment? {{text}}
-
-
-      ||| {{ answer_choices
-      [label] }}'
-    metadata: !TemplateMetadata
-      choices_in_prompt: false
-      languages:
-      - en
-      metrics:
-      - Accuracy
-      original_task: true
-    name: Movie Expressed Sentiment 2
-    reference: ''
-  eb771ab2-d2b4-4be6-a569-64086983abee: !Template
-    answer_choices: 0 ||| 1
-    id: eb771ab2-d2b4-4be6-a569-64086983abee
+    id: eb781ab2-d2b4-4be6-a569-64086983abee
     jinja: 'Consider the following example:  '''''' {{text}} ''''''
 
       Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
