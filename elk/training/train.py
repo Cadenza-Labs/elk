@@ -25,6 +25,8 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
+DEEPMIND_REPRODUCTION = True
+
 
 def evaluate_and_save(
     train_loss: float | None,
@@ -40,6 +42,11 @@ def evaluate_and_save(
         val_h, val_gt, val_lm_preds = val_dict[ds_name]
         train_h, train_gt, train_lm_preds = train_dict[ds_name]
         meta = {"dataset": ds_name, "layer": layer}
+
+        if DEEPMIND_REPRODUCTION:
+            train_h, train_gt = deepmind_reproduction(train_h, train_gt)
+
+            val_h, val_gt = deepmind_reproduction(val_h, val_gt)
 
         def eval_all(reporter: SingleReporter | MultiReporter):
             val_credences = reporter(val_h)
@@ -75,27 +82,28 @@ def evaluate_and_save(
                     }
                 )
 
-                if val_lm_preds is not None:
-                    row_bufs["lm_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                val_gt, val_lm_preds, prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
+                if not DEEPMIND_REPRODUCTION:
+                    if val_lm_preds is not None:
+                        row_bufs["lm_eval"].append(
+                            {
+                                **meta,
+                                PROMPT_ENSEMBLING: prompt_ensembling.value,
+                                **evaluate_preds(
+                                    val_gt, val_lm_preds, prompt_ensembling
+                                ).to_dict(),
+                            }
+                        )
 
-                if train_lm_preds is not None:
-                    row_bufs["train_lm_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                train_gt, train_lm_preds, prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
+                    if train_lm_preds is not None:
+                        row_bufs["train_lm_eval"].append(
+                            {
+                                **meta,
+                                PROMPT_ENSEMBLING: prompt_ensembling.value,
+                                **evaluate_preds(
+                                    train_gt, train_lm_preds, prompt_ensembling
+                                ).to_dict(),
+                            }
+                        )
 
                 for lr_model_num, model in enumerate(lr_models):
                     row_bufs["lr_eval"].append(
@@ -131,6 +139,33 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     path = pathlib.Path(f"./pca_visualizations/{plot_name}.png")
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path)
+
+
+def deepmind_reproduction(hiddens, labels):
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
+    n, v, k, d = hiddens.shape
+
+    # take first n from first template and last n from second template
+    threshold = n // 2
+    template_0_hiddens = hiddens[0:threshold, 0, :, :]
+    template_1_hiddens = hiddens[threshold:, 1, :, :]
+    hiddens = torch.cat((template_0_hiddens, template_1_hiddens), dim=0)
+
+    ## .. do the same for labels
+    template_0_labels = labels[0:threshold]
+    template_1_labels = labels[threshold:]
+    labels = torch.cat((template_0_labels, template_1_labels), dim=0)
+
+    # # shuffle hiddens and labels
+    # shuffled_indices = torch.randperm(n)
+    # hiddens = hiddens[shuffled_indices]
+    # labels = labels[shuffled_indices]
+
+    # add "fake" template dimension
+    # to make it work with the rest of the code
+    hiddens = torch.unsqueeze(hiddens, 1)
+
+    return hiddens, labels
 
 
 @dataclass
@@ -184,6 +219,9 @@ class Elicit(Run):
         (_, v, k, d) = first_train_h.shape
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
+
+        if DEEPMIND_REPRODUCTION:
+            first_train_h, train_gt = deepmind_reproduction(first_train_h, train_gt)
 
         # For a while we did support datasets with different numbers of classes, but
         # we reverted this once we switched to ConceptEraser. There are a few options
@@ -291,10 +329,13 @@ class Elicit(Run):
         train_dict = self.prepare_data(device, layer, "train")
         val_dict = self.prepare_data(device, layer, "val")
 
-        (first_train_h, train_gt, _), *rest = train_dict.values()
-        (_, v, k, d) = first_train_h.shape
-
         if probe_per_prompt:
+            (first_train_h, train_gt, _), *rest = train_dict.values()
+            (_, v, k, d) = first_train_h.shape
+
+            if DEEPMIND_REPRODUCTION:
+                first_train_h, train_gt = deepmind_reproduction(first_train_h, train_gt)
+
             # self.prompt_indices being () actually means "all prompts"
             prompt_indices = self.prompt_indices if self.prompt_indices else range(v)
             prompt_train_dicts = [
