@@ -2,9 +2,10 @@
 import json
 import logging
 import os
+import random
 from contextlib import nullcontext, redirect_stdout
 from dataclasses import InitVar, dataclass, replace
-from itertools import zip_longest
+from itertools import islice, zip_longest
 from typing import Any, Iterable, Literal
 from warnings import filterwarnings
 
@@ -212,10 +213,23 @@ def extract_hiddens(
     if rank == world_size - 1:
         max_examples += global_max_examples % world_size
 
-    for k, example in enumerate(prompt_ds):
-        # Check if we've yielded enough examples
-        if num_yielded >= max_examples:
-            break
+    examples = list(islice(prompt_ds, max_examples))
+    random.shuffle(examples)
+
+    print("len(examples): ", len(examples))
+
+    for k, ex in enumerate(examples):
+        for i, record in enumerate(ex["prompts"]):
+            for j, choice in enumerate(record):
+                if k < len(examples) // 2:
+                    choice["answer"] += ". banana"
+                else:
+                    choice["answer"] += ". shed"
+
+    for k, example in enumerate(examples):
+        # # Check if we've yielded enough examples
+        # if num_yielded >= max_examples:
+        #     break
 
         num_variants = len(example["prompts"])
         num_choices = len(example["prompts"][0])
@@ -238,12 +252,6 @@ def extract_hiddens(
         )
         text_questions = []
 
-        append = ""
-        # if k % 2 == 0:
-        #     append = ". banana"
-        # else:
-        #     append = ". shed"
-
         # Iterate over variants
         for i, record in enumerate(example["prompts"]):
             variant_questions = []
@@ -251,8 +259,6 @@ def extract_hiddens(
             # Iterate over answers
             for j, choice in enumerate(record):
                 text = choice["question"]
-
-                choice["answer"] = choice["answer"] + append
 
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
