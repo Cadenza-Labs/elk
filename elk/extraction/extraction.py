@@ -221,10 +221,12 @@ def extract_hiddens(
     for k, ex in enumerate(examples):
         for i, record in enumerate(ex["prompts"]):
             for j, choice in enumerate(record):
-                if k < len(examples) // 2:
+                if k < max_examples // 2:
                     choice["answer"] += ". banana"
                 else:
                     choice["answer"] += ". shed"
+
+    random.shuffle(examples)
 
     for k, example in enumerate(examples):
         # # Check if we've yielded enough examples
