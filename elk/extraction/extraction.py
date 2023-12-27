@@ -1,11 +1,9 @@
 """Functions for extracting the hidden states of a model."""
-import json
 import logging
 import os
-import random
 from contextlib import nullcontext, redirect_stdout
 from dataclasses import InitVar, dataclass, replace
-from itertools import islice, zip_longest
+from itertools import zip_longest
 from typing import Any, Iterable, Literal
 from warnings import filterwarnings
 
@@ -80,6 +78,9 @@ class Extract(Serializable):
     """The number of prompt templates to use for each example. If -1, all available
     templates are used."""
 
+    balance: bool = True
+    """Whether to balance the number of examples per class."""
+
     layers: tuple[int, ...] = ()
     """Indices of layers to extract hidden states from. We ignore the embedding,
     have only the output of the transformer layers."""
@@ -136,8 +137,9 @@ class Extract(Serializable):
             config = assert_type(
                 PretrainedConfig, AutoConfig.from_pretrained(self.model)
             )
-            layer_range = range(1, config.num_hidden_layers, layer_stride)
-            self.layers = tuple(layer_range)
+            # Note that we always include 0 which is the embedding layer
+            layer_range = range(1, config.num_hidden_layers + 1, layer_stride)
+            self.layers = (0,) + tuple(layer_range)
 
     def explode(self) -> list["Extract"]:
         """Explode this config into a list of configs, one for each layer."""
@@ -191,12 +193,13 @@ def extract_hiddens(
         num_shots=cfg.num_shots,
         split_type=split_type,
         template_path=cfg.template_path,
+        balance=cfg.balance,
         rank=rank,
         world_size=world_size,
         seed=cfg.seed,
     )
 
-    layer_indices = cfg.layers or tuple(range(1, model.config.num_hidden_layers))
+    layer_indices = cfg.layers or tuple(range(model.config.num_hidden_layers + 1))
 
     global_max_examples = cfg.max_examples[0 if split_type == "train" else 1]
 
@@ -213,25 +216,10 @@ def extract_hiddens(
     if rank == world_size - 1:
         max_examples += global_max_examples % world_size
 
-    examples = list(islice(prompt_ds, max_examples))
-    random.shuffle(examples)
-
-    print("len(examples): ", len(examples))
-
-    for k, ex in enumerate(examples):
-        for i, record in enumerate(ex["prompts"]):
-            for j, choice in enumerate(record):
-                if k < max_examples // 2:
-                    choice["answer"] += ". banana"
-                else:
-                    choice["answer"] += ". shed"
-
-    random.shuffle(examples)
-
-    for k, example in enumerate(examples):
-        # # Check if we've yielded enough examples
-        # if num_yielded >= max_examples:
-        #     break
+    for example in prompt_ds:
+        # Check if we've yielded enough examples
+        if num_yielded >= max_examples:
+            break
 
         num_variants = len(example["prompts"])
         num_choices = len(example["prompts"][0])
@@ -246,7 +234,7 @@ def extract_hiddens(
             )
             for layer_idx in layer_indices
         }
-        lm_logits = torch.empty(
+        lm_log_odds = torch.empty(
             num_variants,
             num_choices,
             device=device,
@@ -264,7 +252,6 @@ def extract_hiddens(
 
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
-
                 encoding = tokenizer(
                     text,
                     # Keep [CLS] and [SEP] for BERT-style models
@@ -277,14 +264,19 @@ def extract_hiddens(
                 if is_enc_dec:
                     answer = labels = assert_type(Tensor, encoding.labels)
                 else:
-                    encoding2 = tokenizer(
-                        choice["answer"],
-                        # Don't include [CLS] and [SEP] in the answer
-                        add_special_tokens=False,
-                        return_tensors="pt",
-                    ).to(device)
+                    a_id = tokenizer.encode(
+                        " " + choice["answer"], add_special_tokens=False
+                    )
 
-                    answer = assert_type(Tensor, encoding2.input_ids)
+                    # the Llama tokenizer splits off leading spaces
+                    if tokenizer.decode(a_id[0]).strip() == "":
+                        a_id_without_space = tokenizer.encode(
+                            choice, add_special_tokens=False
+                        )
+                        assert a_id_without_space == a_id[1:]
+                        a_id = a_id_without_space
+
+                    answer = torch.tensor([a_id], device=device)
                     labels = (
                         # -100 is the mask token
                         torch.cat([torch.full_like(ids, -100), answer], dim=-1)
@@ -303,12 +295,16 @@ def extract_hiddens(
                 inputs: dict[str, Tensor | None] = dict(input_ids=ids.long())
                 if is_enc_dec or has_lm_preds:
                     inputs["labels"] = labels
-
                 outputs = model(**inputs, output_hidden_states=True)
 
                 # Compute the log probability of the answer tokens if available
                 if has_lm_preds:
-                    lm_logits[i, j] = -assert_type(Tensor, outputs.loss)
+                    logprob = -assert_type(Tensor, outputs.loss).to(torch.float32)
+                    # Convert logprob to logodds to be consistent with reporters
+                    # Because we went through logprobs, logodds corresponding to
+                    # probs near 1 will be somewhat imprecise
+                    # log(p/(1-p)) = log(p) - log(1-p) = logp - log(1 - exp(logp))
+                    lm_log_odds[i, j] = logprob - torch.log1p(-logprob.exp())
 
                 hiddens = (
                     outputs.get("decoder_hidden_states") or outputs["hidden_states"]
@@ -342,20 +338,16 @@ def extract_hiddens(
             continue
 
         out_record: dict[str, Any] = dict(
+            row_id=example["row_id"],
             label=example["label"],
             variant_ids=example["template_names"],
-            text_questions=text_questions,
+            texts=text_questions,
             **hidden_dict,
         )
-
-        file_path = "examples.json"
-        json_string = json.dumps(example)
-        with open(file_path, "a") as file:
-            file.write(json_string + "\n")  # Adding a newline for readability
-
         if has_lm_preds:
-            out_record["model_logits"] = lm_logits.log_softmax(dim=-1)
+            out_record["lm_log_odds"] = lm_log_odds
 
+        assert out_record["variant_ids"] == sorted(out_record["variant_ids"])
         num_yielded += 1
         yield out_record
 
@@ -391,7 +383,7 @@ def hidden_features(cfg: Extract) -> tuple[DatasetInfo, Features]:
     if num_dropped:
         print(f"Dropping {num_dropped} non-multiple choice templates")
 
-    layer_indices = cfg.layers or tuple(range(1, model_cfg.num_hidden_layers))
+    layer_indices = cfg.layers or tuple(range(model_cfg.num_hidden_layers + 1))
     layer_cols = {
         f"hidden_{layer}": Array3D(
             dtype="int16",
@@ -400,12 +392,13 @@ def hidden_features(cfg: Extract) -> tuple[DatasetInfo, Features]:
         for layer in layer_indices
     }
     other_cols = {
+        "row_id": Value(dtype="int64"),
         "variant_ids": Sequence(
             Value(dtype="string"),
             length=num_variants,
         ),
         "label": Value(dtype="int64"),
-        "text_questions": Sequence(
+        "texts": Sequence(
             Sequence(
                 Value(dtype="string"),
             ),
@@ -415,7 +408,7 @@ def hidden_features(cfg: Extract) -> tuple[DatasetInfo, Features]:
 
     # Only add model_logits if the model is an autoregressive model
     if is_autoregressive(model_cfg, not cfg.use_encoder_states):
-        other_cols["model_logits"] = Array2D(
+        other_cols["lm_log_odds"] = Array2D(
             shape=(num_variants, num_classes),
             dtype="float32",
         )
