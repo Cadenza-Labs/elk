@@ -141,23 +141,29 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     plt.savefig(path)
 
 
-def deepmind_reproduction(hiddens, labels):
+def deepmind_reproduction(hiddens, labels, sample_size=500):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
-    n = hiddens.shape[0]
+    n, v, k, d = hiddens.shape
 
-    sample_size = n // 2
-    shuffled_indices = torch.randperm(n)[:sample_size]
+    # Ensure there are enough samples to select from
+    assert n // 2 >= sample_size, "Not enough samples in each template to select from"
 
-    template_0_hiddens = hiddens[shuffled_indices, 0, :, :]
-    template_1_hiddens = hiddens[shuffled_indices, 1, :, :]
+    # Generate random indices for each template
+    indices_0 = torch.randperm(n // 2)[:sample_size]
+    indices_1 = torch.randperm(n // 2)[:sample_size] + n // 2
+
+    # Select random samples from each template
+    template_0_hiddens = hiddens[indices_0, 0, :, :]
+    template_1_hiddens = hiddens[indices_1, 1, :, :]
     hiddens = torch.cat((template_0_hiddens, template_1_hiddens), dim=0)
 
-    # add "fake" template dimension
-    # to make it work with the rest of the code
-    hiddens = torch.unsqueeze(hiddens, 1)
+    # Do the same for labels
+    template_0_labels = labels[indices_0]
+    template_1_labels = labels[indices_1]
+    labels = torch.cat((template_0_labels, template_1_labels), dim=0)
 
-    labels = labels[shuffled_indices]
-    labels = torch.cat((labels, labels), dim=0)
+    # Add "fake" template dimension to make it work with the rest of the code
+    hiddens = torch.unsqueeze(hiddens, 1)
 
     return hiddens, labels
 
