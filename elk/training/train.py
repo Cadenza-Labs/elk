@@ -143,27 +143,21 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
 
 def deepmind_reproduction(hiddens, labels):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
-    n, v, k, d = hiddens.shape
+    n = hiddens.shape[0]
 
-    # take first n from first template and last n from second template
-    threshold = n // 2
-    template_0_hiddens = hiddens[0:threshold, 0, :, :]
-    template_1_hiddens = hiddens[threshold:, 1, :, :]
+    sample_size = n // 2
+    shuffled_indices = torch.randperm(n)[:sample_size]
+
+    template_0_hiddens = hiddens[shuffled_indices, 0, :, :]
+    template_1_hiddens = hiddens[shuffled_indices, 1, :, :]
     hiddens = torch.cat((template_0_hiddens, template_1_hiddens), dim=0)
-
-    ## .. do the same for labels
-    template_0_labels = labels[0:threshold]
-    template_1_labels = labels[threshold:]
-    labels = torch.cat((template_0_labels, template_1_labels), dim=0)
-
-    # # shuffle hiddens and labels
-    # shuffled_indices = torch.randperm(n)
-    # hiddens = hiddens[shuffled_indices]
-    # labels = labels[shuffled_indices]
 
     # add "fake" template dimension
     # to make it work with the rest of the code
     hiddens = torch.unsqueeze(hiddens, 1)
+
+    labels = labels[shuffled_indices]
+    labels = torch.cat((labels, labels), dim=0)
 
     return hiddens, labels
 
@@ -237,6 +231,7 @@ class Elicit(Run):
             train_loss = reporter.fit(first_train_h)
             reporter.training = False
 
+            # TODO: Do PCA Visualizations in train
             # # PCA Visualizations
             # # ... before normalization
             # flattened_hiddens = rearrange(first_train_h,
