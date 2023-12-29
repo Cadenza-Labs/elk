@@ -141,31 +141,29 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     plt.savefig(path)
 
 
-def deepmind_reproduction(hiddens, labels, sample_size=500):
+def deepmind_reproduction(hiddens, gt_labels):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
     n, v, k, d = hiddens.shape
 
-    # Ensure there are enough samples to select from
-    assert n // 2 >= sample_size, "Not enough samples in each template to select from"
-
     # Generate random indices for each template
-    indices_0 = torch.randperm(n // 2)[:sample_size]
-    indices_1 = torch.randperm(n // 2)[:sample_size] + n // 2
+    indices = torch.randperm(n)
+    sample_size = n // 2
+    indices_0 = indices[:sample_size]
+    indices_1 = indices[sample_size:]
 
     # Select random samples from each template
     template_0_hiddens = hiddens[indices_0, 0, :, :]
     template_1_hiddens = hiddens[indices_1, 1, :, :]
     hiddens = torch.cat((template_0_hiddens, template_1_hiddens), dim=0)
 
-    # Do the same for labels
-    template_0_labels = labels[indices_0]
-    template_1_labels = labels[indices_1]
-    labels = torch.cat((template_0_labels, template_1_labels), dim=0)
-
     # Add "fake" template dimension to make it work with the rest of the code
-    hiddens = torch.unsqueeze(hiddens, 1)
+    hiddens = torch.unsqueeze(hiddens, 1)  # (n, k, d) -> (n, 1, k, d)
+    assert hiddens.shape == (n, 1, k, d), "shape of hiddens has to be: (n, 1, k, d)"
 
-    return hiddens, labels
+    gt_labels = torch.cat((gt_labels[indices_0], gt_labels[indices_1]), dim=0)
+    assert gt_labels.shape == (n,), "shape of gt_labels has to be: (n,)"
+
+    return hiddens, gt_labels
 
 
 @dataclass
