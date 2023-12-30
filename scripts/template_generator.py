@@ -1,18 +1,21 @@
-import argparse
 import json
+import os
 
 
-def generate_templates(template_name):
+def generate_templates(num_templates, dataset_name=""):
     with open("./random_words.json", "r") as file:
         data = json.load(file)
 
     words = data["words"]
+    # Limit words to the number of templates required
+    limited_words = words[:num_templates]
+
     yaml_content = "dataset: imdb\ntemplates:\n"
 
-    for i, word in enumerate(words):
-        template = f"""  id-{word}-{i}: !Template
+    for i, word in enumerate(limited_words):
+        template = f"""  id-{num_templates}_{word}_{i}: !Template
     answer_choices: negative ||| positive
-    id: id-{word}-{i}
+    id: id-{num_templates}_{word}_{i}
     jinja: 'Consider the following example:  '''''' {{{{{"text"}}}}}  ''''''
 
         Between {{{{ answer_choices[0] }}}} and {{{{ answer_choices[1] }}}}, the sentiment of
@@ -24,22 +27,23 @@ def generate_templates(template_name):
       metrics:
       - Accuracy
       original_task: true
-    name: {template_name}_{word}
+    name: {num_templates}_{word}_{i}
     reference: ''
 """  # noqa
         yaml_content += template
 
-    with open(f"templates/{template_name}_templates.yaml", "w") as file:
+    root = f"templates/{dataset_name}/{num_templates}"
+    os.makedirs(root, exist_ok=True)
+
+    with open(f"{root}/templates.yaml", "w") as file:
         file.write(yaml_content)
-    print(f"Templates generated and saved to '{template_name}_templates.yaml'")
+    print(f"Templates generated and saved to '{root}/templates.yaml'")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate YAML templates")
-    parser.add_argument("template_name", type=str, help="Name of the template")
-    args = parser.parse_args()
-
-    generate_templates(args.template_name)
+    # Generate templates for 2, 4, 16, ..., 128
+    for num in [2, 4, 16, 32, 64, 128]:
+        generate_templates(num, "imdb")
 
 
 if __name__ == "__main__":

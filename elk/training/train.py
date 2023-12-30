@@ -27,7 +27,7 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
-DEEPMIND_REPRODUCTION = False
+DEEPMIND_REPRODUCTION = True
 
 
 def evaluate_and_save(

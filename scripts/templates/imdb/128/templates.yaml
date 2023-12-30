@@ -1,11 +1,12 @@
 dataset: imdb
 templates:
-  id-Thebais-0: !Template
+  id-128_Thebais_0: !Template
     answer_choices: negative ||| positive
-    id: id-Thebais-0
+    id: id-128_Thebais_0
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Thebais'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Thebais'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -13,14 +14,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Thebais
+    name: 128_Thebais_0
     reference: ''
-  id-phrenopericardiac-1: !Template
+  id-128_phrenopericardiac_1: !Template
     answer_choices: negative ||| positive
-    id: id-phrenopericardiac-1
+    id: id-128_phrenopericardiac_1
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. phrenopericardiac'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. phrenopericardiac'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -28,14 +30,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_phrenopericardiac
+    name: 128_phrenopericardiac_1
     reference: ''
-  id-pebblestone-2: !Template
+  id-128_pebblestone_2: !Template
     answer_choices: negative ||| positive
-    id: id-pebblestone-2
+    id: id-128_pebblestone_2
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. pebblestone'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. pebblestone'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -43,14 +46,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_pebblestone
+    name: 128_pebblestone_2
     reference: ''
-  id-prize-3: !Template
+  id-128_prize_3: !Template
     answer_choices: negative ||| positive
-    id: id-prize-3
+    id: id-128_prize_3
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. prize'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. prize'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -58,14 +62,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_prize
+    name: 128_prize_3
     reference: ''
-  id-psychophysiologist-4: !Template
+  id-128_psychophysiologist_4: !Template
     answer_choices: negative ||| positive
-    id: id-psychophysiologist-4
+    id: id-128_psychophysiologist_4
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. psychophysiologist'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. psychophysiologist'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -73,14 +78,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_psychophysiologist
+    name: 128_psychophysiologist_4
     reference: ''
-  id-unpostulated-5: !Template
+  id-128_unpostulated_5: !Template
     answer_choices: negative ||| positive
-    id: id-unpostulated-5
+    id: id-128_unpostulated_5
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unpostulated'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unpostulated'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -88,14 +94,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unpostulated
+    name: 128_unpostulated_5
     reference: ''
-  id-psychovital-6: !Template
+  id-128_psychovital_6: !Template
     answer_choices: negative ||| positive
-    id: id-psychovital-6
+    id: id-128_psychovital_6
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. psychovital'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. psychovital'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -103,14 +110,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_psychovital
+    name: 128_psychovital_6
     reference: ''
-  id-chieftess-7: !Template
+  id-128_chieftess_7: !Template
     answer_choices: negative ||| positive
-    id: id-chieftess-7
+    id: id-128_chieftess_7
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. chieftess'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. chieftess'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -118,14 +126,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_chieftess
+    name: 128_chieftess_7
     reference: ''
-  id-dissepiment-8: !Template
+  id-128_dissepiment_8: !Template
     answer_choices: negative ||| positive
-    id: id-dissepiment-8
+    id: id-128_dissepiment_8
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. dissepiment'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. dissepiment'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -133,14 +142,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_dissepiment
+    name: 128_dissepiment_8
     reference: ''
-  id-pipistrelle-9: !Template
+  id-128_pipistrelle_9: !Template
     answer_choices: negative ||| positive
-    id: id-pipistrelle-9
+    id: id-128_pipistrelle_9
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. pipistrelle'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. pipistrelle'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -148,14 +158,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_pipistrelle
+    name: 128_pipistrelle_9
     reference: ''
-  id-gobble-10: !Template
+  id-128_gobble_10: !Template
     answer_choices: negative ||| positive
-    id: id-gobble-10
+    id: id-128_gobble_10
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. gobble'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. gobble'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -163,14 +174,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_gobble
+    name: 128_gobble_10
     reference: ''
-  id-overstrictly-11: !Template
+  id-128_overstrictly_11: !Template
     answer_choices: negative ||| positive
-    id: id-overstrictly-11
+    id: id-128_overstrictly_11
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. overstrictly'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. overstrictly'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -178,14 +190,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_overstrictly
+    name: 128_overstrictly_11
     reference: ''
-  id-unrecognition-12: !Template
+  id-128_unrecognition_12: !Template
     answer_choices: negative ||| positive
-    id: id-unrecognition-12
+    id: id-128_unrecognition_12
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unrecognition'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unrecognition'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -193,14 +206,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unrecognition
+    name: 128_unrecognition_12
     reference: ''
-  id-cypsela-13: !Template
+  id-128_cypsela_13: !Template
     answer_choices: negative ||| positive
-    id: id-cypsela-13
+    id: id-128_cypsela_13
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. cypsela'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. cypsela'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -208,14 +222,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_cypsela
+    name: 128_cypsela_13
     reference: ''
-  id-telyn-14: !Template
+  id-128_telyn_14: !Template
     answer_choices: negative ||| positive
-    id: id-telyn-14
+    id: id-128_telyn_14
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. telyn'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. telyn'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -223,14 +238,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_telyn
+    name: 128_telyn_14
     reference: ''
-  id-araliad-15: !Template
+  id-128_araliad_15: !Template
     answer_choices: negative ||| positive
-    id: id-araliad-15
+    id: id-128_araliad_15
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. araliad'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. araliad'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -238,14 +254,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_araliad
+    name: 128_araliad_15
     reference: ''
-  id-prandial-16: !Template
+  id-128_prandial_16: !Template
     answer_choices: negative ||| positive
-    id: id-prandial-16
+    id: id-128_prandial_16
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. prandial'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. prandial'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -253,14 +270,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_prandial
+    name: 128_prandial_16
     reference: ''
-  id-photometric-17: !Template
+  id-128_photometric_17: !Template
     answer_choices: negative ||| positive
-    id: id-photometric-17
+    id: id-128_photometric_17
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. photometric'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. photometric'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -268,14 +286,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_photometric
+    name: 128_photometric_17
     reference: ''
-  id-lawnlet-18: !Template
+  id-128_lawnlet_18: !Template
     answer_choices: negative ||| positive
-    id: id-lawnlet-18
+    id: id-128_lawnlet_18
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. lawnlet'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. lawnlet'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -283,14 +302,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_lawnlet
+    name: 128_lawnlet_18
     reference: ''
-  id-bouncing-19: !Template
+  id-128_bouncing_19: !Template
     answer_choices: negative ||| positive
-    id: id-bouncing-19
+    id: id-128_bouncing_19
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. bouncing'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. bouncing'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -298,14 +318,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_bouncing
+    name: 128_bouncing_19
     reference: ''
-  id-repugnant-20: !Template
+  id-128_repugnant_20: !Template
     answer_choices: negative ||| positive
-    id: id-repugnant-20
+    id: id-128_repugnant_20
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. repugnant'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. repugnant'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -313,14 +334,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_repugnant
+    name: 128_repugnant_20
     reference: ''
-  id-blightbird-21: !Template
+  id-128_blightbird_21: !Template
     answer_choices: negative ||| positive
-    id: id-blightbird-21
+    id: id-128_blightbird_21
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. blightbird'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. blightbird'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -328,14 +350,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_blightbird
+    name: 128_blightbird_21
     reference: ''
-  id-gomuti-22: !Template
+  id-128_gomuti_22: !Template
     answer_choices: negative ||| positive
-    id: id-gomuti-22
+    id: id-128_gomuti_22
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. gomuti'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. gomuti'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -343,14 +366,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_gomuti
+    name: 128_gomuti_22
     reference: ''
-  id-nakedly-23: !Template
+  id-128_nakedly_23: !Template
     answer_choices: negative ||| positive
-    id: id-nakedly-23
+    id: id-128_nakedly_23
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. nakedly'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. nakedly'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -358,14 +382,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_nakedly
+    name: 128_nakedly_23
     reference: ''
-  id-repercussively-24: !Template
+  id-128_repercussively_24: !Template
     answer_choices: negative ||| positive
-    id: id-repercussively-24
+    id: id-128_repercussively_24
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. repercussively'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. repercussively'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -373,14 +398,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_repercussively
+    name: 128_repercussively_24
     reference: ''
-  id-desponder-25: !Template
+  id-128_desponder_25: !Template
     answer_choices: negative ||| positive
-    id: id-desponder-25
+    id: id-128_desponder_25
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. desponder'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. desponder'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -388,14 +414,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_desponder
+    name: 128_desponder_25
     reference: ''
-  id-cormous-26: !Template
+  id-128_cormous_26: !Template
     answer_choices: negative ||| positive
-    id: id-cormous-26
+    id: id-128_cormous_26
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. cormous'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. cormous'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -403,14 +430,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_cormous
+    name: 128_cormous_26
     reference: ''
-  id-plexal-27: !Template
+  id-128_plexal_27: !Template
     answer_choices: negative ||| positive
-    id: id-plexal-27
+    id: id-128_plexal_27
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. plexal'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. plexal'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -418,14 +446,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_plexal
+    name: 128_plexal_27
     reference: ''
-  id-idiogenesis-28: !Template
+  id-128_idiogenesis_28: !Template
     answer_choices: negative ||| positive
-    id: id-idiogenesis-28
+    id: id-128_idiogenesis_28
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. idiogenesis'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. idiogenesis'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -433,14 +462,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_idiogenesis
+    name: 128_idiogenesis_28
     reference: ''
-  id-pentathionic-29: !Template
+  id-128_pentathionic_29: !Template
     answer_choices: negative ||| positive
-    id: id-pentathionic-29
+    id: id-128_pentathionic_29
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. pentathionic'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. pentathionic'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -448,14 +478,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_pentathionic
+    name: 128_pentathionic_29
     reference: ''
-  id-overskirt-30: !Template
+  id-128_overskirt_30: !Template
     answer_choices: negative ||| positive
-    id: id-overskirt-30
+    id: id-128_overskirt_30
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. overskirt'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. overskirt'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -463,14 +494,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_overskirt
+    name: 128_overskirt_30
     reference: ''
-  id-unhafted-31: !Template
+  id-128_unhafted_31: !Template
     answer_choices: negative ||| positive
-    id: id-unhafted-31
+    id: id-128_unhafted_31
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unhafted'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unhafted'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -478,14 +510,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unhafted
+    name: 128_unhafted_31
     reference: ''
-  id-deathbed-32: !Template
+  id-128_deathbed_32: !Template
     answer_choices: negative ||| positive
-    id: id-deathbed-32
+    id: id-128_deathbed_32
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. deathbed'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. deathbed'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -493,14 +526,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_deathbed
+    name: 128_deathbed_32
     reference: ''
-  id-drone-33: !Template
+  id-128_drone_33: !Template
     answer_choices: negative ||| positive
-    id: id-drone-33
+    id: id-128_drone_33
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. drone'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. drone'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -508,14 +542,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_drone
+    name: 128_drone_33
     reference: ''
-  id-stereognosis-34: !Template
+  id-128_stereognosis_34: !Template
     answer_choices: negative ||| positive
-    id: id-stereognosis-34
+    id: id-128_stereognosis_34
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. stereognosis'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. stereognosis'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -523,14 +558,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_stereognosis
+    name: 128_stereognosis_34
     reference: ''
-  id-Ophiobolus-35: !Template
+  id-128_Ophiobolus_35: !Template
     answer_choices: negative ||| positive
-    id: id-Ophiobolus-35
+    id: id-128_Ophiobolus_35
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Ophiobolus'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Ophiobolus'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -538,14 +574,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Ophiobolus
+    name: 128_Ophiobolus_35
     reference: ''
-  id-bistipulate-36: !Template
+  id-128_bistipulate_36: !Template
     answer_choices: negative ||| positive
-    id: id-bistipulate-36
+    id: id-128_bistipulate_36
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. bistipulate'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. bistipulate'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -553,14 +590,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_bistipulate
+    name: 128_bistipulate_36
     reference: ''
-  id-profusive-37: !Template
+  id-128_profusive_37: !Template
     answer_choices: negative ||| positive
-    id: id-profusive-37
+    id: id-128_profusive_37
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. profusive'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. profusive'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -568,14 +606,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_profusive
+    name: 128_profusive_37
     reference: ''
-  id-balsamine-38: !Template
+  id-128_balsamine_38: !Template
     answer_choices: negative ||| positive
-    id: id-balsamine-38
+    id: id-128_balsamine_38
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. balsamine'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. balsamine'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -583,14 +622,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_balsamine
+    name: 128_balsamine_38
     reference: ''
-  id-unsplayed-39: !Template
+  id-128_unsplayed_39: !Template
     answer_choices: negative ||| positive
-    id: id-unsplayed-39
+    id: id-128_unsplayed_39
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unsplayed'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unsplayed'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -598,14 +638,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unsplayed
+    name: 128_unsplayed_39
     reference: ''
-  id-wahine-40: !Template
+  id-128_wahine_40: !Template
     answer_choices: negative ||| positive
-    id: id-wahine-40
+    id: id-128_wahine_40
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. wahine'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. wahine'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -613,14 +654,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_wahine
+    name: 128_wahine_40
     reference: ''
-  id-borofluorin-41: !Template
+  id-128_borofluorin_41: !Template
     answer_choices: negative ||| positive
-    id: id-borofluorin-41
+    id: id-128_borofluorin_41
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. borofluorin'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. borofluorin'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -628,14 +670,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_borofluorin
+    name: 128_borofluorin_41
     reference: ''
-  id-Lamaism-42: !Template
+  id-128_Lamaism_42: !Template
     answer_choices: negative ||| positive
-    id: id-Lamaism-42
+    id: id-128_Lamaism_42
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Lamaism'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Lamaism'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -643,14 +686,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Lamaism
+    name: 128_Lamaism_42
     reference: ''
-  id-besieger-43: !Template
+  id-128_besieger_43: !Template
     answer_choices: negative ||| positive
-    id: id-besieger-43
+    id: id-128_besieger_43
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. besieger'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. besieger'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -658,14 +702,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_besieger
+    name: 128_besieger_43
     reference: ''
-  id-prewarn-44: !Template
+  id-128_prewarn_44: !Template
     answer_choices: negative ||| positive
-    id: id-prewarn-44
+    id: id-128_prewarn_44
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. prewarn'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. prewarn'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -673,14 +718,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_prewarn
+    name: 128_prewarn_44
     reference: ''
-  id-ironflower-45: !Template
+  id-128_ironflower_45: !Template
     answer_choices: negative ||| positive
-    id: id-ironflower-45
+    id: id-128_ironflower_45
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. ironflower'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ironflower'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -688,14 +734,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_ironflower
+    name: 128_ironflower_45
     reference: ''
-  id-tinetare-46: !Template
+  id-128_tinetare_46: !Template
     answer_choices: negative ||| positive
-    id: id-tinetare-46
+    id: id-128_tinetare_46
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. tinetare'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. tinetare'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -703,14 +750,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_tinetare
+    name: 128_tinetare_46
     reference: ''
-  id-indiscernibly-47: !Template
+  id-128_indiscernibly_47: !Template
     answer_choices: negative ||| positive
-    id: id-indiscernibly-47
+    id: id-128_indiscernibly_47
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. indiscernibly'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. indiscernibly'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -718,14 +766,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_indiscernibly
+    name: 128_indiscernibly_47
     reference: ''
-  id-superfecundity-48: !Template
+  id-128_superfecundity_48: !Template
     answer_choices: negative ||| positive
-    id: id-superfecundity-48
+    id: id-128_superfecundity_48
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. superfecundity'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. superfecundity'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -733,14 +782,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_superfecundity
+    name: 128_superfecundity_48
     reference: ''
-  id-orangeroot-49: !Template
+  id-128_orangeroot_49: !Template
     answer_choices: negative ||| positive
-    id: id-orangeroot-49
+    id: id-128_orangeroot_49
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. orangeroot'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. orangeroot'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -748,14 +798,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_orangeroot
+    name: 128_orangeroot_49
     reference: ''
-  id-oystershell-50: !Template
+  id-128_oystershell_50: !Template
     answer_choices: negative ||| positive
-    id: id-oystershell-50
+    id: id-128_oystershell_50
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. oystershell'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. oystershell'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -763,14 +814,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_oystershell
+    name: 128_oystershell_50
     reference: ''
-  id-janapan-51: !Template
+  id-128_janapan_51: !Template
     answer_choices: negative ||| positive
-    id: id-janapan-51
+    id: id-128_janapan_51
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. janapan'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. janapan'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -778,14 +830,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_janapan
+    name: 128_janapan_51
     reference: ''
-  id-Cambodian-52: !Template
+  id-128_Cambodian_52: !Template
     answer_choices: negative ||| positive
-    id: id-Cambodian-52
+    id: id-128_Cambodian_52
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Cambodian'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Cambodian'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -793,14 +846,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Cambodian
+    name: 128_Cambodian_52
     reference: ''
-  id-saphie-53: !Template
+  id-128_saphie_53: !Template
     answer_choices: negative ||| positive
-    id: id-saphie-53
+    id: id-128_saphie_53
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. saphie'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. saphie'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -808,14 +862,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_saphie
+    name: 128_saphie_53
     reference: ''
-  id-lokaose-54: !Template
+  id-128_lokaose_54: !Template
     answer_choices: negative ||| positive
-    id: id-lokaose-54
+    id: id-128_lokaose_54
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. lokaose'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. lokaose'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -823,14 +878,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_lokaose
+    name: 128_lokaose_54
     reference: ''
-  id-ametaboly-55: !Template
+  id-128_ametaboly_55: !Template
     answer_choices: negative ||| positive
-    id: id-ametaboly-55
+    id: id-128_ametaboly_55
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. ametaboly'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ametaboly'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -838,14 +894,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_ametaboly
+    name: 128_ametaboly_55
     reference: ''
-  id-rebelove-56: !Template
+  id-128_rebelove_56: !Template
     answer_choices: negative ||| positive
-    id: id-rebelove-56
+    id: id-128_rebelove_56
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. rebelove'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. rebelove'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -853,14 +910,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_rebelove
+    name: 128_rebelove_56
     reference: ''
-  id-brilliancy-57: !Template
+  id-128_brilliancy_57: !Template
     answer_choices: negative ||| positive
-    id: id-brilliancy-57
+    id: id-128_brilliancy_57
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. brilliancy'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. brilliancy'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -868,14 +926,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_brilliancy
+    name: 128_brilliancy_57
     reference: ''
-  id-tenaciously-58: !Template
+  id-128_tenaciously_58: !Template
     answer_choices: negative ||| positive
-    id: id-tenaciously-58
+    id: id-128_tenaciously_58
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. tenaciously'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. tenaciously'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -883,14 +942,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_tenaciously
+    name: 128_tenaciously_58
     reference: ''
-  id-sunray-59: !Template
+  id-128_sunray_59: !Template
     answer_choices: negative ||| positive
-    id: id-sunray-59
+    id: id-128_sunray_59
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. sunray'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. sunray'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -898,14 +958,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_sunray
+    name: 128_sunray_59
     reference: ''
-  id-tanjib-60: !Template
+  id-128_tanjib_60: !Template
     answer_choices: negative ||| positive
-    id: id-tanjib-60
+    id: id-128_tanjib_60
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. tanjib'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. tanjib'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -913,14 +974,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_tanjib
+    name: 128_tanjib_60
     reference: ''
-  id-lymphemia-61: !Template
+  id-128_lymphemia_61: !Template
     answer_choices: negative ||| positive
-    id: id-lymphemia-61
+    id: id-128_lymphemia_61
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. lymphemia'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. lymphemia'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -928,14 +990,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_lymphemia
+    name: 128_lymphemia_61
     reference: ''
-  id-pipi-62: !Template
+  id-128_pipi_62: !Template
     answer_choices: negative ||| positive
-    id: id-pipi-62
+    id: id-128_pipi_62
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. pipi'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. pipi'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -943,14 +1006,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_pipi
+    name: 128_pipi_62
     reference: ''
-  id-adenography-63: !Template
+  id-128_adenography_63: !Template
     answer_choices: negative ||| positive
-    id: id-adenography-63
+    id: id-128_adenography_63
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. adenography'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. adenography'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -958,14 +1022,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_adenography
+    name: 128_adenography_63
     reference: ''
-  id-ineffaceably-64: !Template
+  id-128_ineffaceably_64: !Template
     answer_choices: negative ||| positive
-    id: id-ineffaceably-64
+    id: id-128_ineffaceably_64
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. ineffaceably'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ineffaceably'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -973,14 +1038,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_ineffaceably
+    name: 128_ineffaceably_64
     reference: ''
-  id-rootstock-65: !Template
+  id-128_rootstock_65: !Template
     answer_choices: negative ||| positive
-    id: id-rootstock-65
+    id: id-128_rootstock_65
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. rootstock'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. rootstock'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -988,14 +1054,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_rootstock
+    name: 128_rootstock_65
     reference: ''
-  id-Tubipora-66: !Template
+  id-128_Tubipora_66: !Template
     answer_choices: negative ||| positive
-    id: id-Tubipora-66
+    id: id-128_Tubipora_66
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Tubipora'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Tubipora'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1003,14 +1070,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Tubipora
+    name: 128_Tubipora_66
     reference: ''
-  id-bellyache-67: !Template
+  id-128_bellyache_67: !Template
     answer_choices: negative ||| positive
-    id: id-bellyache-67
+    id: id-128_bellyache_67
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. bellyache'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. bellyache'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1018,14 +1086,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_bellyache
+    name: 128_bellyache_67
     reference: ''
-  id-underusher-68: !Template
+  id-128_underusher_68: !Template
     answer_choices: negative ||| positive
-    id: id-underusher-68
+    id: id-128_underusher_68
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. underusher'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. underusher'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1033,14 +1102,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_underusher
+    name: 128_underusher_68
     reference: ''
-  id-aspace-69: !Template
+  id-128_aspace_69: !Template
     answer_choices: negative ||| positive
-    id: id-aspace-69
+    id: id-128_aspace_69
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. aspace'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. aspace'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1048,14 +1118,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_aspace
+    name: 128_aspace_69
     reference: ''
-  id-floridly-70: !Template
+  id-128_floridly_70: !Template
     answer_choices: negative ||| positive
-    id: id-floridly-70
+    id: id-128_floridly_70
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. floridly'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. floridly'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1063,14 +1134,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_floridly
+    name: 128_floridly_70
     reference: ''
-  id-flock-71: !Template
+  id-128_flock_71: !Template
     answer_choices: negative ||| positive
-    id: id-flock-71
+    id: id-128_flock_71
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. flock'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. flock'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1078,14 +1150,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_flock
+    name: 128_flock_71
     reference: ''
-  id-hebdomary-72: !Template
+  id-128_hebdomary_72: !Template
     answer_choices: negative ||| positive
-    id: id-hebdomary-72
+    id: id-128_hebdomary_72
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. hebdomary'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. hebdomary'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1093,14 +1166,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_hebdomary
+    name: 128_hebdomary_72
     reference: ''
-  id-regress-73: !Template
+  id-128_regress_73: !Template
     answer_choices: negative ||| positive
-    id: id-regress-73
+    id: id-128_regress_73
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. regress'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. regress'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1108,14 +1182,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_regress
+    name: 128_regress_73
     reference: ''
-  id-septangle-74: !Template
+  id-128_septangle_74: !Template
     answer_choices: negative ||| positive
-    id: id-septangle-74
+    id: id-128_septangle_74
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. septangle'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. septangle'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1123,14 +1198,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_septangle
+    name: 128_septangle_74
     reference: ''
-  id-Stygial-75: !Template
+  id-128_Stygial_75: !Template
     answer_choices: negative ||| positive
-    id: id-Stygial-75
+    id: id-128_Stygial_75
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Stygial'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Stygial'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1138,14 +1214,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Stygial
+    name: 128_Stygial_75
     reference: ''
-  id-trigamy-76: !Template
+  id-128_trigamy_76: !Template
     answer_choices: negative ||| positive
-    id: id-trigamy-76
+    id: id-128_trigamy_76
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. trigamy'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. trigamy'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1153,14 +1230,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_trigamy
+    name: 128_trigamy_76
     reference: ''
-  id-historicodogmatic-77: !Template
+  id-128_historicodogmatic_77: !Template
     answer_choices: negative ||| positive
-    id: id-historicodogmatic-77
+    id: id-128_historicodogmatic_77
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. historicodogmatic'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. historicodogmatic'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1168,14 +1246,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_historicodogmatic
+    name: 128_historicodogmatic_77
     reference: ''
-  id-quaternity-78: !Template
+  id-128_quaternity_78: !Template
     answer_choices: negative ||| positive
-    id: id-quaternity-78
+    id: id-128_quaternity_78
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. quaternity'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. quaternity'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1183,14 +1262,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_quaternity
+    name: 128_quaternity_78
     reference: ''
-  id-squelchiness-79: !Template
+  id-128_squelchiness_79: !Template
     answer_choices: negative ||| positive
-    id: id-squelchiness-79
+    id: id-128_squelchiness_79
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. squelchiness'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. squelchiness'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1198,14 +1278,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_squelchiness
+    name: 128_squelchiness_79
     reference: ''
-  id-unrealizing-80: !Template
+  id-128_unrealizing_80: !Template
     answer_choices: negative ||| positive
-    id: id-unrealizing-80
+    id: id-128_unrealizing_80
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unrealizing'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unrealizing'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1213,14 +1294,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unrealizing
+    name: 128_unrealizing_80
     reference: ''
-  id-pleader-81: !Template
+  id-128_pleader_81: !Template
     answer_choices: negative ||| positive
-    id: id-pleader-81
+    id: id-128_pleader_81
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. pleader'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. pleader'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1228,14 +1310,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_pleader
+    name: 128_pleader_81
     reference: ''
-  id-ploy-82: !Template
+  id-128_ploy_82: !Template
     answer_choices: negative ||| positive
-    id: id-ploy-82
+    id: id-128_ploy_82
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. ploy'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ploy'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1243,14 +1326,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_ploy
+    name: 128_ploy_82
     reference: ''
-  id-luxuriation-83: !Template
+  id-128_luxuriation_83: !Template
     answer_choices: negative ||| positive
-    id: id-luxuriation-83
+    id: id-128_luxuriation_83
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. luxuriation'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. luxuriation'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1258,14 +1342,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_luxuriation
+    name: 128_luxuriation_83
     reference: ''
-  id-bowerlet-84: !Template
+  id-128_bowerlet_84: !Template
     answer_choices: negative ||| positive
-    id: id-bowerlet-84
+    id: id-128_bowerlet_84
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. bowerlet'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. bowerlet'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1273,14 +1358,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_bowerlet
+    name: 128_bowerlet_84
     reference: ''
-  id-Jeremias-85: !Template
+  id-128_Jeremias_85: !Template
     answer_choices: negative ||| positive
-    id: id-Jeremias-85
+    id: id-128_Jeremias_85
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Jeremias'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Jeremias'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1288,14 +1374,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Jeremias
+    name: 128_Jeremias_85
     reference: ''
-  id-unembased-86: !Template
+  id-128_unembased_86: !Template
     answer_choices: negative ||| positive
-    id: id-unembased-86
+    id: id-128_unembased_86
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unembased'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unembased'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1303,14 +1390,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unembased
+    name: 128_unembased_86
     reference: ''
-  id-torsiograph-87: !Template
+  id-128_torsiograph_87: !Template
     answer_choices: negative ||| positive
-    id: id-torsiograph-87
+    id: id-128_torsiograph_87
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. torsiograph'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. torsiograph'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1318,14 +1406,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_torsiograph
+    name: 128_torsiograph_87
     reference: ''
-  id-gelatification-88: !Template
+  id-128_gelatification_88: !Template
     answer_choices: negative ||| positive
-    id: id-gelatification-88
+    id: id-128_gelatification_88
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. gelatification'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. gelatification'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1333,14 +1422,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_gelatification
+    name: 128_gelatification_88
     reference: ''
-  id-unfraught-89: !Template
+  id-128_unfraught_89: !Template
     answer_choices: negative ||| positive
-    id: id-unfraught-89
+    id: id-128_unfraught_89
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unfraught'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unfraught'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1348,14 +1438,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unfraught
+    name: 128_unfraught_89
     reference: ''
-  id-slaphappy-90: !Template
+  id-128_slaphappy_90: !Template
     answer_choices: negative ||| positive
-    id: id-slaphappy-90
+    id: id-128_slaphappy_90
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. slaphappy'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. slaphappy'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1363,14 +1454,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_slaphappy
+    name: 128_slaphappy_90
     reference: ''
-  id-zoarium-91: !Template
+  id-128_zoarium_91: !Template
     answer_choices: negative ||| positive
-    id: id-zoarium-91
+    id: id-128_zoarium_91
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. zoarium'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. zoarium'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1378,14 +1470,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_zoarium
+    name: 128_zoarium_91
     reference: ''
-  id-villager-92: !Template
+  id-128_villager_92: !Template
     answer_choices: negative ||| positive
-    id: id-villager-92
+    id: id-128_villager_92
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. villager'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. villager'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1393,14 +1486,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_villager
+    name: 128_villager_92
     reference: ''
-  id-chroococcoid-93: !Template
+  id-128_chroococcoid_93: !Template
     answer_choices: negative ||| positive
-    id: id-chroococcoid-93
+    id: id-128_chroococcoid_93
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. chroococcoid'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. chroococcoid'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1408,14 +1502,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_chroococcoid
+    name: 128_chroococcoid_93
     reference: ''
-  id-telephony-94: !Template
+  id-128_telephony_94: !Template
     answer_choices: negative ||| positive
-    id: id-telephony-94
+    id: id-128_telephony_94
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. telephony'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. telephony'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1423,14 +1518,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_telephony
+    name: 128_telephony_94
     reference: ''
-  id-archcozener-95: !Template
+  id-128_archcozener_95: !Template
     answer_choices: negative ||| positive
-    id: id-archcozener-95
+    id: id-128_archcozener_95
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. archcozener'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. archcozener'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1438,14 +1534,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_archcozener
+    name: 128_archcozener_95
     reference: ''
-  id-outcity-96: !Template
+  id-128_outcity_96: !Template
     answer_choices: negative ||| positive
-    id: id-outcity-96
+    id: id-128_outcity_96
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. outcity'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. outcity'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1453,14 +1550,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_outcity
+    name: 128_outcity_96
     reference: ''
-  id-licca-97: !Template
+  id-128_licca_97: !Template
     answer_choices: negative ||| positive
-    id: id-licca-97
+    id: id-128_licca_97
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. licca'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. licca'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1468,14 +1566,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_licca
+    name: 128_licca_97
     reference: ''
-  id-floundering-98: !Template
+  id-128_floundering_98: !Template
     answer_choices: negative ||| positive
-    id: id-floundering-98
+    id: id-128_floundering_98
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. floundering'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. floundering'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1483,14 +1582,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_floundering
+    name: 128_floundering_98
     reference: ''
-  id-ovism-99: !Template
+  id-128_ovism_99: !Template
     answer_choices: negative ||| positive
-    id: id-ovism-99
+    id: id-128_ovism_99
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. ovism'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ovism'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1498,14 +1598,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_ovism
+    name: 128_ovism_99
     reference: ''
-  id-tartlet-100: !Template
+  id-128_tartlet_100: !Template
     answer_choices: negative ||| positive
-    id: id-tartlet-100
+    id: id-128_tartlet_100
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. tartlet'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. tartlet'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1513,14 +1614,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_tartlet
+    name: 128_tartlet_100
     reference: ''
-  id-oreophasine-101: !Template
+  id-128_oreophasine_101: !Template
     answer_choices: negative ||| positive
-    id: id-oreophasine-101
+    id: id-128_oreophasine_101
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. oreophasine'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. oreophasine'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1528,14 +1630,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_oreophasine
+    name: 128_oreophasine_101
     reference: ''
-  id-expostulation-102: !Template
+  id-128_expostulation_102: !Template
     answer_choices: negative ||| positive
-    id: id-expostulation-102
+    id: id-128_expostulation_102
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. expostulation'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. expostulation'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1543,14 +1646,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_expostulation
+    name: 128_expostulation_102
     reference: ''
-  id-meller-103: !Template
+  id-128_meller_103: !Template
     answer_choices: negative ||| positive
-    id: id-meller-103
+    id: id-128_meller_103
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. meller'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. meller'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1558,14 +1662,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_meller
+    name: 128_meller_103
     reference: ''
-  id-repunishment-104: !Template
+  id-128_repunishment_104: !Template
     answer_choices: negative ||| positive
-    id: id-repunishment-104
+    id: id-128_repunishment_104
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. repunishment'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. repunishment'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1573,14 +1678,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_repunishment
+    name: 128_repunishment_104
     reference: ''
-  id-Tovaria-105: !Template
+  id-128_Tovaria_105: !Template
     answer_choices: negative ||| positive
-    id: id-Tovaria-105
+    id: id-128_Tovaria_105
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Tovaria'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Tovaria'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1588,14 +1694,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Tovaria
+    name: 128_Tovaria_105
     reference: ''
-  id-paternosterer-106: !Template
+  id-128_paternosterer_106: !Template
     answer_choices: negative ||| positive
-    id: id-paternosterer-106
+    id: id-128_paternosterer_106
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. paternosterer'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. paternosterer'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1603,14 +1710,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_paternosterer
+    name: 128_paternosterer_106
     reference: ''
-  id-universitize-107: !Template
+  id-128_universitize_107: !Template
     answer_choices: negative ||| positive
-    id: id-universitize-107
+    id: id-128_universitize_107
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. universitize'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. universitize'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1618,14 +1726,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_universitize
+    name: 128_universitize_107
     reference: ''
-  id-caveat-108: !Template
+  id-128_caveat_108: !Template
     answer_choices: negative ||| positive
-    id: id-caveat-108
+    id: id-128_caveat_108
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. caveat'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. caveat'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1633,14 +1742,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_caveat
+    name: 128_caveat_108
     reference: ''
-  id-wae-109: !Template
+  id-128_wae_109: !Template
     answer_choices: negative ||| positive
-    id: id-wae-109
+    id: id-128_wae_109
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. wae'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. wae'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1648,14 +1758,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_wae
+    name: 128_wae_109
     reference: ''
-  id-trichomaphyte-110: !Template
+  id-128_trichomaphyte_110: !Template
     answer_choices: negative ||| positive
-    id: id-trichomaphyte-110
+    id: id-128_trichomaphyte_110
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. trichomaphyte'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. trichomaphyte'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1663,14 +1774,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_trichomaphyte
+    name: 128_trichomaphyte_110
     reference: ''
-  id-graupel-111: !Template
+  id-128_graupel_111: !Template
     answer_choices: negative ||| positive
-    id: id-graupel-111
+    id: id-128_graupel_111
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. graupel'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. graupel'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1678,14 +1790,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_graupel
+    name: 128_graupel_111
     reference: ''
-  id-inaudibly-112: !Template
+  id-128_inaudibly_112: !Template
     answer_choices: negative ||| positive
-    id: id-inaudibly-112
+    id: id-128_inaudibly_112
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. inaudibly'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. inaudibly'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1693,14 +1806,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_inaudibly
+    name: 128_inaudibly_112
     reference: ''
-  id-Byzantinize-113: !Template
+  id-128_Byzantinize_113: !Template
     answer_choices: negative ||| positive
-    id: id-Byzantinize-113
+    id: id-128_Byzantinize_113
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Byzantinize'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Byzantinize'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1708,14 +1822,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Byzantinize
+    name: 128_Byzantinize_113
     reference: ''
-  id-poise-114: !Template
+  id-128_poise_114: !Template
     answer_choices: negative ||| positive
-    id: id-poise-114
+    id: id-128_poise_114
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. poise'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. poise'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1723,14 +1838,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_poise
+    name: 128_poise_114
     reference: ''
-  id-resplice-115: !Template
+  id-128_resplice_115: !Template
     answer_choices: negative ||| positive
-    id: id-resplice-115
+    id: id-128_resplice_115
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. resplice'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. resplice'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1738,14 +1854,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_resplice
+    name: 128_resplice_115
     reference: ''
-  id-edibleness-116: !Template
+  id-128_edibleness_116: !Template
     answer_choices: negative ||| positive
-    id: id-edibleness-116
+    id: id-128_edibleness_116
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. edibleness'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. edibleness'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1753,14 +1870,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_edibleness
+    name: 128_edibleness_116
     reference: ''
-  id-heterandrous-117: !Template
+  id-128_heterandrous_117: !Template
     answer_choices: negative ||| positive
-    id: id-heterandrous-117
+    id: id-128_heterandrous_117
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. heterandrous'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. heterandrous'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1768,14 +1886,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_heterandrous
+    name: 128_heterandrous_117
     reference: ''
-  id-conquer-118: !Template
+  id-128_conquer_118: !Template
     answer_choices: negative ||| positive
-    id: id-conquer-118
+    id: id-128_conquer_118
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. conquer'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. conquer'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1783,14 +1902,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_conquer
+    name: 128_conquer_118
     reference: ''
-  id-grothite-119: !Template
+  id-128_grothite_119: !Template
     answer_choices: negative ||| positive
-    id: id-grothite-119
+    id: id-128_grothite_119
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. grothite'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. grothite'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1798,14 +1918,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_grothite
+    name: 128_grothite_119
     reference: ''
-  id-botryoidally-120: !Template
+  id-128_botryoidally_120: !Template
     answer_choices: negative ||| positive
-    id: id-botryoidally-120
+    id: id-128_botryoidally_120
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. botryoidally'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. botryoidally'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1813,14 +1934,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_botryoidally
+    name: 128_botryoidally_120
     reference: ''
-  id-electroshock-121: !Template
+  id-128_electroshock_121: !Template
     answer_choices: negative ||| positive
-    id: id-electroshock-121
+    id: id-128_electroshock_121
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. electroshock'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. electroshock'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1828,14 +1950,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_electroshock
+    name: 128_electroshock_121
     reference: ''
-  id-Livistona-122: !Template
+  id-128_Livistona_122: !Template
     answer_choices: negative ||| positive
-    id: id-Livistona-122
+    id: id-128_Livistona_122
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Livistona'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Livistona'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1843,14 +1966,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Livistona
+    name: 128_Livistona_122
     reference: ''
-  id-outrick-123: !Template
+  id-128_outrick_123: !Template
     answer_choices: negative ||| positive
-    id: id-outrick-123
+    id: id-128_outrick_123
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. outrick'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. outrick'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1858,14 +1982,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_outrick
+    name: 128_outrick_123
     reference: ''
-  id-unimperial-124: !Template
+  id-128_unimperial_124: !Template
     answer_choices: negative ||| positive
-    id: id-unimperial-124
+    id: id-128_unimperial_124
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. unimperial'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. unimperial'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1873,14 +1998,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_unimperial
+    name: 128_unimperial_124
     reference: ''
-  id-foreknowable-125: !Template
+  id-128_foreknowable_125: !Template
     answer_choices: negative ||| positive
-    id: id-foreknowable-125
+    id: id-128_foreknowable_125
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. foreknowable'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. foreknowable'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1888,14 +2014,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_foreknowable
+    name: 128_foreknowable_125
     reference: ''
-  id-neodamode-126: !Template
+  id-128_neodamode_126: !Template
     answer_choices: negative ||| positive
-    id: id-neodamode-126
+    id: id-128_neodamode_126
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. neodamode'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. neodamode'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1903,14 +2030,15 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_neodamode
+    name: 128_neodamode_126
     reference: ''
-  id-Pentameridae-127: !Template
+  id-128_Pentameridae_127: !Template
     answer_choices: negative ||| positive
-    id: id-Pentameridae-127
+    id: id-128_Pentameridae_127
     jinja: 'Consider the following example:  '''''' {{text}}  ''''''
 
-        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of this example is ||| {{ answer_choices[label] }}. Pentameridae'
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Pentameridae'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -1918,5 +2046,5 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: template_Pentameridae
+    name: 128_Pentameridae_127
     reference: ''
