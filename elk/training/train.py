@@ -124,7 +124,7 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
-def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
+def create_pca_visualizations(hiddens, labels, root, plot_name="pca_plot"):
     assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
 
     # Use 3 components for PCA
@@ -149,7 +149,7 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     plt.title("PCA of Hidden Activations")
 
     # Saving the plot
-    path = pathlib.Path(f"./pca_visualizations/{plot_name}.jpg")
+    path = pathlib.Path(f"./pca_visualizations/{root}/{plot_name}.jpg")
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path)
     plt.close(fig)
@@ -182,12 +182,16 @@ def deepmind_reproduction(hiddens, gt_labels):
 
 def pca_visualizations(layer, first_train_h, train_gt):
     n, v, k, d = first_train_h.shape
-    flattened_hiddens = rearrange(first_train_h, "n v k d -> (n v k) d", v=v, k=k)
+
+    hiddens_difference = first_train_h[:, :, 0, :] - first_train_h[:, :, 1, :]
+    flattened_hiddens = rearrange(hiddens_difference, "n v k d -> (n v k) d", v=v, k=k)
     expanded_labels = train_gt.repeat_interleave(v * k)
 
+    root_folder = str(pd.Timestamp.now().timestamp())
     create_pca_visualizations(
         hiddens=flattened_hiddens,
         labels=expanded_labels,
+        root=root_folder,
         plot_name=f"before_norm_{layer}",
     )
 
@@ -199,13 +203,14 @@ def pca_visualizations(layer, first_train_h, train_gt):
     normalized_hiddens = torch.stack(
         (normalized_hiddens_neg, normalized_hiddens_pos), dim=2
     )
+    hiddens_difference = normalized_hiddens[:, :, 0, :] - normalized_hiddens[:, :, 1, :]
     flattened_normalized_hiddens = rearrange(
-        normalized_hiddens, "n v k d -> (n v k) d", v=v, k=k
+        hiddens_difference, "n v k d -> (n v k) d", v=v, k=k
     )
-
     create_pca_visualizations(
         hiddens=flattened_normalized_hiddens,
         labels=expanded_labels,
+        root=root_folder,
         plot_name=f"after_norm_{layer}",
     )
 

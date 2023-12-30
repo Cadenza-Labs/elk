@@ -5,8 +5,6 @@ templates:
     id: eb781ab2-d2b4-4be6-a569-64086983abee
     jinja: 'Consider the following example:  '''''' {{text}} ''''''
 
-      Alice thinks this is positive.
-
       Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
       this example is ||| {{ answer_choices[label] }}'
     metadata: !TemplateMetadata
@@ -23,7 +21,7 @@ templates:
     id: fb781ab2-d2b4-4be6-a569-64086983abee
     jinja: 'Consider the following example:  '''''' {{text}} ''''''
 
-      Alice thinks this is negative.
+      Alice thinks this is positive.
 
       Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
       this example is ||| {{ answer_choices[label] }}'
@@ -34,5 +32,5 @@ templates:
       metrics:
       - Accuracy
       original_task: true
-    name: burns_shed
+    name: burns_banana
     reference: ''
