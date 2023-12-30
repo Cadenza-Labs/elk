@@ -143,3 +143,4 @@ dmypy.json
 .pyre/
 
 examples.json
+pca_visualizations/

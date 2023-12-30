@@ -12,6 +12,8 @@ from matplotlib import pyplot as plt
 from simple_parsing import subgroups
 from sklearn.decomposition import PCA
 
+from elk.training.burns_norm import BurnsNorm
+
 from ..evaluation import Eval
 from ..extraction import Extract
 from ..metrics import evaluate_preds, to_one_hot
@@ -125,20 +127,32 @@ def evaluate_and_save(
 def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
 
-    pca = PCA(n_components=2)
+    # Use 3 components for PCA
+    pca = PCA(n_components=3)
     reduced_data = pca.fit_transform(hiddens.cpu().numpy())
 
-    plt.figure(figsize=(8, 6))
-    plt.scatter(
-        reduced_data[:, 0], reduced_data[:, 1], c=labels.cpu().numpy(), cmap="viridis"
+    # Create a 3D plot
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(
+        reduced_data[:, 0],
+        reduced_data[:, 1],
+        reduced_data[:, 2],
+        c=labels.cpu().numpy(),
+        cmap="viridis",
     )
-    plt.xlabel("PCA Component 1")
-    plt.ylabel("PCA Component 2")
+
+    # Labeling the axes
+    ax.set_xlabel("PCA Component 1")
+    ax.set_ylabel("PCA Component 2")
+    ax.set_zlabel("PCA Component 3")
     plt.title("PCA of Hidden Activations")
 
-    path = pathlib.Path(f"./pca_visualizations/{plot_name}.png")
+    # Saving the plot
+    path = pathlib.Path(f"./pca_visualizations/{plot_name}.jpg")
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path)
+    plt.close(fig)
 
 
 def deepmind_reproduction(hiddens, gt_labels):
@@ -164,6 +178,36 @@ def deepmind_reproduction(hiddens, gt_labels):
     assert gt_labels.shape == (n,), "shape of gt_labels has to be: (n,)"
 
     return hiddens, gt_labels
+
+
+def pca_visualizations(layer, first_train_h, train_gt):
+    n, v, k, d = first_train_h.shape
+    flattened_hiddens = rearrange(first_train_h, "n v k d -> (n v k) d", v=v, k=k)
+    expanded_labels = train_gt.repeat_interleave(v * k)
+
+    create_pca_visualizations(
+        hiddens=flattened_hiddens,
+        labels=expanded_labels,
+        plot_name=f"before_norm_{layer}",
+    )
+
+    # ... and after normalization
+    norm = BurnsNorm()
+    hiddens_neg, hiddens_pos = first_train_h.unbind(2)
+    normalized_hiddens_neg = norm(hiddens_neg)
+    normalized_hiddens_pos = norm(hiddens_pos)
+    normalized_hiddens = torch.stack(
+        (normalized_hiddens_neg, normalized_hiddens_pos), dim=2
+    )
+    flattened_normalized_hiddens = rearrange(
+        normalized_hiddens, "n v k d -> (n v k) d", v=v, k=k
+    )
+
+    create_pca_visualizations(
+        hiddens=flattened_normalized_hiddens,
+        labels=expanded_labels,
+        plot_name=f"after_norm_{layer}",
+    )
 
 
 @dataclass
@@ -235,30 +279,9 @@ class Elicit(Run):
             train_loss = reporter.fit(first_train_h)
             reporter.training = False
 
-            # TODO: Do PCA Visualizations in train
-            # # PCA Visualizations
-            # # ... before normalization
-            # flattened_hiddens = rearrange(first_train_h,
-            # 'n v k d -> (n k v) d', v=v, k=k)
-            # flattened_labels = train_gt.repeat(v, k).flatten()
+            pca_visualizations(layer, first_train_h, train_gt)
 
-            # create_pca_visualizations(hiddens=flattened_hiddens,
-            # labels=flattened_labels, plot_name=f"before_norm_{layer}")
-            # # ... and after normalization
-            # norm = BurnsNorm()
-            # hiddens_neg, hiddens_pos = first_train_h.unbind(2)
-            # normalized_hiddens_neg = norm(hiddens_neg)
-            # normalized_hiddens_pos = norm(hiddens_pos)
-            # normalized_h = torch.stack((normalized_hiddens_neg,
-            # normalized_hiddens_pos), dim=2)
-            # flattened_hiddens = rearrange(normalized_h,
-            # 'n v k d -> (n k v) d', v=v, k=k)
-            # breakpoint()
-
-            # create_pca_visualizations(hiddens=flattened_hiddens,
-            # labels=flattened_labels, plot_name=f"after_norm_{layer}")
-
-            # # Platt Scaling
+            # Platt Scaling
             # labels = repeat(to_one_hot(train_gt, k),
             # "n k -> n v k", v=v)
             # reporter.platt_scale(labels, first_train_h)
