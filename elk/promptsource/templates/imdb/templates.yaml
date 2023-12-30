@@ -8,7 +8,7 @@ templates:
       Alice thinks this is positive.
 
       Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
-      this example is ||| {{ answer_choices[label] }}. banana'
+      this example is ||| {{ answer_choices[label] }}'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -26,7 +26,7 @@ templates:
       Alice thinks this is negative.
 
       Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
-      this example is ||| {{ answer_choices[label] }}. shed'
+      this example is ||| {{ answer_choices[label] }}'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
