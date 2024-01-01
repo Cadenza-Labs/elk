@@ -124,7 +124,7 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
-def create_pca_visualizations(hiddens, labels, root, plot_name="pca_plot"):
+def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
 
     # Use 3 components for PCA
@@ -149,33 +149,45 @@ def create_pca_visualizations(hiddens, labels, root, plot_name="pca_plot"):
     plt.title("PCA of Hidden Activations")
 
     # Saving the plot
-    path = pathlib.Path(f"./pca_visualizations/{root}/{plot_name}.jpg")
+    path = pathlib.Path(f"./pca_visualizations/{plot_name}.jpg")
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path)
     plt.close(fig)
 
 
+# TODO: Make work for more than 2 templates
 def deepmind_reproduction(hiddens, gt_labels):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
     n, v, k, d = hiddens.shape
 
     # Generate random indices for each template
     indices = torch.randperm(n)
-    sample_size = n // 2
-    indices_0 = indices[:sample_size]
-    indices_1 = indices[sample_size:]
+    sample_size_per_template = n // v
 
-    # Select random samples from each template
-    template_0_hiddens = hiddens[indices_0, 0, :, :]
-    template_1_hiddens = hiddens[indices_1, 1, :, :]
-    hiddens = torch.cat((template_0_hiddens, template_1_hiddens), dim=0)
+    selected_hiddens = []
+    selected_gt_labels = []
+
+    for i in range(v):
+        start_idx = i * sample_size_per_template
+        end_idx = start_idx + sample_size_per_template
+
+        indices_i = indices[start_idx:end_idx]
+
+        # Select random samples from each template
+        template_i_hiddens = hiddens[indices_i, i, :, :]
+        selected_hiddens.append(template_i_hiddens)
+        selected_gt_labels.append(gt_labels[indices_i])
+
+    hiddens = torch.cat(selected_hiddens, dim=0)
 
     # Add "fake" template dimension to make it work with the rest of the code
     hiddens = torch.unsqueeze(hiddens, 1)  # (n, k, d) -> (n, 1, k, d)
-    assert hiddens.shape == (n, 1, k, d), "shape of hiddens has to be: (n, 1, k, d)"
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
 
-    gt_labels = torch.cat((gt_labels[indices_0], gt_labels[indices_1]), dim=0)
-    assert gt_labels.shape == (n,), "shape of gt_labels has to be: (n,)"
+    gt_labels = torch.cat(selected_gt_labels, dim=0)
+    assert gt_labels.shape == (
+        hiddens.shape[0],
+    ), f"shape of gt_labels has to be: ({hiddens.shape[0]},)"
 
     return hiddens, gt_labels
 
@@ -184,14 +196,12 @@ def pca_visualizations(layer, first_train_h, train_gt):
     n, v, k, d = first_train_h.shape
 
     hiddens_difference = first_train_h[:, :, 0, :] - first_train_h[:, :, 1, :]
-    flattened_hiddens = rearrange(hiddens_difference, "n v k d -> (n v k) d", v=v, k=k)
-    expanded_labels = train_gt.repeat_interleave(v * k)
+    flattened_hiddens = rearrange(hiddens_difference, "n v d -> (n v) d", v=v)
+    expanded_labels = train_gt.repeat_interleave(v)
 
-    root_folder = str(pd.Timestamp.now().timestamp())
     create_pca_visualizations(
         hiddens=flattened_hiddens,
         labels=expanded_labels,
-        root=root_folder,
         plot_name=f"before_norm_{layer}",
     )
 
@@ -205,12 +215,11 @@ def pca_visualizations(layer, first_train_h, train_gt):
     )
     hiddens_difference = normalized_hiddens[:, :, 0, :] - normalized_hiddens[:, :, 1, :]
     flattened_normalized_hiddens = rearrange(
-        hiddens_difference, "n v k d -> (n v k) d", v=v, k=k
+        hiddens_difference, "n v d -> (n v) d", v=v
     )
     create_pca_visualizations(
         hiddens=flattened_normalized_hiddens,
         labels=expanded_labels,
-        root=root_folder,
         plot_name=f"after_norm_{layer}",
     )
 
@@ -283,7 +292,6 @@ class Elicit(Run):
             reporter = CcsReporter(self.net, d, device=device, num_variants=v)
             train_loss = reporter.fit(first_train_h)
             reporter.training = False
-
             pca_visualizations(layer, first_train_h, train_gt)
 
             # Platt Scaling
