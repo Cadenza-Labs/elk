@@ -45,7 +45,7 @@ def get_clusters(
         X=x_averaged_over_choices,
         num_clusters=num_clusters,
         distance="euclidean",  # TODO: try cosine distance, and others...
-        device=torch.device("cuda:0"),  # TODO: make it work for more than one GPU
+        device=x.device,  # TODO: make it work for more than one GPU
     )
 
     unique_clusters = list(set(cluster_ids.tolist()))
