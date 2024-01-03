@@ -31,21 +31,21 @@ from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 def get_clusters(
     x: torch.Tensor, labels: torch.Tensor, lm_preds: torch.Tensor, num_clusters: int
 ) -> dict:
-    n, v, c, d = x.shape
+    n, v, k, d = x.shape
 
     # get rid of template dimensions,
     # since we are creating the clusters as a replacement
-    x = x.view(n * v, c, d)
-    labels = labels.repeat(v).flatten()
-    lm_preds = lm_preds.view(n * v, c)
+    x = x.view(n * v, k, d)
+    labels = labels.repeat_interleave(v).flatten()
+    lm_preds = lm_preds.view(n * v, k)
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
 
     cluster_ids, cluster_centers = kmeans(
         X=x_averaged_over_choices,
         num_clusters=num_clusters,
-        distance="euclidean",  # TODO: try cosine distance, and others...
-        device=x.device,  # TODO: make it work for more than one GPU
+        distance="cosine",
+        device=x.device,
     )
 
     unique_clusters = list(set(cluster_ids.tolist()))
@@ -330,7 +330,7 @@ class Elicit(Run):
         if isinstance(self.net, CcsConfig):
             dataset_key = list(clusters.keys())[0]
             hiddens = clusters[dataset_key]["train"]["hiddens"]
-            labels = clusters[dataset_key]["train"]["labels"]
+            clusters[dataset_key]["train"]["labels"]
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
             reporter = CcsReporter(
@@ -342,8 +342,7 @@ class Elicit(Run):
             )
             train_loss = reporter.fit_by_clusters(hiddens)
             # iterate over hiddens
-
-            reporter.platt_scale_with_clusters(labels, hiddens)
+            # reporter.platt_scale_with_clusters(labels, hiddens)
 
         # Save reporter checkpoint to disk
         # TODO have to change this
@@ -455,19 +454,12 @@ class Elicit(Run):
             for dataset_name, dataset in self.datasets:
                 # TODO:
                 # concatenate train and val hiddens and save the result in hiddens
-                hiddens = torch.cat(
-                    [train_dict[dataset_name][0], val_dict[dataset_name][0]], dim=0
-                )
-                labels = torch.cat(
-                    [train_dict[dataset_name][1], val_dict[dataset_name][1]], dim=0
-                )
-                lm_preds = torch.cat(
-                    [train_dict[dataset_name][2], val_dict[dataset_name][2]], dim=0
-                )
+                hiddens = train_dict[dataset_name][0]
+                labels = train_dict[dataset_name][1]
+                lm_preds = train_dict[dataset_name][2]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
                 num_clusters = v
-
                 clusters = get_clusters(hiddens, labels, lm_preds, num_clusters)
 
                 clusters_by_dataset[dataset_name] = clusters
