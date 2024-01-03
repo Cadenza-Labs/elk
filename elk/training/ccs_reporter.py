@@ -186,10 +186,9 @@ class CcsReporter(nn.Module, PlattMixin):
             x = self.norm(x)
 
         raw_scores = self.probe(x).squeeze(-1)
-        # Do platt scaling only for evaluation (not during training)
-        # # TODO: check code from Jonathan
-        platt_scaled_scores = raw_scores.mul(self.scale).add(self.bias).squeeze(-1)
-        return platt_scaled_scores
+        return raw_scores.squeeze(-1)
+        # platt_scaled_scores = raw_scores.mul(self.scale).add(self.bias).squeeze(-1)
+        # return platt_scaled_scores
 
     def loss(self, logit0: Tensor, logit1: Tensor) -> Tensor:
         """Return the loss of the reporter on the contrast pair (x0, x1).
