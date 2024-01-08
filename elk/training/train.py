@@ -256,6 +256,24 @@ class Elicit(Run):
                         S.detach().cpu().numpy().tolist()
                     )
                     probe = TPCProbe.train(hiddens, correct_norm=False)
+                    per_template_probes = []  # shape of one probe: (768, 1)
+
+                    for i in range(hiddens.shape[1]):  # hiddens: n v c d
+                        probe = TPCProbe.train(
+                            hiddens[:, i : i + 1, :, :], correct_norm=False
+                        )
+                        per_template_probes.append(probe)
+
+                    # get probe directions and stack into one
+                    per_template_probes = [
+                        probe.probe_direction.squeeze(-1)
+                        for probe in per_template_probes
+                    ]
+                    per_template_probes = torch.stack(
+                        per_template_probes, dim=0
+                    )  # ([13, 768])
+
+                    # breakpoint()
                     probe_direction = probe.probe_direction.squeeze(-1)
 
                     Q, R = torch.linalg.qr(pseudolabel_directions.T)
@@ -276,8 +294,13 @@ class Elicit(Run):
 
                     truth = (norm(trues, wrong=True) - norm(falses, wrong=True)).mean(
                         dim=0
-                    )
+                    )  # (13, 768)
                     truth_len = torch.linalg.vector_norm(truth) ** 2
+
+                    cosine_similarity_probe_truth = F.cosine_similarity(
+                        per_template_probes, truth.unsqueeze(0), dim=-1
+                    )
+                    breakpoint()
                     to_save[f"6_{self.name}_truth_len"] = (
                         truth_len.detach().cpu().numpy().tolist()
                     )
@@ -300,6 +323,10 @@ class Elicit(Run):
                         .cpu()
                         .numpy()
                         .tolist()
+                    )
+
+                    to_save[f"6_{self.name}_cosine_similarity_probe_truth"] = (
+                        cosine_similarity_probe_truth.detach().cpu().numpy().tolist()
                     )
 
             Expt(hiddens, lambda x: x, "no_norm").run()
