@@ -26,10 +26,37 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
+# For debugging, TODO: Remove later
+torch.set_printoptions(threshold=5000)
+
+
+def flatten_text_questions(text_questions):
+    # Initialize an empty list to store the flattened data
+    flattened_text_questions = []
+
+    # Loop through each sublist (representing the 'n' dimension)
+    for sublist in text_questions:
+        # Loop through each item in the sublist (representing the 'v' dimension)
+        for item in sublist:
+            # Append each item (which is a list of 'k' elements) to the flattened_list
+            assert (
+                item[0] == item[1]
+            ), "First and second element should be the same, \
+            only the pseudo label is different"
+
+            # Store only the first element, since it is the same as the second
+            # Only the pseudo label is different but that is appended later
+            flattened_text_questions.append(item[0])
+    return flattened_text_questions
+
 
 # TODO: Move to utils
 def get_clusters(
-    x: torch.Tensor, labels: torch.Tensor, lm_preds: torch.Tensor, num_clusters: int
+    x: torch.Tensor,
+    labels: torch.Tensor,
+    lm_preds: torch.Tensor,
+    text_questions: list,
+    num_clusters: int,
 ) -> dict:
     n, v, k, d = x.shape
 
@@ -52,13 +79,34 @@ def get_clusters(
     print("unique_clusters", len(unique_clusters))
 
     clusters = {
-        "train": {"hiddens": {}, "labels": {}, "lm_preds": {}},
-        "test": {"hiddens": {}, "labels": {}, "lm_preds": {}},
+        "train": {
+            "hiddens": {},
+            "labels": {},
+            "lm_preds": {},
+            "cluster_ids": {},
+            "ids": {},
+            "text_questions": {},
+        },
+        "test": {
+            "hiddens": {},
+            "labels": {},
+            "lm_preds": {},
+            "cluster_ids": {},
+            "ids": {},
+            "text_questions": {},
+        },
     }
+    text_questions = flatten_text_questions(text_questions)
+
     for unique_cluster_id in unique_clusters:
         cluster_data = []
         gt_data = []
         lm_pred_data = []
+        # cluster ids and ids are collected for debugging,
+        # cluster_ids should be all the same in a cluster
+        cluster_ids_data = []
+        # ids should be different
+        ids_data = []
 
         # Gather data for the current cluster
         for idx, cluster_id in enumerate(cluster_ids):
@@ -66,17 +114,29 @@ def get_clusters(
                 cluster_data.append(x[idx])
                 gt_data.append(labels[idx])
                 lm_pred_data.append(lm_preds[idx])
+                cluster_ids_data.append(cluster_id.item())
+                ids_data.append(idx)
 
         cluster = torch.stack(cluster_data, dim=0)
 
-        split_index = len(cluster_data) // 2  # Divide the data in the middle
+        # Divide the data in the middle
+        # if there is just one element, add it to both train and test
+        split_index = len(cluster_data) // 2 if len(cluster_data) > 1 else None
         clusters["train"]["hiddens"][unique_cluster_id] = cluster[:split_index]
+
         clusters["train"]["labels"][unique_cluster_id] = torch.stack(
             gt_data[:split_index], dim=0
         )
         clusters["train"]["lm_preds"][unique_cluster_id] = torch.stack(
             lm_pred_data[:split_index], dim=0
         )
+        clusters["train"]["cluster_ids"][unique_cluster_id] = cluster_ids_data[
+            :split_index
+        ]
+        clusters["train"]["ids"][unique_cluster_id] = ids_data[:split_index]
+
+        selected_questions = [text_questions[idx] for idx in ids_data[:split_index]]
+        clusters["train"]["text_questions"][unique_cluster_id] = selected_questions
 
         clusters["test"]["hiddens"][unique_cluster_id] = cluster[split_index:]
         clusters["test"]["labels"][unique_cluster_id] = torch.stack(
@@ -85,6 +145,26 @@ def get_clusters(
         clusters["test"]["lm_preds"][unique_cluster_id] = torch.stack(
             lm_pred_data[split_index:], dim=0
         )
+        clusters["test"]["cluster_ids"][unique_cluster_id] = cluster_ids_data[
+            split_index:
+        ]
+        clusters["test"]["ids"][unique_cluster_id] = ids_data[split_index:]
+
+        selected_questions = [text_questions[i] for i in ids_data[split_index:]]
+        clusters["test"]["text_questions"][unique_cluster_id] = selected_questions
+
+        assert set(cluster_ids_data[:split_index]) == {
+            unique_cluster_id
+        }, "cluster_ids should be all the same in a cluster"
+        assert set(cluster_ids_data[split_index:]) == {
+            unique_cluster_id
+        }, "cluster_ids should be all the same in a cluster"
+        assert len(set(ids_data[:split_index])) == len(
+            ids_data[:split_index]
+        ), "ids should be different"
+        assert len(set(ids_data[split_index:])) == len(
+            ids_data[split_index:]
+        ), "ids should be different"
 
     return clusters
 
@@ -457,10 +537,13 @@ class Elicit(Run):
                 hiddens = train_dict[dataset_name][0]
                 labels = train_dict[dataset_name][1]
                 lm_preds = train_dict[dataset_name][2]
+                text_questions = train_dict[dataset_name][3]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
-                num_clusters = v
-                clusters = get_clusters(hiddens, labels, lm_preds, num_clusters)
+                num_clusters = v  # *2
+                clusters = get_clusters(
+                    hiddens, labels, lm_preds, text_questions, num_clusters
+                )
 
                 clusters_by_dataset[dataset_name] = clusters
 

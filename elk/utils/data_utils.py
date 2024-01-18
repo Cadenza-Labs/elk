@@ -25,7 +25,7 @@ def prepare_data(
     layer: int,
     split_type: Literal["train", "val"],
     prompt_indices: tuple[int, ...] = (),
-) -> PreparedData:
+):
     """Prepare data for the specified layer and split type."""
     out = {}
 
@@ -41,8 +41,9 @@ def prepare_data(
         with split.formatted_as("torch", device=device):
             has_preds = "model_logits" in split.features
             lm_preds = split["model_logits"] if has_preds else None
+            text_questions = split["text_questions"]
 
-        out[ds_name] = (hiddens, labels.to(hiddens.device), lm_preds)
+        out[ds_name] = (hiddens, labels.to(hiddens.device), lm_preds, text_questions)
 
     return out
 
