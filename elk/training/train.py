@@ -1,5 +1,5 @@
 """Main training loop."""
-
+import json
 from collections import defaultdict
 from dataclasses import dataclass, replace
 from typing import Literal
@@ -28,6 +28,66 @@ from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
+
+
+def tensor_to_serializable(data):
+    """
+    Recursively converts tensors in the given data structure to a serializable format.
+    """
+    if isinstance(data, torch.Tensor):
+        return data.tolist()  # Convert tensors to lists
+    elif isinstance(data, dict):
+        return {key: tensor_to_serializable(val) for key, val in data.items()}
+    elif isinstance(data, list):
+        return [tensor_to_serializable(val) for val in data]
+    else:
+        return data
+
+
+def generate_html(json_data, output_file="clusters.html"):
+    """
+    Generates an HTML file that uses
+    jquery.json-viewer (from CDN) to display the given JSON data.
+
+    Parameters:
+    json_data (dict): The JSON data to display.
+    output_file (str): The filename for the generated HTML file.
+    """
+
+    # Convert the dictionary to a JSON-formatted string
+    json_string = json.dumps(json_data, indent=4)
+
+    # HTML content with jquery.json-viewer from CDN
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>JSON Viewer</title>
+        <!-- jQuery from CDN -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- jquery.json-viewer JS and CSS from CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/jquery.json-viewer/json-viewer/jquery.json-viewer.js">
+        </script>
+        <link href="https://cdn.jsdelivr.net/npm/jquery.json-viewer/json-viewer/jquery.json-viewer.css" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <h2>JSON Data</h2>
+        <pre id="json-renderer"></pre>
+
+        <script>
+            var jsonData = {json_string};
+            $(document).ready(function() {{
+                $('#json-renderer').jsonViewer(jsonData, {{collapsed: true}});
+            }});
+        </script>
+    </body>
+    </html>
+    """  # noqa: E501
+
+    # Write the HTML content to a file
+    with open(output_file, "w") as file:
+        file.write(html_content)
 
 
 def flatten_text_questions(text_questions):
@@ -544,8 +604,14 @@ class Elicit(Run):
                 clusters = get_clusters(
                     hiddens, labels, lm_preds, text_questions, num_clusters
                 )
-
                 clusters_by_dataset[dataset_name] = clusters
+
+                # print("train viz")
+                # visualize_clusters(clusters["train"])
+                # print("test viz")
+                # visualize_clusters(clusters["test"])
+
+                generate_html(tensor_to_serializable(clusters))
 
             reporter_train_result = self.cluster_train_and_save_reporter(
                 device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
