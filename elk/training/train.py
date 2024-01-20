@@ -600,7 +600,7 @@ class Elicit(Run):
                 text_questions = train_dict[dataset_name][3]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
-                num_clusters = v  # *2
+                num_clusters = v * 2
                 clusters = get_clusters(
                     hiddens, labels, lm_preds, text_questions, num_clusters
                 )

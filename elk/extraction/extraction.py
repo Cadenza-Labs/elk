@@ -285,7 +285,7 @@ def extract_hiddens(
                         dict(
                             {
                                 "template_id": i,
-                                "template_name": example["template_names"],
+                                "template_name": example["template_names"][i],
                                 "text": text,
                                 "example_id": example_id,
                             }
