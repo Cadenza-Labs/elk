@@ -7,8 +7,8 @@ from typing import Literal
 import pandas as pd
 import torch
 from einops import rearrange, repeat
-from kmeans_pytorch import kmeans
 from simple_parsing import subgroups
+from sklearn.cluster import KMeans
 
 from elk.normalization.cluster_norm import split_clusters
 from elk.utils.data_utils import PreparedData, prepare_data
@@ -128,12 +128,18 @@ def get_clusters(
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
 
-    cluster_ids, cluster_centers = kmeans(
-        X=x_averaged_over_choices,
-        num_clusters=num_clusters,
-        distance="cosine",
-        device=x.device,
+    # cluster_ids, cluster_centers = kmeans(
+    #     X=x_averaged_over_choices,
+    #     num_clusters=num_clusters,
+    #     distance="cosine",
+    #     device=x.device,
+    # )
+
+    kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(
+        x_averaged_over_choices.cpu().numpy()
     )
+
+    cluster_ids = kmeans.labels_
 
     unique_clusters = list(set(cluster_ids.tolist()))
     print("unique_clusters", len(unique_clusters))
@@ -600,7 +606,7 @@ class Elicit(Run):
                 text_questions = train_dict[dataset_name][3]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
-                num_clusters = v * 2
+                num_clusters = v * 3
                 clusters = get_clusters(
                     hiddens, labels, lm_preds, text_questions, num_clusters
                 )
