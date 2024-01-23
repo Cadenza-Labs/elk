@@ -128,13 +128,6 @@ def get_clusters(
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
 
-    # cluster_ids, cluster_centers = kmeans(
-    #     X=x_averaged_over_choices,
-    #     num_clusters=num_clusters,
-    #     distance="cosine",
-    #     device=x.device,
-    # )
-
     kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(
         x_averaged_over_choices.cpu().numpy()
     )
@@ -606,9 +599,12 @@ class Elicit(Run):
                 text_questions = train_dict[dataset_name][3]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
-                num_clusters = v * 3
+
+                if self.k_clusters is None:
+                    self.k_clusters = v
+
                 clusters = get_clusters(
-                    hiddens, labels, lm_preds, text_questions, num_clusters
+                    hiddens, labels, lm_preds, text_questions, self.k_clusters
                 )
                 clusters_by_dataset[dataset_name] = clusters
 
@@ -617,7 +613,8 @@ class Elicit(Run):
                 # print("test viz")
                 # visualize_clusters(clusters["test"])
 
-                generate_html(tensor_to_serializable(clusters))
+                with open(self.out_dir / "clusters.json", "w"):
+                    json.dumps(tensor_to_serializable(clusters), indent=4)
 
             reporter_train_result = self.cluster_train_and_save_reporter(
                 device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
