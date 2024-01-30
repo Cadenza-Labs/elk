@@ -4,6 +4,7 @@ from functools import cache
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, Literal
 
+import requests
 from datasets import (
     ClassLabel,
     DatasetDict,
@@ -13,6 +14,17 @@ from datasets import (
 )
 
 from .typing import assert_type
+
+
+def is_dataset_available_online(dataset_name):
+    """Check if the dataset is available online on hugginface and returns true if yes"""
+
+    response = requests.get(
+        f"https://datasets-server.huggingface.co/is-valid?dataset={dataset_name}"
+    )
+    response = response.json()
+    dataset_exists = response.get("viewer", False) is True
+    return dataset_exists
 
 
 def get_columns_all_equal(dataset: DatasetDict) -> list[str]:

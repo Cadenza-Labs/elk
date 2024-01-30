@@ -20,10 +20,13 @@ from datasets import (
     SplitInfo,
     Value,
     get_dataset_config_info,
+    load_dataset,
 )
 from simple_parsing import Serializable, field
 from torch import Tensor
 from transformers import AutoConfig, PreTrainedModel
+
+from elk.utils.data_utils import is_dataset_available_online
 
 from ..promptsource import DatasetTemplates
 from ..utils import (
@@ -433,41 +436,52 @@ def extract(
         else:
             print(f"{pretty_name} using '{split_name}' for validation")
 
-    builders = {
-        split_name: _GeneratorBuilder(
-            cache_dir=None,
-            features=features,
-            generator=_extraction_worker,
-            split_name=split_name,
-            split_info=SplitInfo(
-                name=split_name,
-                num_examples=min(limit, v.num_examples) * len(cfg.datasets),
-                dataset_name=v.dataset_name,
-            ),
-            gen_kwargs=dict(
-                cfg=[cfg] * len(devices),
-                device=devices,
-                rank=list(range(len(devices))),
-                split_type=[ty] * len(devices),
-                world_size=[len(devices)] * len(devices),
-            ),
+    for limit, (split_name, v), ty in zip(limits, splits.items(), split_types):
+        if is_dataset_available_online(v.dataset_name):
+            builders = {
+                split_name: _GeneratorBuilder(
+                    cache_dir=None,
+                    features=features,
+                    generator=_extraction_worker,
+                    split_name=split_name,
+                    split_info=SplitInfo(
+                        name=split_name,
+                        num_examples=min(limit, v.num_examples) * len(cfg.datasets),
+                        dataset_name=v.dataset_name,
+                    ),
+                    gen_kwargs=dict(
+                        cfg=[cfg] * len(devices),
+                        device=devices,
+                        rank=list(range(len(devices))),
+                        split_type=[ty] * len(devices),
+                        world_size=[len(devices)] * len(devices),
+                    ),
+                )
+            }
+            import multiprocess as mp
+
+            mp.set_start_method("spawn", force=True)  # type: ignore[attr-defined]
+
+            ds = dict()
+            for split, builder in builders.items():
+                builder.download_and_prepare(
+                    download_mode=DownloadMode.FORCE_REDOWNLOAD
+                    if disable_cache
+                    else None,
+                    num_proc=len(devices),
+                )
+                ds[split] = builder.as_dataset(split=split)
+        else:
+            print(
+                f"WARNING: {v.dataset_name} is not available online, "
+                "try loading local version instead from {v.dataset_name}"
+            )
+            ds = load_dataset("csv", data_files=v.dataset_name, split=split_name)
+
+        breakpoint()
+
+        dataset_dict = DatasetDict(ds)
+        return DatasetDictWithName(
+            name=cfg.datasets[0],
+            dataset=dataset_dict,
         )
-        for limit, (split_name, v), ty in zip(limits, splits.items(), split_types)
-    }
-    import multiprocess as mp
-
-    mp.set_start_method("spawn", force=True)  # type: ignore[attr-defined]
-
-    ds = dict()
-    for split, builder in builders.items():
-        builder.download_and_prepare(
-            download_mode=DownloadMode.FORCE_REDOWNLOAD if disable_cache else None,
-            num_proc=len(devices),
-        )
-        ds[split] = builder.as_dataset(split=split)
-
-    dataset_dict = DatasetDict(ds)
-    return DatasetDictWithName(
-        name=cfg.datasets[0],
-        dataset=dataset_dict,
-    )
