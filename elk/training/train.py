@@ -117,6 +117,7 @@ def get_clusters(
     lm_preds: torch.Tensor,
     text_questions: list,
     num_clusters: int,
+    cluster_algo: Literal["kmeans", None] = "kmeans",
 ) -> dict:
     n, v, k, d = x.shape
 
@@ -128,11 +129,14 @@ def get_clusters(
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
 
-    kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(
-        x_averaged_over_choices.cpu().numpy()
-    )
+    if cluster_algo == "kmeans":
+        clustering_results = KMeans(
+            n_clusters=num_clusters, random_state=0, n_init="auto"
+        ).fit(x_averaged_over_choices.cpu().numpy())
+    else:
+        raise ValueError(f"Unknown cluster algo: {cluster_algo}")
 
-    cluster_ids = kmeans.labels_
+    cluster_ids = clustering_results.labels_
 
     unique_clusters = list(set(cluster_ids.tolist()))
     print("unique_clusters", len(unique_clusters))
@@ -614,7 +618,8 @@ class Elicit(Run):
                 # visualize_clusters(clusters["test"])
 
                 with open(self.out_dir / "clusters.json", "w"):
-                    json.dumps(tensor_to_serializable(clusters), indent=4)
+                    serialized_clusters = tensor_to_serializable(clusters)
+                    json.dumps(serialized_clusters, indent=4)
 
             reporter_train_result = self.cluster_train_and_save_reporter(
                 device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
