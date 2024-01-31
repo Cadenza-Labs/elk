@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from einops import rearrange, repeat
 from simple_parsing import subgroups
-from sklearn.cluster import KMeans
+from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.normalization.cluster_norm import split_clusters
 from elk.utils.data_utils import PreparedData, prepare_data
@@ -117,7 +117,8 @@ def get_clusters(
     lm_preds: torch.Tensor,
     text_questions: list,
     num_clusters: int,
-    cluster_algo: Literal["kmeans", None] = "kmeans",
+    min_cluster_size: int = 3,
+    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral"] = "kmeans",
 ) -> dict:
     n, v, k, d = x.shape
 
@@ -133,8 +134,16 @@ def get_clusters(
         clustering_results = KMeans(
             n_clusters=num_clusters, random_state=0, n_init="auto"
         ).fit(x_averaged_over_choices.cpu().numpy())
+    elif cluster_algo == "HDBSCAN":
+        clustering_results = HDBSCAN(min_cluster_size=min_cluster_size).fit(
+            x_averaged_over_choices.cpu().numpy()
+        )
+    elif cluster_algo == "spectral":
+        clustering_results = SpectralClustering(
+            n_clusters=num_clusters, assign_labels="discretize", random_state=0
+        ).fit(x_averaged_over_choices.cpu().numpy())
     else:
-        raise ValueError(f"Unknown cluster algo: {cluster_algo}")
+        raise ValueError(f"Unknown cluster algorithm: {cluster_algo}")
 
     cluster_ids = clustering_results.labels_
 
@@ -592,7 +601,7 @@ class Elicit(Run):
         train_dict = prepare_data(self.datasets, device, layer, "train")
         val_dict = prepare_data(self.datasets, device, layer, "val")
 
-        if self.net.norm == "cluster":
+        if isinstance(self.net, CcsConfig) and self.net.norm == "cluster":
             clusters_by_dataset = {}
             for dataset_name, dataset in self.datasets:
                 # TODO:
@@ -604,11 +613,17 @@ class Elicit(Run):
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
 
-                if self.k_clusters is None:
-                    self.k_clusters = v
+                if self.net.k_clusters is None:
+                    self.net.k_clusters = v
 
                 clusters = get_clusters(
-                    hiddens, labels, lm_preds, text_questions, self.k_clusters
+                    hiddens,
+                    labels,
+                    lm_preds,
+                    text_questions,
+                    self.net.k_clusters,
+                    self.net.min_cluster_size,
+                    self.net.cluster_algo,
                 )
                 clusters_by_dataset[dataset_name] = clusters
 

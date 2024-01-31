@@ -64,6 +64,10 @@ class CcsConfig(FitterConfig):
     erase_prompts: bool = True
     """Whether to apply concept erasure on the prompt template IDs."""
 
+    cluster_algo: Literal["kmeans", None] = None
+    k_clusters: int | None = None
+    min_cluster_size: int | None = None
+
     def __post_init__(self):
         self.loss_dict = parse_loss(self.loss)
 

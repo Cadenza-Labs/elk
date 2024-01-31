@@ -103,9 +103,6 @@ class Run(ABC, Serializable):
     num_gpus: int = -1
     disable_cache: bool = field(default=False, to_dict=False)
 
-    cluster_algo: Literal["kmeans", None] = None
-    k_clusters: int | None = None
-
     def execute(
         self,
         highlight_color: Color = "cyan",
