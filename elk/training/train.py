@@ -631,10 +631,10 @@ class Elicit(Run):
                 # visualize_clusters(clusters["train"])
                 # print("test viz")
                 # visualize_clusters(clusters["test"])
-
-                with open(self.out_dir / "clusters.json", "w"):
-                    serialized_clusters = tensor_to_serializable(clusters)
-                    json.dumps(serialized_clusters, indent=4)
+                serialized_clusters = tensor_to_serializable(clusters)
+                json_object = json.dumps(serialized_clusters, indent=4)
+                with open(self.out_dir / "clusters.json", "w") as outfile:
+                    outfile.write(json_object)
 
             reporter_train_result = self.cluster_train_and_save_reporter(
                 device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
