@@ -30,6 +30,20 @@ from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 torch.set_printoptions(threshold=5000)
 
 
+def save_clusters_representations(dataset_name, clusters, split, out_dir, layer):
+    serialized_text_questions = tensor_to_serializable(
+        clusters[split]["text_questions"]
+    )
+    json_object = json.dumps(serialized_text_questions, indent=4)
+    path = (
+        out_dir / "clusters" / split / f"clusters_{dataset_name}_{split}_{layer}.json"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as outfile:
+        outfile.write(json_object)
+        print(path)
+
+
 def tensor_to_serializable(data):
     """
     Recursively converts tensors in the given data structure to a serializable format.
@@ -631,10 +645,13 @@ class Elicit(Run):
                 # visualize_clusters(clusters["train"])
                 # print("test viz")
                 # visualize_clusters(clusters["test"])
-                serialized_clusters = tensor_to_serializable(clusters)
-                json_object = json.dumps(serialized_clusters, indent=4)
-                with open(self.out_dir / "clusters.json", "w") as outfile:
-                    outfile.write(json_object)
+
+                save_clusters_representations(
+                    dataset_name, clusters, "train", self.out_dir, layer
+                )
+                save_clusters_representations(
+                    dataset_name, clusters, "test", self.out_dir, layer
+                )
 
             reporter_train_result = self.cluster_train_and_save_reporter(
                 device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset

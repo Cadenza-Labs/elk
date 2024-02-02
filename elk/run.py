@@ -225,6 +225,7 @@ class Run(ABC, Serializable):
                     # Save the CSV
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
+
                 if self.debug:
                     save_debug_log(self.datasets, self.out_dir)
                 # calculate_layer_outputs(
