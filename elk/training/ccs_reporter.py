@@ -64,7 +64,7 @@ class CcsConfig(FitterConfig):
     erase_prompts: bool = True
     """Whether to apply concept erasure on the prompt template IDs."""
 
-    cluster_algo: Literal["kmeans", None] = None
+    cluster_algo: Literal["kmeans", "HDBSCAN", None] = None
     k_clusters: int | None = None
     min_cluster_size: int | None = None
 
