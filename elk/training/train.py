@@ -154,7 +154,7 @@ def get_clusters(
         )
     elif cluster_algo == "spectral":
         clustering_results = SpectralClustering(
-            n_clusters=num_clusters, assign_labels="discretize", random_state=0
+            n_clusters=num_clusters, assign_labels="cluster_qr", random_state=0
         ).fit(x_averaged_over_choices.cpu().numpy())
     else:
         raise ValueError(f"Unknown cluster algorithm: {cluster_algo}")
