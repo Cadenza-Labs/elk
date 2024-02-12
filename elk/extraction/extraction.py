@@ -286,7 +286,7 @@ def extract_hiddens(
                             {
                                 "template_id": i,
                                 "template_name": example["template_names"][i],
-                                "text": text,
+                                "text": text + choice["answer"],
                                 "example_id": example_id,
                             }
                         )
