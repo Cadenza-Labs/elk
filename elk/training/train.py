@@ -113,14 +113,16 @@ def flatten_text_questions(text_questions):
         # Loop through each item in the sublist (representing the 'v' dimension)
         for item in sublist:
             # Append each item (which is a list of 'k' elements) to the flattened_list
+            breakpoint()
             assert (
-                item[0] == item[1]
+                item[0]["question"] == item[1]["question"]
             ), "First and second element should be the same, \
             only the pseudo label is different"
 
             # Store only the first element, since it is the same as the second
             # Only the pseudo label is different but that is appended later
             flattened_text_questions.append(item[0])
+            flattened_text_questions.append(item[1])
     return flattened_text_questions
 
 
