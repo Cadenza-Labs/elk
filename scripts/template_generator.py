@@ -69,8 +69,8 @@ def generate_templates(num_templates, dataset_name=""):
 
 def main():
     # Generate templates for 2, 4, 16, ..., 128
-    for num in [2, 4, 16, 32, 64, 128]:
-        generate_templates(num, "amazon_polarity")
+    for num in [2, 4, 8, 16, 32, 64, 128]:
+        generate_templates(num, "imdb")
 
 
 if __name__ == "__main__":
