@@ -148,6 +148,9 @@ class CcsReporter(nn.Module, PlattMixin):
             if param is not self.scale and param is not self.bias:
                 yield param
 
+    def set_norm(self, norm: nn.Module):
+        self.norm = norm
+
     def reset_parameters(self):
         """Reset the parameters of the probe.
 
@@ -185,10 +188,15 @@ class CcsReporter(nn.Module, PlattMixin):
         """Return the credence assigned to the hidden state `x`"""
 
         if self.config.norm == "cluster":
+            print("cluster_norm")
             x = cluster_norm(x)
-        elif self.config.norm == "burns" or self.config.norm == "leace":
+        elif self.config.norm != "none":
             assert self.norm is not None, "Normalization not initialized"
+            print("normalize")
             x = self.norm(x)
+        else:
+            print("self.config.norm", self.config.norm)
+            print("No normalization")
 
         raw_scores = self.probe(x).squeeze(-1)
         return raw_scores.squeeze(-1)

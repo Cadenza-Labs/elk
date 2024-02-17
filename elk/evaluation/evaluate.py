@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 from simple_parsing.helpers import field
 
+from elk.training.ccs_reporter import CcsReporter
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -25,6 +26,7 @@ class Eval(Run):
 
     source: Path = field(positional=True)
     skip_supervised: bool = False
+    norm: bool = True
 
     def __post_init__(self):
         # Set our output directory before super().execute() does
@@ -57,6 +59,9 @@ class Eval(Run):
                 return torch.load(path, map_location=device)
 
         reporter = load_reporter()
+
+        if not self.norm and type(reporter) == CcsReporter:
+            reporter.config.norm = "none"
 
         row_bufs = defaultdict(list)
 
