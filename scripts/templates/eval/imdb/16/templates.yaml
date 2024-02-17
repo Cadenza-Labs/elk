@@ -1,0 +1,258 @@
+dataset: imdb
+templates:
+  id-16_togetheriness_0: !Template
+    answer_choices: negative ||| positive
+    id: id-16_togetheriness_0
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. togetheriness'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_togetheriness_0
+    reference: ''
+  id-16_ultrasimian_1: !Template
+    answer_choices: negative ||| positive
+    id: id-16_ultrasimian_1
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ultrasimian'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_ultrasimian_1
+    reference: ''
+  id-16_sope_2: !Template
+    answer_choices: negative ||| positive
+    id: id-16_sope_2
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. sope'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_sope_2
+    reference: ''
+  id-16_undecreed_3: !Template
+    answer_choices: negative ||| positive
+    id: id-16_undecreed_3
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. undecreed'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_undecreed_3
+    reference: ''
+  id-16_Tareq_4: !Template
+    answer_choices: negative ||| positive
+    id: id-16_Tareq_4
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Tareq'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_Tareq_4
+    reference: ''
+  id-16_flushness_5: !Template
+    answer_choices: negative ||| positive
+    id: id-16_flushness_5
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. flushness'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_flushness_5
+    reference: ''
+  id-16_weal_6: !Template
+    answer_choices: negative ||| positive
+    id: id-16_weal_6
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. weal'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_weal_6
+    reference: ''
+  id-16_yamp_7: !Template
+    answer_choices: negative ||| positive
+    id: id-16_yamp_7
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. yamp'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_yamp_7
+    reference: ''
+  id-16_indignity_8: !Template
+    answer_choices: negative ||| positive
+    id: id-16_indignity_8
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. indignity'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_indignity_8
+    reference: ''
+  id-16_crystallogeny_9: !Template
+    answer_choices: negative ||| positive
+    id: id-16_crystallogeny_9
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. crystallogeny'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_crystallogeny_9
+    reference: ''
+  id-16_truckmaster_10: !Template
+    answer_choices: negative ||| positive
+    id: id-16_truckmaster_10
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. truckmaster'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_truckmaster_10
+    reference: ''
+  id-16_versette_11: !Template
+    answer_choices: negative ||| positive
+    id: id-16_versette_11
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. versette'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_versette_11
+    reference: ''
+  id-16_tinselweaver_12: !Template
+    answer_choices: negative ||| positive
+    id: id-16_tinselweaver_12
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. tinselweaver'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_tinselweaver_12
+    reference: ''
+  id-16_caudalward_13: !Template
+    answer_choices: negative ||| positive
+    id: id-16_caudalward_13
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. caudalward'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_caudalward_13
+    reference: ''
+  id-16_cannonade_14: !Template
+    answer_choices: negative ||| positive
+    id: id-16_cannonade_14
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. cannonade'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_cannonade_14
+    reference: ''
+  id-16_Halecomorphi_15: !Template
+    answer_choices: negative ||| positive
+    id: id-16_Halecomorphi_15
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. Halecomorphi'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_Halecomorphi_15
+    reference: ''

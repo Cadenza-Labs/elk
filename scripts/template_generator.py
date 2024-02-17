@@ -2,8 +2,11 @@ import json
 import os
 
 
-def generate_templates(num_templates, dataset_name=""):
-    with open("./random_words.json", "r") as file:
+def generate_templates(num_templates, dataset_name="", eval=False):
+    random_words_file = (
+        "./random_words.json" if not eval else "./random_words_eval.json"
+    )
+    with open(random_words_file, "r") as file:
         data = json.load(file)
 
     words = data["words"]
@@ -58,8 +61,10 @@ def generate_templates(num_templates, dataset_name=""):
             template = amazon_polarity_template
 
         yaml_content += template
-
-    root = f"templates/{dataset_name}/{num_templates}"
+    if eval:
+        root = f"templates/eval/{dataset_name}/{num_templates}"
+    else:
+        root = f"templates/train/{dataset_name}/{num_templates}"
     os.makedirs(root, exist_ok=True)
 
     with open(f"{root}/templates.yaml", "w") as file:
@@ -71,6 +76,7 @@ def main():
     # Generate templates for 2, 4, 16, ..., 128
     for num in [2, 4, 8, 16, 32, 64, 128]:
         generate_templates(num, "imdb")
+        generate_templates(num, "imdb", eval=True)
 
 
 if __name__ == "__main__":

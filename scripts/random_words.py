@@ -17,5 +17,5 @@ random_unique_words = random.sample(english_words, 128)
 random_words_json = {"words": random_unique_words}
 
 # save to file
-with open("random_words.json", "w") as f:
+with open("random_words_eval.json", "w") as f:
     json.dump(random_words_json, f)

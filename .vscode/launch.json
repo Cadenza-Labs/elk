@@ -2,7 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug elk",
+      "name": "Eval",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/elk/__main__.py", // Path to your __main__.py
+      "args": [
+        "eval",
+        "/home/wombat_share/laurito/elk_reporters/sweeps/nervous-knuth/mistralai/Mistral-7B-v0.1/imdb",
+        "mistralai/Mistral-7B-v0.1",
+        "imdb",
+        "--num_gpus",
+        "1",
+      ],
+      "console": "integratedTerminal",
+    },
+    {
+      "name": "Elicit",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/elk/__main__.py", // Path to your __main__.py
@@ -24,6 +39,7 @@
         "10"
       ],
       "console": "integratedTerminal",
-    }
+    },
+
   ]
 }

@@ -63,7 +63,7 @@ class Eval(Run):
         layer_outputs: list[LayerOutput] = []
 
         def eval_all(reporter: SingleReporter | MultiReporter):
-            for ds_name, (val_h, val_gt, val_lm_preds) in val_output.items():
+            for ds_name, (val_h, val_gt, val_lm_preds, _) in val_output.items():
                 meta = {"dataset": ds_name, "layer": layer}
                 val_credences = (
                     reporter(val_h)

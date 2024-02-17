@@ -11,7 +11,7 @@ from concept_erasure import LeaceFitter
 from torch import Tensor
 from typing_extensions import override
 
-from ..normalization.cluster_norm import cluster_norm, split_clusters
+from ..normalization.cluster_norm import split_clusters
 from ..parsing import parse_loss
 from ..utils.typing import assert_type
 from .common import FitterConfig
@@ -43,7 +43,7 @@ class CcsConfig(FitterConfig):
     function 1.0*consistency_squared + 0.5*prompt_var.
     """
     loss_dict: dict[str, float] = field(default_factory=dict, init=False)
-    norm: Literal["leace", "burns", "cluster"] = "leace"
+    norm: Literal["leace", "burns", "cluster", "none"] = "leace"
     num_layers: int = 1
     """The number of layers in the MLP."""
     pre_ln: bool = False
@@ -183,11 +183,12 @@ class CcsReporter(nn.Module, PlattMixin):
 
     def forward(self, x) -> Tensor:
         """Return the credence assigned to the hidden state `x`"""
-        if self.config.norm == "cluster":
-            x = cluster_norm(x)
-        else:
-            assert self.norm is not None, "Must call fit() before forward()"
-            x = self.norm(x)
+
+        # if self.config.norm == "cluster":
+        #     x = cluster_norm(x)
+        # elif self.config.norm == "burns" or self.config.norm == "leace":
+        #     assert self.norm is not None, "Normalization not initialized"
+        #     x = self.norm(x)
 
         raw_scores = self.probe(x).squeeze(-1)
         return raw_scores.squeeze(-1)

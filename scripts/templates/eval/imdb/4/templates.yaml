@@ -1,0 +1,66 @@
+dataset: imdb
+templates:
+  id-4_togetheriness_0: !Template
+    answer_choices: negative ||| positive
+    id: id-4_togetheriness_0
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. togetheriness'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 4_togetheriness_0
+    reference: ''
+  id-4_ultrasimian_1: !Template
+    answer_choices: negative ||| positive
+    id: id-4_ultrasimian_1
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. ultrasimian'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 4_ultrasimian_1
+    reference: ''
+  id-4_sope_2: !Template
+    answer_choices: negative ||| positive
+    id: id-4_sope_2
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. sope'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 4_sope_2
+    reference: ''
+  id-4_undecreed_3: !Template
+    answer_choices: negative ||| positive
+    id: id-4_undecreed_3
+    jinja: 'Consider the following example:  '''''' {{text}}  ''''''
+
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}. undecreed'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 4_undecreed_3
+    reference: ''
