@@ -188,11 +188,9 @@ class CcsReporter(nn.Module, PlattMixin):
         """Return the credence assigned to the hidden state `x`"""
 
         if self.config.norm == "cluster":
-            print("cluster_norm")
             x = cluster_norm(x)
         elif self.config.norm != "none":
             assert self.norm is not None, "Normalization not initialized"
-            print("normalize")
             x = self.norm(x)
         else:
             print("self.config.norm", self.config.norm)
