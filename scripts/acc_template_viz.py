@@ -3,10 +3,9 @@ from matplotlib import pyplot as plt
 
 num_templates = [2, 8, 32]
 probe_accuracies = {
-    "Probe k=random_words": [0.7, 0.75, 0.8, 0.85],
-    # 'Probe k=4': [0.65, 0.7, 0.78, 0.82],
-    "Probe k=2*random_words": [0.6, 0.68, 0.76, 0.84],
-    "Probe k=3*random_words": [0.55, 0.63, 0.71, 0.79],
+    "Probe k=num_random_words": [0.95, 0.95, 0.94],
+    "Probe k=2*num_random_words": [0.93, 0.93, 0.93],
+    "Probe k=3*num_random_words": [0.93, 0.93, 0.92],
 }
 
 # Line styles for different probes
