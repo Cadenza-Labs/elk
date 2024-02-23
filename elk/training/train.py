@@ -25,6 +25,7 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
+from .whitening import whitening
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
@@ -139,6 +140,7 @@ def get_clusters(
     lm_preds = lm_preds.view(n * v, k)
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
+    x_averaged_over_choices = whitening(x_averaged_over_choices)
 
     if cluster_algo == "kmeans":
         clustering_results = KMeans(
@@ -608,6 +610,7 @@ class Elicit(Run):
         self.make_reproducible(seed=self.net.seed + layer)
         device = get_device(devices, world_size)
 
+        print(self.datasets)
         train_dict = prepare_data(self.datasets, device, layer, "train")
         val_dict = prepare_data(self.datasets, device, layer, "val")
 
