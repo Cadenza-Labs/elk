@@ -70,11 +70,18 @@ class Eval(Run):
         def eval_all(reporter: SingleReporter | MultiReporter):
             for ds_name, (val_h, val_gt, val_lm_preds, _) in val_output.items():
                 meta = {"dataset": ds_name, "layer": layer}
+                # print(val_h.shape)
+                # n, v, k, d = val_h.shape
+                # val_h = val_h.view(n * v, k, d)
+                # val_h = val_h.unsqueeze(1)
+                # val_gt = val_gt.repeat_interleave(v).flatten()
+
                 val_credences = (
                     reporter(val_h)
                     if isinstance(reporter, SingleReporter)
                     else reporter(val_h, super_full=True)
                 )
+
                 layer_outputs.append(LayerOutput(val_gt, val_credences, meta))
                 for prompt_ensembling in PromptEnsembling.all():
                     row_bufs["eval"].append(
