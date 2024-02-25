@@ -196,13 +196,32 @@ def pca_visualizations(layer, first_train_h, train_gt):
     n, v, k, d = first_train_h.shape
 
     hiddens_difference = first_train_h[:, :, 0, :] - first_train_h[:, :, 1, :]
+    hidden_mean = (first_train_h[:, :, 0, :] + first_train_h[:, :, 1, :]) / 2
     flattened_hiddens = rearrange(hiddens_difference, "n v d -> (n v) d", v=v)
     expanded_labels = train_gt.repeat_interleave(v)
 
     create_pca_visualizations(
         hiddens=flattened_hiddens,
         labels=expanded_labels,
-        plot_name=f"before_norm_{layer}",
+        plot_name=f"diff_before_norm_{layer}",
+    )
+
+    create_pca_visualizations(
+        hiddens=hidden_mean.view(-1, d),
+        labels=expanded_labels,
+        plot_name=f"mean_before_norm_{layer}",
+    )
+
+    pos_neg_labels = torch.zeros(first_train_h.shape[:3], device=first_train_h.device)
+    pos_neg_labels[:, :, 1] = 2
+    pos_neg_labels += expanded_labels.unsqueeze(1).unsqueeze(2)
+    pos_neg_labels = pos_neg_labels.view(-1)
+    flattened_hiddens = first_train_h.view(-1, d)
+
+    create_pca_visualizations(
+        hiddens=flattened_hiddens,
+        labels=pos_neg_labels,
+        plot_name=f"pos_neg_before_norm_{layer}",
     )
 
     # ... and after normalization
@@ -214,14 +233,29 @@ def pca_visualizations(layer, first_train_h, train_gt):
         (normalized_hiddens_neg, normalized_hiddens_pos), dim=2
     )
     hiddens_difference = normalized_hiddens[:, :, 0, :] - normalized_hiddens[:, :, 1, :]
+    hidden_mean = (normalized_hiddens[:, :, 0, :] + normalized_hiddens[:, :, 1, :]) / 2
     flattened_normalized_hiddens = rearrange(
         hiddens_difference, "n v d -> (n v) d", v=v
     )
     create_pca_visualizations(
         hiddens=flattened_normalized_hiddens,
         labels=expanded_labels,
-        plot_name=f"after_norm_{layer}",
+        plot_name=f"diff_after_norm_{layer}",
     )
+
+    create_pca_visualizations(
+        hiddens=hidden_mean.view(-1, d),
+        labels=expanded_labels,
+        plot_name=f"mean_after_norm_{layer}",
+    )
+
+    flattened_normalized_hiddens = normalized_hiddens.view(-1, d)
+    create_pca_visualizations(
+        hiddens=flattened_normalized_hiddens,
+        labels=pos_neg_labels,
+        plot_name=f"pos_neg_after_norm_{layer}",
+    )
+
 
 
 @dataclass
@@ -289,10 +323,10 @@ class Elicit(Run):
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
+            pca_visualizations(layer, first_train_h, train_gt)
             reporter = CcsReporter(self.net, d, device=device, num_variants=v)
             train_loss = reporter.fit(first_train_h)
             reporter.training = False
-            pca_visualizations(layer, first_train_h, train_gt)
 
             # Platt Scaling
             # labels = repeat(to_one_hot(train_gt, k),
