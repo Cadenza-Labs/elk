@@ -16,7 +16,6 @@ def whitening(x: Tensor) -> Tensor:
     Lambda_sqrt_inv = torch.diag(1 / torch.sqrt(Lambda))
     W = U @ Lambda_sqrt_inv @ U.T
     #x_normalized = torch.einsum("nvD, vdD -> nvd", x_normalized, W)
-    print(x.shape, W.shape)
     x = torch.einsum("nD, dD -> nd", x, W)
 
     return x

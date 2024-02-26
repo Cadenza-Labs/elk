@@ -25,7 +25,7 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
-from .whitening import whitening
+from .CRC import CRC1, CRC2, CRC3, CRC4
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
@@ -140,7 +140,6 @@ def get_clusters(
     lm_preds = lm_preds.view(n * v, k)
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
-    x_averaged_over_choices = whitening(x_averaged_over_choices)
 
     if cluster_algo == "kmeans":
         clustering_results = KMeans(
@@ -160,7 +159,7 @@ def get_clusters(
     cluster_ids = clustering_results.labels_
 
     unique_clusters = list(set(cluster_ids.tolist()))
-    print("unique_clusters", len(unique_clusters))
+    print("\nunique_clusters", len(unique_clusters))
 
     clusters = {
         "train": {
@@ -494,9 +493,32 @@ class Elicit(Run):
         if isinstance(self.net, CcsConfig):
             dataset_key = list(clusters.keys())[0]
             hiddens = clusters[dataset_key]["train"]["hiddens"]
-            clusters[dataset_key]["train"]["labels"]
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
+
+            # TODO : CRC(hiddens)
+            print("Fitting CRC")
+            crc = CRC1(d)
+            crc.fit(hiddens)
+            print("train : per cluster norm, test : global norm")
+            print(crc.test_train_acc(hiddens))
+            
+            crc = CRC2(d)
+            crc.fit(hiddens)
+            print("train : per cluster norm, test : no norm")
+            print(crc.test_train_acc(hiddens))
+            
+            crc = CRC3(d)
+            crc.fit(hiddens)
+            print("train : global norm, test : global norm")
+            print(crc.test_train_acc(hiddens))
+            
+            crc = CRC4(d)
+            crc.fit(hiddens)
+            print(crc.test_train_acc(hiddens))
+            print("train : global norm, test : no norm")
+            print("CRC fitted")
+
             reporter = CcsReporter(
                 self.net,
                 in_features=d,
@@ -610,7 +632,6 @@ class Elicit(Run):
         self.make_reproducible(seed=self.net.seed + layer)
         device = get_device(devices, world_size)
 
-        print(self.datasets)
         train_dict = prepare_data(self.datasets, device, layer, "train")
         val_dict = prepare_data(self.datasets, device, layer, "val")
 
