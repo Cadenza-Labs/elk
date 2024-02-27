@@ -26,6 +26,10 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 from .CRC import CRC1, CRC2, CRC3, CRC4
+from .burns_norm import BurnsNorm
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import pathlib
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
@@ -119,6 +123,138 @@ def flatten_text_questions(text_questions):
             flattened_text_questions.append(item[0])
             flattened_text_questions.append(item[1])
     return flattened_text_questions
+
+def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
+    assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
+
+    # Use 3 components for PCA
+    pca = PCA(n_components=3)
+    reduced_data = pca.fit_transform(hiddens.cpu().numpy())
+
+    # Create a 3D plot
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(
+        reduced_data[:, 0],
+        reduced_data[:, 1],
+        reduced_data[:, 2],
+        c=labels.cpu().numpy(),
+        cmap="viridis",
+    )
+
+    # Labeling the axes
+    ax.set_xlabel("PCA Component 1")
+    ax.set_ylabel("PCA Component 2")
+    ax.set_zlabel("PCA Component 3")
+    plt.title("PCA of Hidden Activations")
+
+    # Saving the plot
+    path = pathlib.Path(f"./pca_visualizations/{plot_name}.jpg")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path)
+    plt.close(fig)
+
+
+# TODO: Make work for more than 2 templates
+def deepmind_reproduction(hiddens, gt_labels):
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
+    n, v, k, d = hiddens.shape
+
+    # Generate random indices for each template
+    indices = torch.randperm(n)
+    sample_size_per_template = n // v
+
+    selected_hiddens = []
+    selected_gt_labels = []
+
+    for i in range(v):
+        start_idx = i * sample_size_per_template
+        end_idx = start_idx + sample_size_per_template
+
+        indices_i = indices[start_idx:end_idx]
+
+        # Select random samples from each template
+        template_i_hiddens = hiddens[indices_i, i, :, :]
+        selected_hiddens.append(template_i_hiddens)
+        selected_gt_labels.append(gt_labels[indices_i])
+
+    hiddens = torch.cat(selected_hiddens, dim=0)
+
+    # Add "fake" template dimension to make it work with the rest of the code
+    hiddens = torch.unsqueeze(hiddens, 1)  # (n, k, d) -> (n, 1, k, d)
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
+
+    gt_labels = torch.cat(selected_gt_labels, dim=0)
+    assert gt_labels.shape == (
+        hiddens.shape[0],
+    ), f"shape of gt_labels has to be: ({hiddens.shape[0]},)"
+
+    return hiddens, gt_labels
+
+
+def pca_visualizations(layer, first_train_h, train_gt):
+    n, v, k, d = first_train_h.shape
+
+    hiddens_difference = first_train_h[:, :, 0, :] - first_train_h[:, :, 1, :]
+    hidden_mean = (first_train_h[:, :, 0, :] + first_train_h[:, :, 1, :]) / 2
+    flattened_hiddens = rearrange(hiddens_difference, "n v d -> (n v) d", v=v)
+    expanded_labels = train_gt.repeat_interleave(v)
+
+    create_pca_visualizations(
+        hiddens=flattened_hiddens,
+        labels=expanded_labels,
+        plot_name=f"diff_before_norm_{layer}",
+    )
+
+    create_pca_visualizations(
+        hiddens=hidden_mean.view(-1, d),
+        labels=expanded_labels,
+        plot_name=f"mean_before_norm_{layer}",
+    )
+
+    pos_neg_labels = torch.zeros(first_train_h.shape[:3], device=first_train_h.device)
+    pos_neg_labels[:, :, 1] = 2
+    pos_neg_labels += expanded_labels.unsqueeze(1).unsqueeze(2)
+    pos_neg_labels = pos_neg_labels.view(-1)
+    flattened_hiddens = first_train_h.view(-1, d)
+
+    create_pca_visualizations(
+        hiddens=flattened_hiddens,
+        labels=pos_neg_labels,
+        plot_name=f"pos_neg_before_norm_{layer}",
+    )
+
+    # ... and after normalization
+    norm = BurnsNorm()
+    hiddens_neg, hiddens_pos = first_train_h.unbind(2)
+    normalized_hiddens_neg = norm(hiddens_neg)
+    normalized_hiddens_pos = norm(hiddens_pos)
+    normalized_hiddens = torch.stack(
+        (normalized_hiddens_neg, normalized_hiddens_pos), dim=2
+    )
+    hiddens_difference = normalized_hiddens[:, :, 0, :] - normalized_hiddens[:, :, 1, :]
+    hidden_mean = (normalized_hiddens[:, :, 0, :] + normalized_hiddens[:, :, 1, :]) / 2
+    flattened_normalized_hiddens = rearrange(
+        hiddens_difference, "n v d -> (n v) d", v=v
+    )
+    create_pca_visualizations(
+        hiddens=flattened_normalized_hiddens,
+        labels=expanded_labels,
+        plot_name=f"diff_after_norm_{layer}",
+    )
+
+    create_pca_visualizations(
+        hiddens=hidden_mean.view(-1, d),
+        labels=expanded_labels,
+        plot_name=f"mean_after_norm_{layer}",
+    )
+
+    flattened_normalized_hiddens = normalized_hiddens.view(-1, d)
+    create_pca_visualizations(
+        hiddens=flattened_normalized_hiddens,
+        labels=pos_neg_labels,
+        plot_name=f"pos_neg_after_norm_{layer}",
+    )
 
 
 # TODO: Move to utils
@@ -493,13 +629,14 @@ class Elicit(Run):
         if isinstance(self.net, CcsConfig):
             dataset_key = list(clusters.keys())[0]
             hiddens = clusters[dataset_key]["train"]["hiddens"]
+            labels = clusters[dataset_key]["train"]["labels"]
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
 
             # TODO : CRC(hiddens)
             print("Fitting CRC")
             crc = CRC1(d)
-            crc.fit(hiddens)
+            crc.fit(hiddens, labels)
             print("train : per cluster norm, test : global norm")
             print(crc.test_train_acc(hiddens))
             
