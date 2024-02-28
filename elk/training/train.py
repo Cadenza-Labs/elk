@@ -9,6 +9,8 @@ import torch
 from einops import rearrange, repeat
 from simple_parsing import subgroups
 
+from elk.utils.viz import pca_visualizations
+
 from ..evaluation import Eval
 from ..extraction import Extract
 from ..metrics import evaluate_preds, to_one_hot
@@ -173,6 +175,9 @@ class Elicit(Run):
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
+
+            pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+
             reporter = CcsReporter(self.net, d, device=device, num_variants=v)
             train_loss = reporter.fit(first_train_h)
             labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
