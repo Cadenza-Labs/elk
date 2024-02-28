@@ -52,9 +52,8 @@ class GlobalNorm:
 
 # TODO : I don't know how reporters work, but I think you can make this class into a reporter like CcsReporter
 class CRC1:
-    def __init__(self, in_features: int, method: str = "TPC"):
+    def __init__(self, in_features: int):
         self.in_features = in_features
-        self.method = method
         self.direction = torch.zeros(in_features)
         self.global_norm = GlobalNorm(0, 0, 1, 1)
     
@@ -73,12 +72,9 @@ class CRC1:
         self.global_norm = GlobalNorm(mu_pos, mu_neg, sigma_pos, sigma_neg)
         diff = (x_pos - x_neg).squeeze(1)
 
-        if self.method == "TPC":
-            self.direction = self._tpc(diff)
-        elif self.method == "BSS":
-            self.direction = self._bss(diff)
-        else:
-            raise ValueError(f"Unknown method {self.method}")
+        U, S, V = torch.pca_lowrank(diff, q=1, niter=10)
+        self.temp_PCscores = U[:, 0] * S[0]
+        self.direction = V[:, 0]
         
         # Create PCA visualizations
         gt_labels = torch.cat([labels[key] for key in labels])
@@ -88,16 +84,6 @@ class CRC1:
         create_pca_visualizations(diff, pca_labels, self.direction.unsqueeze(0), "cluster_norm_diff")
         create_pca_visualizations(glob_pos - glob_neg, pca_labels, self.direction.unsqueeze(0), "burns_norm_diff")
         create_pca_visualizations(stacked_x_pos - stacked_x_neg, pca_labels, self.direction.unsqueeze(0), "true_diff")
-       
-    def _tpc(self, diffs: torch.Tensor) -> torch.Tensor:
-        """Compute the Top Principal Component of the differences."""
-        U, S, V = torch.pca_lowrank(diffs, q=1, niter=10)
-        self.temp_PCscores = U[:, 0] * S[0]
-        return V[:, 0]
-    
-    def _bss(self, diffs: torch.Tensor):
-        """Not implemented yet."""
-        pass
 
     # code to evaluate the CRC on the test data
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
