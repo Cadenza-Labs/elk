@@ -1,10 +1,12 @@
 import torch
 
 from .burns_norm import BurnsNorm
+from .common import FitterConfig
 from ..normalization.cluster_norm import cluster_norm, split_clusters
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import pathlib
+from typing import Optional, Literal
 
 def create_pca_visualizations(hiddens, labels, special_direction, plot_name="pca_plot"):
     assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
@@ -42,6 +44,7 @@ def create_pca_visualizations(hiddens, labels, special_direction, plot_name="pca
     plt.close(fig)
 
 # TODO : Maybe you can use something like this to integrate into the CcsReporter for evaluation time
+# TODO : move this to a separate file, and include it in CRC and CCS
 # Class to store global normalisation parameters to be used at evaluation time
 class GlobalNorm:
     def __init__(self, mu_pos, mu_neg, sigma_pos, sigma_neg):
@@ -50,10 +53,26 @@ class GlobalNorm:
         self.sigma_pos = sigma_pos
         self.sigma_neg = sigma_neg
 
+class CrcConfig(FitterConfig):
+    hidden_size: Optional[int] = None
+    norm: Literal["leace", "burns", "cluster", "none"] = "leace"
+    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral", None] = None
+    k_clusters: int | None = None
+    min_cluster_size: int | None = None
+
 # TODO : I don't know how reporters work, but I think you can make this class into a reporter like CcsReporter
-class CRC1:
-    def __init__(self, in_features: int):
-        self.in_features = in_features
+class CrcReporter(torch.nn.Module):
+
+    config: CrcConfig
+
+    def __init__(
+        self,
+        cfg: CrcConfig,
+        *,
+        device: str | torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ):
+        super().__init__()
         self.direction = torch.zeros(in_features)
         self.global_norm = GlobalNorm(0, 0, 1, 1)
     

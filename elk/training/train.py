@@ -25,7 +25,7 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
-from .CRC import CRC1, CRC2, CRC3, CRC4
+from .CRC import CrcConfig, CrcReporter, CRC2, CRC3, CRC4
 from .burns_norm import BurnsNorm
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -627,34 +627,38 @@ class Elicit(Run):
     ) -> ReporterWithInfo:
         train_loss = None
         if isinstance(self.net, CcsConfig):
+            # TODO
             dataset_key = list(clusters.keys())[0]
             hiddens = clusters[dataset_key]["train"]["hiddens"]
             labels = clusters[dataset_key]["train"]["labels"]
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
 
-            # TODO : CRC(hiddens)
             print("Fitting CRC")
-            crc = CRC1(d)
-            crc.fit(hiddens, labels)
+            crc1 = CrcReporter(d)
+            crc1.fit(hiddens, labels)
             print("train : per cluster norm, test : global norm")
-            print(crc.test_train_acc(hiddens))
+            print(crc1.test_train_acc(hiddens))
             
-            crc = CRC2(d)
-            crc.fit(hiddens)
+            crc2 = CRC2(d)
+            crc2.fit(hiddens)
             print("train : per cluster norm, test : no norm")
-            print(crc.test_train_acc(hiddens))
+            print(crc2.test_train_acc(hiddens))
             
-            crc = CRC3(d)
-            crc.fit(hiddens)
+            crc3 = CRC3(d)
+            crc3.fit(hiddens)
             print("train : global norm, test : global norm")
-            print(crc.test_train_acc(hiddens))
+            print(crc3.test_train_acc(hiddens))
             
-            crc = CRC4(d)
-            crc.fit(hiddens)
-            print(crc.test_train_acc(hiddens))
+            crc4 = CRC4(d)
+            crc4.fit(hiddens)
+            print(crc4.test_train_acc(hiddens))
             print("train : global norm, test : no norm")
             print("CRC fitted")
+
+        if isinstance(self.net, CcsConfig):
+            dataset_key = list(clusters.keys())[0]
+            hiddens = clusters[dataset_key]["train"]["hiddens"]
 
             reporter = CcsReporter(
                 self.net,
@@ -705,7 +709,9 @@ class Elicit(Run):
 
             labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
             reporter.platt_scale(labels, first_train_h)
-
+        elif isinstance(self.net, CrcConfig):
+            # TODO
+            pass
         elif isinstance(self.net, EigenFitterConfig):
             fitter = EigenFitter(
                 self.net, d, num_classes=k, num_variants=v, device=device

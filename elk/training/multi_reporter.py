@@ -4,9 +4,10 @@ from pathlib import Path
 import torch as t
 
 from elk.training import CcsReporter
+from elk.training.CRC import CrcReporter
 from elk.training.common import Reporter
 
-SingleReporter = CcsReporter | Reporter
+SingleReporter = CcsReporter | CrcReporter | Reporter
 
 
 @dataclass
