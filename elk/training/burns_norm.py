@@ -1,5 +1,6 @@
 import torch
 from torch import Tensor, nn
+from ..utils.normparam import NormParam
 
 
 class BurnsNorm(nn.Module):
@@ -10,7 +11,7 @@ class BurnsNorm(nn.Module):
         self.scale: bool = scale
         self.return_params: bool = return_params
 
-    def forward(self, x: Tensor) -> Tensor | tuple[Tensor, Tensor] | tuple[Tensor, Tensor, Tensor]:
+    def forward(self, x: Tensor) -> Tensor | tuple[Tensor, NormParam]:
         """Normalizes per prompt template
         Args:
             x: input of dimension (n, v, k, d) or (n, v, d)
@@ -23,7 +24,7 @@ class BurnsNorm(nn.Module):
 
         if not self.scale:
             if self.return_params:
-                return x_normalized, mean
+                return x_normalized, NormParam(mean, 1)
             return x_normalized
         else:
             std = torch.linalg.norm(x_normalized, dim=0) / x_normalized.shape[0] ** 0.5
@@ -38,5 +39,7 @@ class BurnsNorm(nn.Module):
             avg_norm = std.mean(dim=dims, keepdim=True)
 
             if self.return_params:
-                return x_normalized / avg_norm, mean, avg_norm
+                if mean.shape[0] == 1:
+                    mean = mean.squeeze(0)
+                return x_normalized / avg_norm, NormParam(mean, avg_norm)
             return x_normalized / avg_norm

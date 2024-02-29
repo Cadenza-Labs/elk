@@ -1,6 +1,7 @@
 import torch
 
 from .burns_norm import BurnsNorm
+from ..utils.normparam import ContrastNormParam, NormParam
 from ..normalization.cluster_norm import cluster_norm, split_clusters
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -25,8 +26,6 @@ def create_pca_visualizations(hiddens, labels, special_direction, plot_name="pca
     )
 
     pca_direction = pca.transform(special_direction.cpu().numpy())
-    print(reduced_data[0])
-    print(pca_direction)
     ax.quiver(0, 0, 0, pca_direction[0, 0], pca_direction[0, 1], pca_direction[0, 2], color="r")
 
     # Labeling the axes
@@ -41,21 +40,20 @@ def create_pca_visualizations(hiddens, labels, special_direction, plot_name="pca
     plt.savefig(path)
     plt.close(fig)
 
-# TODO : Maybe you can use something like this to integrate into the CcsReporter for evaluation time
-# Class to store global normalisation parameters to be used at evaluation time
-class GlobalNorm:
-    def __init__(self, mu_pos, mu_neg, sigma_pos, sigma_neg):
-        self.mu_pos = mu_pos
-        self.mu_neg = mu_neg
-        self.sigma_pos = sigma_pos
-        self.sigma_neg = sigma_neg
+def print_cosine_similarities(direction, mu_pos, mu_neg):
+        print("Pos mean norm: ", torch.norm(mu_pos).item())
+        print("Neg mean norm: ", torch.norm(mu_neg).item())
+        print("Diff mean norm: ", torch.norm(mu_pos - mu_neg).item())
+        print("Cosine similarity with pos mean: ", (torch.dot(direction, mu_pos) / (torch.norm(direction) * torch.norm(mu_pos) + 1e-8)).item())
+        print("Cosine similarity with neg mean: ", (torch.dot(direction, mu_neg) / (torch.norm(direction) * torch.norm(mu_neg) + 1e-8)).item())
+        print("Cosine similarity with diff mean: ", (torch.dot(direction, mu_pos - mu_neg) / (torch.norm(direction) * torch.norm(mu_pos - mu_neg) + 1e-8)).item())
 
 # TODO : I don't know how reporters work, but I think you can make this class into a reporter like CcsReporter
 class CRC1:
     def __init__(self, in_features: int):
         self.in_features = in_features
         self.direction = torch.zeros(in_features)
-        self.global_norm = GlobalNorm(0, 0, 1, 1)
+        self.global_norm = ContrastNormParam(NormParam(0, 1), NormParam(0, 1))
     
     # code to fit the CRC direction on the training data
     def fit(self, clusters: dict[str, torch.Tensor], labels: dict[str, torch.Tensor]):
@@ -64,12 +62,13 @@ class CRC1:
         true_x_neg, true_x_pos = split_clusters(clusters)
         stacked_x_neg = torch.cat([x for x in true_x_neg])
         stacked_x_pos = torch.cat([x for x in true_x_pos])
-        glob_neg, mu_neg, sigma_neg = burnsNorm(stacked_x_neg)
-        x_neg = cluster_norm(true_x_neg)
-        glob_pos, mu_pos, sigma_pos = burnsNorm(stacked_x_pos)
-        x_pos = cluster_norm(true_x_pos)
+        glob_neg, negParam = burnsNorm(stacked_x_neg)
+        x_neg, negClusterParam = cluster_norm(true_x_neg, True)
+        glob_pos, posParam = burnsNorm(stacked_x_pos)
+        x_pos, posClusterParam = cluster_norm(true_x_pos, True)
+        clusterParams = [ContrastNormParam(posClusterParam[i], negClusterParam[i]) for i in range(len(posClusterParam))]
+        self.global_norm = ContrastNormParam(posParam, negParam)
 
-        self.global_norm = GlobalNorm(mu_pos, mu_neg, sigma_pos, sigma_neg)
         diff = (x_pos - x_neg).squeeze(1)
 
         U, S, V = torch.pca_lowrank(diff, q=1, niter=10)
@@ -85,6 +84,15 @@ class CRC1:
         create_pca_visualizations(glob_pos - glob_neg, pca_labels, self.direction.unsqueeze(0), "burns_norm_diff")
         create_pca_visualizations(stacked_x_pos - stacked_x_neg, pca_labels, self.direction.unsqueeze(0), "true_diff")
 
+        # compute cosine similarity between the learned direction and the mean direction (in pos, in neg, and the difference of these means)
+
+        print("\nGlobal Norms")
+        print_cosine_similarities(self.direction, self.global_norm.pos.mu, self.global_norm.neg.mu)
+
+        for i, clusterParam in enumerate(clusterParams):
+            print(f"\nCluster {i} with {len(true_x_pos[i])} samples")
+            print_cosine_similarities(self.direction, clusterParam.pos.mu, clusterParam.neg.mu)         
+
     # code to evaluate the CRC on the test data
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Project the input onto the learned direction."""
@@ -92,8 +100,8 @@ class CRC1:
         assert x.dim() == 3, "Expected shape (n, k, d)"
 
         x_neg, x_pos = x.unbind(1)
-        x_neg = (x_neg - self.global_norm.mu_neg) / self.global_norm.sigma_neg
-        x_pos = (x_pos - self.global_norm.mu_pos) / self.global_norm.sigma_pos
+        x_neg = (x_neg - self.global_norm.neg.mu) / self.global_norm.neg.sigma
+        x_pos = (x_pos - self.global_norm.pos.mu) / self.global_norm.pos.sigma
 
         diff = x_pos - x_neg
 
@@ -114,21 +122,22 @@ class CRC2:
         self.in_features = in_features
         self.method = method
         self.direction = torch.zeros(in_features)
-        self.global_norm = GlobalNorm(0, 0, 1, 1)
+        self.global_norm = ContrastNormParam(NormParam(0, 1), NormParam(0, 1))
     
     # code to fit the CRC direction on the training data
     def fit(self, clusters: dict[str, torch.Tensor]):
         burnsNorm = BurnsNorm(return_params=True)
 
-        x_neg, x_pos = split_clusters(clusters)
-        stacked_x_neg = torch.cat([x for x in x_neg])
-        stacked_x_pos = torch.cat([x for x in x_pos])
-        _, mu_neg, sigma_neg = burnsNorm(stacked_x_neg)
-        x_neg = cluster_norm(x_neg)
-        _, mu_pos, sigma_pos = burnsNorm(stacked_x_pos)
-        x_pos = cluster_norm(x_pos)
+        true_x_neg, true_x_pos = split_clusters(clusters)
+        stacked_x_neg = torch.cat([x for x in true_x_neg])
+        stacked_x_pos = torch.cat([x for x in true_x_pos])
+        _, negParam = burnsNorm(stacked_x_neg)
+        x_neg, negClusterParam = cluster_norm(true_x_neg, return_params=True)
+        _, posParam = burnsNorm(stacked_x_pos)
+        x_pos, posClusterParam = cluster_norm(true_x_pos, return_params=True)
+        cluster_params = [ContrastNormParam(posClusterParam[i], negClusterParam[i]) for i in range(len(posClusterParam))]
 
-        self.global_norm = GlobalNorm(mu_pos, mu_neg, sigma_pos, sigma_neg)
+        self.global_norm = ContrastNormParam(posParam, negParam)
         diff = (x_pos - x_neg).squeeze(1)
         if self.method == "TPC":
             self.direction = self._tpc(diff)
@@ -136,6 +145,14 @@ class CRC2:
             self.direction = self._bss(diff)
         else:
             raise ValueError(f"Unknown method {self.method}")
+        
+        # compute cosine similarity between the learned direction and the mean direction (in pos, in neg, and the difference of these means)
+        print("\nGlobal Norms")
+        print_cosine_similarities(self.direction, self.global_norm.pos.mu, self.global_norm.neg.mu)
+
+        for i, clusterParam in enumerate(cluster_params):
+            print(f"\nCluster {i} with {len(true_x_pos[i])} samples")
+            print_cosine_similarities(self.direction, clusterParam.pos.mu, clusterParam.neg.mu)
        
     def _tpc(self, diffs: torch.Tensor) -> torch.Tensor:
         """Compute the Top Principal Component of the differences."""
@@ -176,21 +193,22 @@ class CRC3:
         self.in_features = in_features
         self.method = method
         self.direction = torch.zeros(in_features)
-        self.global_norm = GlobalNorm(0, 0, 1, 1)
+        self.global_norm = ContrastNormParam(NormParam(0, 1), NormParam(0, 1))
     
     # code to fit the CRC direction on the training data
     def fit(self, clusters: dict[str, torch.Tensor]):
         burnsNorm = BurnsNorm(return_params=True)
 
-        x_neg, x_pos = split_clusters(clusters)
-        stacked_x_neg = torch.cat([x for x in x_neg])
-        stacked_x_pos = torch.cat([x for x in x_pos])
-        x_neg, mu_neg, sigma_neg = burnsNorm(stacked_x_neg)
-        #x_neg = cluster_norm(x_neg)
-        x_pos, mu_pos, sigma_pos = burnsNorm(stacked_x_pos)
-        #x_pos = cluster_norm(x_pos)
-
-        self.global_norm = GlobalNorm(mu_pos, mu_neg, sigma_pos, sigma_neg)
+        list_x_neg, list_x_pos = split_clusters(clusters)
+        stacked_x_neg = torch.cat([x for x in list_x_neg])
+        stacked_x_pos = torch.cat([x for x in list_x_pos])
+        x_neg, negParam = burnsNorm(stacked_x_neg)
+        _, negClusterParam = cluster_norm(list_x_neg, return_params=True)
+        x_pos, posParam = burnsNorm(stacked_x_pos)
+        _, posClusterParam = cluster_norm(list_x_pos, return_params=True)
+        cluster_params = [ContrastNormParam(posClusterParam[i], negClusterParam[i]) for i in range(len(posClusterParam))]
+        self.global_norm = ContrastNormParam(posParam, negParam)
+        
         diff = (x_pos - x_neg).squeeze(1)
         if self.method == "TPC":
             self.direction = self._tpc(diff)
@@ -198,6 +216,14 @@ class CRC3:
             self.direction = self._bss(diff)
         else:
             raise ValueError(f"Unknown method {self.method}")
+        
+        # compute cosine similarity between the learned direction and the mean direction (in pos, in neg, and the difference of these means)
+        print("\nGlobal Norms")
+        print_cosine_similarities(self.direction, self.global_norm.pos.mu, self.global_norm.neg.mu)
+
+        for i, clusterParam in enumerate(cluster_params):
+            print(f"\nCluster {i} with {len(list_x_neg[i])} samples")
+            print_cosine_similarities(self.direction, clusterParam.pos.mu, clusterParam.neg.mu)
        
     def _tpc(self, diffs: torch.Tensor) -> torch.Tensor:
         """Compute the Top Principal Component of the differences."""
@@ -216,8 +242,8 @@ class CRC3:
         assert x.dim() == 3, "Expected shape (n, k, d)"
 
         x_neg, x_pos = x.unbind(1)
-        x_neg = (x_neg - self.global_norm.mu_neg) / self.global_norm.sigma_neg
-        x_pos = (x_pos - self.global_norm.mu_pos) / self.global_norm.sigma_pos
+        x_neg = (x_neg - self.global_norm.neg.mu) / self.global_norm.neg.sigma
+        x_pos = (x_pos - self.global_norm.pos.mu) / self.global_norm.pos.sigma
 
         diff = x_pos - x_neg
 
@@ -238,21 +264,22 @@ class CRC4:
         self.in_features = in_features
         self.method = method
         self.direction = torch.zeros(in_features)
-        self.global_norm = GlobalNorm(0, 0, 1, 1)
+        self.global_norm = ContrastNormParam(NormParam(0, 1), NormParam(0, 1))
     
     # code to fit the CRC direction on the training data
     def fit(self, clusters: dict[str, torch.Tensor]):
         burnsNorm = BurnsNorm(return_params=True)
 
-        x_neg, x_pos = split_clusters(clusters)
-        stacked_x_neg = torch.cat([x for x in x_neg])
-        stacked_x_pos = torch.cat([x for x in x_pos])
-        x_neg, mu_neg, sigma_neg = burnsNorm(stacked_x_neg)
-        #x_neg = cluster_norm(x_neg)
-        x_pos, mu_pos, sigma_pos = burnsNorm(stacked_x_pos)
-        #x_pos = cluster_norm(x_pos)
+        list_x_neg, list_x_pos = split_clusters(clusters)
+        stacked_x_neg = torch.cat([x for x in list_x_neg])
+        stacked_x_pos = torch.cat([x for x in list_x_pos])
+        x_neg, negParam = burnsNorm(stacked_x_neg)
+        _, negClusterParam = cluster_norm(list_x_neg, return_params=True)
+        x_pos, posParam = burnsNorm(stacked_x_pos)
+        _, posClusterParam = cluster_norm(list_x_pos, return_params=True)
+        cluster_params = [ContrastNormParam(posClusterParam[i], negClusterParam[i]) for i in range(len(posClusterParam))]
+        self.global_norm = ContrastNormParam(posParam, negParam)
 
-        self.global_norm = GlobalNorm(mu_pos, mu_neg, sigma_pos, sigma_neg)
         diff = (x_pos - x_neg).squeeze(1)
         if self.method == "TPC":
             self.direction = self._tpc(diff)
@@ -260,6 +287,14 @@ class CRC4:
             self.direction = self._bss(diff)
         else:
             raise ValueError(f"Unknown method {self.method}")
+                
+        # compute cosine similarity between the learned direction and the mean direction (in pos, in neg, and the difference of these means)
+        print("\nGlobal Norms")
+        print_cosine_similarities(self.direction, self.global_norm.pos.mu, self.global_norm.neg.mu)
+
+        for i, clusterParam in enumerate(cluster_params):
+            print(f"\nCluster {i} with {len(list_x_neg[i])} samples")
+            print_cosine_similarities(self.direction, clusterParam.pos.mu, clusterParam.neg.mu)
        
     def _tpc(self, diffs: torch.Tensor) -> torch.Tensor:
         """Compute the Top Principal Component of the differences."""

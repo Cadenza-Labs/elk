@@ -635,25 +635,25 @@ class Elicit(Run):
 
             # TODO : CRC(hiddens)
             print("Fitting CRC")
+            print("\n\ntrain : per cluster norm, test : global norm")
             crc = CRC1(d)
             crc.fit(hiddens, labels)
-            print("train : per cluster norm, test : global norm")
             print(crc.test_train_acc(hiddens))
             
             crc = CRC2(d)
+            print("\n\ntrain : per cluster norm, test : no norm")
             crc.fit(hiddens)
-            print("train : per cluster norm, test : no norm")
             print(crc.test_train_acc(hiddens))
             
             crc = CRC3(d)
+            print("\n\ntrain : global norm, test : global norm")
             crc.fit(hiddens)
-            print("train : global norm, test : global norm")
             print(crc.test_train_acc(hiddens))
             
             crc = CRC4(d)
+            print("\n\ntrain : global norm, test : no norm")
             crc.fit(hiddens)
             print(crc.test_train_acc(hiddens))
-            print("train : global norm, test : no norm")
             print("CRC fitted")
 
             reporter = CcsReporter(
