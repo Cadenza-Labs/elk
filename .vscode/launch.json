@@ -36,7 +36,7 @@
         "--disable_cache",
         "--max_examples",
         "10",
-        "10"
+        "10",
       ],
       "console": "integratedTerminal",
     },
@@ -48,7 +48,7 @@
       "args": [
         "sweep",
         "--template_path",
-        "/home/laurito/elk/scripts/templates/imdb/2/",
+        "/home/laurito/elk/scripts/templates/train/imdb/2/",
         "--net",
         "ccs",
         "--norm",
@@ -63,7 +63,11 @@
         "imdb",
         "--skip_transfer_eval",
         "--num_gpus",
-        "1"
+        "1",
+        "--disable_cache",
+        "--max_examples",
+        "10",
+        "10",
       ],
       "console": "integratedTerminal",
     }

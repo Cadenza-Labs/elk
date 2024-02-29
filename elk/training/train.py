@@ -11,6 +11,7 @@ from simple_parsing import subgroups
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.normalization.cluster_norm import split_clusters
+from elk.plotting.pca_viz import pca_visualizations_cluster
 from elk.utils.data_utils import PreparedData, prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -492,7 +493,18 @@ class Elicit(Run):
         if isinstance(self.net, CcsConfig):
             dataset_key = list(clusters.keys())[0]
             hiddens = clusters[dataset_key]["train"]["hiddens"]
-            clusters[dataset_key]["train"]["labels"]
+            labels = clusters[dataset_key]["train"]["labels"]
+            cluster_ids = clusters[dataset_key]["train"]["cluster_ids"]
+            cluster_ids_flattened = torch.cat(
+                [torch.tensor(cluster_ids[key]) for key in cluster_ids]
+            )
+            pca_visualizations_cluster(
+                hiddens,
+                cluster_ids_flattened,
+                labels,
+                layer=layer,
+                out_dir=self.out_dir,
+            )
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
             reporter = CcsReporter(

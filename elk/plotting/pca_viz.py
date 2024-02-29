@@ -1,26 +1,53 @@
 import pathlib
 
+import pandas as pd
 import plotly.express as px
 import torch
-from einops import rearrange
 from sklearn.decomposition import PCA
 
-from elk.training.burns_norm import BurnsNorm
+from elk.normalization.cluster_norm import cluster_norm, split_clusters
 
 
-def create_pca_visualizations(hiddens, labels, plot_name="pca_plot", out_dir="."):
+def create_pca_visualizations(
+    hiddens, color_labels, symbol_labels, plot_name="pca_plot", out_dir="."
+):
     assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
 
     # Use 3 components for PCA
     pca = PCA(n_components=3)
     reduced_data = pca.fit_transform(hiddens.cpu().numpy())
 
+    # Combine color_labels and symbol_labels into a single label
+    combined_labels = [f"{cl}_{sl}" for cl, sl in zip(color_labels, symbol_labels)]
+
+    # Create a DataFrame for Plotly Express
+    df = pd.DataFrame(
+        {
+            "PCA Component 1": reduced_data[:, 0],
+            "PCA Component 2": reduced_data[:, 1],
+            "PCA Component 3": reduced_data[:, 2],
+            "Combined Label": combined_labels,
+            "Symbol": symbol_labels.cpu().numpy(),
+        }
+    )
+
+    # Create a custom color map
+    color_map = {
+        "0_0": "blue",  # dark color for cluster 0, gt label 0
+        "0_1": "green",  # dark color for cluster 0, gt label 1
+        "1_0": "red",  # light color for cluster 1, gt label 0
+        "1_1": "black",  # light color for cluster 1, gt label 1
+    }
+
     # Create a 3D plot with Plotly Express
     fig = px.scatter_3d(
-        x=reduced_data[:, 0],
-        y=reduced_data[:, 1],
-        z=reduced_data[:, 2],
-        color=labels.cpu().numpy(),
+        df,
+        x="PCA Component 1",
+        y="PCA Component 2",
+        z="PCA Component 3",
+        color="Combined Label",
+        symbol="Symbol",
+        color_discrete_map=color_map,
         title="PCA of Hidden Activations",
         labels={"x": "PCA Component 1", "y": "PCA Component 2", "z": "PCA Component 3"},
     )
@@ -31,24 +58,33 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot", out_dir="."
     fig.write_html(str(path))
 
 
-# def pca_visualizations_cluster(clusters, labels):
-#     true_x_neg, true_x_pos = split_clusters(clusters)
-#     x_neg = cluster_norm(true_x_neg)
-#     x_pos = cluster_norm(true_x_pos)
+def pca_visualizations_cluster(clusters, template_ids, labels, layer, out_dir):
+    true_x_neg, true_x_pos = split_clusters(clusters)
+    x_neg = cluster_norm(true_x_neg)
+    x_pos = cluster_norm(true_x_pos)
 
-#     stacked_x_neg = torch.cat([x for x in true_x_neg])
-#     stacked_x_pos = torch.cat([x for x in true_x_pos])
+    stacked_x_neg = torch.cat([x for x in true_x_neg])
+    stacked_x_pos = torch.cat([x for x in true_x_pos])
+    expanded_labels = torch.cat([labels[key] for key in labels])
+    # expanded_labels = expanded_labels.cpu().numpy()
+    # template_ids = torch.cat([torch.tensor(
+    # template_ids[key]
+    # ) for key in template_ids])
 
-#     diff = (x_pos - x_neg).squeeze(1)
-#     cluster_labels = torch.cat(
-#         [torch.full_like(labels[key],
-#         int(key)) for key in labels]
-#     )
-#     pca_labels = cluster_labels
-#     create_pca_visualizations(diff, pca_labels, "cluster_norm_diff")
-#     create_pca_visualizations(stacked_x_pos - stacked_x_neg, pca_labels, "true_diff")
+    diff = (x_pos - x_neg).squeeze(1)
+    create_pca_visualizations(
+        diff, template_ids, expanded_labels, f"cluster_norm_diff_{layer}", out_dir
+    )
+    create_pca_visualizations(
+        stacked_x_pos - stacked_x_neg,
+        template_ids,
+        expanded_labels,
+        f"true_diff_{layer}",
+        out_dir,
+    )
 
 
+"""
 def pca_visualizations(layer, hiddens, train_gt, out_dir):
     n, v, k, d = hiddens.shape
 
@@ -59,14 +95,14 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir):
 
     create_pca_visualizations(
         hiddens=flattened_hiddens,
-        labels=expanded_labels,
+        color_labels=expanded_labels,
         plot_name=f"diff_before_norm_{layer}",
         out_dir=out_dir,
     )
 
     create_pca_visualizations(
         hiddens=hidden_mean.view(-1, d),
-        labels=expanded_labels,
+        color_labels=expanded_labels,
         plot_name=f"mean_before_norm_{layer}",
         out_dir=out_dir,
     )
@@ -86,15 +122,16 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir):
     )
     create_pca_visualizations(
         hiddens=flattened_normalized_hiddens,
-        labels=expanded_labels,
+        color_labels=expanded_labels,
         plot_name=f"diff_after_norm_{layer}",
         out_dir=out_dir,
     )
 
     create_pca_visualizations(
         hiddens=hidden_mean.view(-1, d),
-        labels=expanded_labels,
+        color_labels=expanded_labels,
         plot_name=f"mean_after_norm_{layer}",
         out_dir=out_dir,
     )
     # code to fit the CRC direction on the training data
+"""
