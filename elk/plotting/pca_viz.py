@@ -1,24 +1,27 @@
 import pathlib
+import textwrap
 
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
-import textwrap
 import torch
 from einops import rearrange
 from sklearn.decomposition import PCA
 
+from elk.normalization.cluster_norm import cluster_norm, split_clusters
 from elk.training.burns_norm import BurnsNorm
-from elk.normalization.cluster_norm import split_clusters, cluster_norm
 
 
 def create_pca_visualizations(
-        hiddens, labels,
-        plot_name="pca_plot", out_dir=".",
-        cluster_direction=None, burns_direction=None,
-        force_direction=0,
-        hover_labels=None,
-    ):
+    hiddens,
+    labels,
+    plot_name="pca_plot",
+    out_dir=".",
+    cluster_direction=None,
+    burns_direction=None,
+    force_direction=0,
+    hover_labels=None,
+):
     assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
 
     # Use 3 components for PCA
@@ -26,14 +29,18 @@ def create_pca_visualizations(
         # First, project the data onto the forced direction (1 for cluster, 2 for burns)
         if force_direction == 1:
             direction = cluster_direction
-        else :
+        else:
             direction = burns_direction
         scores = (hiddens @ direction).unsqueeze(1)
         projected_data = scores * direction.unsqueeze(0)
         orthogonal_data = hiddens - projected_data
         pca = PCA(n_components=2)
         reduced_data = pca.fit_transform(orthogonal_data.cpu().numpy())
-        reduced_data = torch.cat([scores, torch.tensor(reduced_data, device=scores.device)], dim=1).cpu().numpy()
+        reduced_data = (
+            torch.cat([scores, torch.tensor(reduced_data, device=scores.device)], dim=1)
+            .cpu()
+            .numpy()
+        )
     else:
         pca = PCA(n_components=3)
         reduced_data = pca.fit_transform(hiddens.cpu().numpy())
@@ -42,9 +49,12 @@ def create_pca_visualizations(
     dataframe = pd.DataFrame(reduced_data, columns=["PCA1", "PCA2", "PCA3"])
     dataframe["label"] = labels.cpu().numpy()
 
-    breaker = lambda txt: '<br>'.join(textwrap.wrap(txt, width=90))
+    def breaker(txt):
+        return "<br>".join(textwrap.wrap(txt, width=90))
+
     if hover_labels is not None:
-        hovertext = [breaker(txt) for txt in hover_labels]
+        for pair in hover_labels:
+            hovertext = breaker(pair[0] + pair[1])
     else:
         hovertext = None
     print(len(hovertext))
@@ -62,10 +72,24 @@ def create_pca_visualizations(
     )
 
     if cluster_direction is not None:
-        pca_cluster_dir = pca.transform(cluster_direction.unsqueeze(0).cpu().numpy()) * 20
+        pca_cluster_dir = (
+            pca.transform(cluster_direction.unsqueeze(0).cpu().numpy()) * 20
+        )
         if force_direction > 0:
-            dir_cluster_dir = (cluster_direction @ direction).unsqueeze(0).unsqueeze(1).cpu() * 20
-            pca_cluster_dir = torch.cat([dir_cluster_dir, torch.tensor(pca_cluster_dir, device=dir_cluster_dir.device)], dim=1).cpu().numpy()
+            dir_cluster_dir = (cluster_direction @ direction).unsqueeze(0).unsqueeze(
+                1
+            ).cpu() * 20
+            pca_cluster_dir = (
+                torch.cat(
+                    [
+                        dir_cluster_dir,
+                        torch.tensor(pca_cluster_dir, device=dir_cluster_dir.device),
+                    ],
+                    dim=1,
+                )
+                .cpu()
+                .numpy()
+            )
         # Add an arrow for the cluster direction
         line = go.Scatter3d(
             x=[0, pca_cluster_dir[0, 0]],
@@ -88,12 +112,24 @@ def create_pca_visualizations(
         )
         fig.add_trace(line)
         fig.add_trace(cone)
-    
+
     if burns_direction is not None:
         pca_burns_dir = pca.transform(burns_direction.unsqueeze(0).cpu().numpy()) * 20
         if force_direction > 0:
-            dir_burns_dir = (burns_direction @ direction).unsqueeze(0).unsqueeze(1).cpu() * 20
-            pca_burns_dir = torch.cat([dir_burns_dir, torch.tensor(pca_burns_dir, device=dir_burns_dir.device)], dim=1).cpu().numpy()
+            dir_burns_dir = (burns_direction @ direction).unsqueeze(0).unsqueeze(
+                1
+            ).cpu() * 20
+            pca_burns_dir = (
+                torch.cat(
+                    [
+                        dir_burns_dir,
+                        torch.tensor(pca_burns_dir, device=dir_burns_dir.device),
+                    ],
+                    dim=1,
+                )
+                .cpu()
+                .numpy()
+            )
         # Add an arrow for the burns direction
         line = go.Scatter3d(
             x=[0, pca_burns_dir[0, 0]],
@@ -117,8 +153,10 @@ def create_pca_visualizations(
         fig.add_trace(line)
         fig.add_trace(cone)
 
-        pca_cosine_similarity = torch.cosine_similarity(torch.tensor(pca_cluster_dir[0]), torch.tensor(pca_burns_dir[0]), dim=0).item()
-        #print("PCA directions cosine similarity: ", pca_cosine_similarity)
+        torch.cosine_similarity(
+            torch.tensor(pca_cluster_dir[0]), torch.tensor(pca_burns_dir[0]), dim=0
+        ).item()
+        # print("PCA directions cosine similarity: ", pca_cosine_similarity)
 
     # Saving the plot as an HTML file
     path = pathlib.Path(f"{out_dir}/pca_visualizations/{plot_name}.html")
@@ -153,27 +191,69 @@ def pca_visualizations_cluster(layer, clusters, labels, out_dir, hover_labels=No
     burns_preds = torch.sign(burns_logits)
 
     cluster_labels = torch.cat(
-        [torch.full_like(labels[key],
-        int(key)) for key in labels]
+        [torch.full_like(labels[key], int(key)) for key in labels]
     )
     pca_labels = cluster_labels
-    
-    create_pca_visualizations(cluster_diff, pca_labels, f"cluster_norm_diff_{layer}", out_dir, cluster_direction, burns_direction, force_direction=1, hover_labels=hover_labels)
-    create_pca_visualizations(burns_diff, pca_labels, f"burns_norm_diff_{layer}", out_dir, cluster_direction, burns_direction, force_direction=2, hover_labels=hover_labels)
-    create_pca_visualizations(true_diff, pca_labels, f"true_diff_centered_{layer}", out_dir, cluster_direction, burns_direction, force_direction=0, hover_labels=hover_labels)
 
-    # Compute the prediction of both directions on their respectively normalized data and compare it to the other normalized or not data
+    create_pca_visualizations(
+        cluster_diff,
+        pca_labels,
+        f"cluster_norm_diff_{layer}",
+        out_dir,
+        cluster_direction,
+        burns_direction,
+        force_direction=1,
+        hover_labels=hover_labels,
+    )
+    create_pca_visualizations(
+        burns_diff,
+        pca_labels,
+        f"burns_norm_diff_{layer}",
+        out_dir,
+        cluster_direction,
+        burns_direction,
+        force_direction=2,
+        hover_labels=hover_labels,
+    )
+    create_pca_visualizations(
+        true_diff,
+        pca_labels,
+        f"true_diff_centered_{layer}",
+        out_dir,
+        cluster_direction,
+        burns_direction,
+        force_direction=0,
+        hover_labels=hover_labels,
+    )
+
+    # Compute the prediction of both directions on their respectively
+    # normalized data and compare it to the other normalized or not data
     agreement = torch.sum(cluster_preds == burns_preds).item() / len(cluster_preds)
-    ccn = torch.sum(cluster_preds == torch.sign(cluster_diff @ cluster_direction)).item() / len(cluster_preds)
-    cbn = torch.sum(cluster_preds == torch.sign(burns_diff @ cluster_direction)).item() / len(cluster_preds)
-    cnn = torch.sum(cluster_preds == torch.sign(true_diff @ cluster_direction)).item() / len(cluster_preds)
-    bcn = torch.sum(burns_preds == torch.sign(cluster_diff @ burns_direction)).item() / len(burns_preds)
-    bbn = torch.sum(burns_preds == torch.sign(burns_diff @ burns_direction)).item() / len(burns_preds)
-    bnn = torch.sum(burns_preds == torch.sign(true_diff @ burns_direction)).item() / len(burns_preds)
+    ccn = torch.sum(
+        cluster_preds == torch.sign(cluster_diff @ cluster_direction)
+    ).item() / len(cluster_preds)
+    cbn = torch.sum(
+        cluster_preds == torch.sign(burns_diff @ cluster_direction)
+    ).item() / len(cluster_preds)
+    cnn = torch.sum(
+        cluster_preds == torch.sign(true_diff @ cluster_direction)
+    ).item() / len(cluster_preds)
+    bcn = torch.sum(
+        burns_preds == torch.sign(cluster_diff @ burns_direction)
+    ).item() / len(burns_preds)
+    bbn = torch.sum(
+        burns_preds == torch.sign(burns_diff @ burns_direction)
+    ).item() / len(burns_preds)
+    bnn = torch.sum(
+        burns_preds == torch.sign(true_diff @ burns_direction)
+    ).item() / len(burns_preds)
 
     # save the agreement table
     with open(f"{out_dir}/pca_visualizations/{layer}_agreement.txt", "w") as f:
-        f.write(f"CRC directions cosine similarity: {torch.cosine_similarity(cluster_direction, burns_direction, dim=0).item()}\n")
+        f.write(
+            f"CRC directions cosine similarity: "
+            f"{torch.cosine_similarity(cluster_direction, burns_direction, dim=0).item()}\n"  # noqa
+        )
         f.write(f"CRC agreement: {agreement}\n")
         f.write("Cluster direction consistency:\n")
         f.write(f"\tCluster norm: {ccn}\n")
@@ -200,7 +280,7 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
         labels=expanded_labels,
         plot_name=f"diff_before_norm_{layer}",
         out_dir=out_dir,
-        hover_labels=hover_labels
+        hover_labels=hover_labels,
     )
 
     create_pca_visualizations(
@@ -208,7 +288,7 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
         labels=expanded_labels,
         plot_name=f"mean_before_norm_{layer}",
         out_dir=out_dir,
-        hover_labels=hover_labels
+        hover_labels=hover_labels,
     )
 
     # ... and after normalization
@@ -229,7 +309,7 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
         labels=expanded_labels,
         plot_name=f"diff_after_norm_{layer}",
         out_dir=out_dir,
-        hover_labels=hover_labels
+        hover_labels=hover_labels,
     )
 
     create_pca_visualizations(
@@ -237,6 +317,6 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
         labels=expanded_labels,
         plot_name=f"mean_after_norm_{layer}",
         out_dir=out_dir,
-        hover_labels=hover_labels
+        hover_labels=hover_labels,
     )
     # code to fit the CRC direction on the training data

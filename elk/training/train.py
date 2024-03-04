@@ -17,6 +17,7 @@ from elk.utils.gpu_utils import get_device
 from ..evaluation import Eval
 from ..metrics import evaluate_preds, to_one_hot
 from ..metrics.eval import LayerOutput
+from ..plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
 from ..run import LayerApplied, Run
 from ..training.supervised import train_supervised
 from ..utils.types import PromptEnsembling
@@ -25,8 +26,6 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
-from .whitening import whitening
-from ..plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
@@ -113,12 +112,11 @@ def flatten_text_questions(text_questions):
     # Loop through each sublist (representing the 'n' dimension)
     for sublist in text_questions:
         # Loop through each item in the sublist (representing the 'v' dimension)
-        for item in sublist:
-            # Append each item (which is a list of 'k' elements) to the flattened_list
-            # Store only the first element, since it is the same as the second
-            # Only the pseudo label is different but that is appended later
-            flattened_text_questions.append(item[0])
-            flattened_text_questions.append(item[1])
+        for text_pair in sublist:
+            # text_pair is a list of the text questions,
+            # where element 0 has negative pseudo-label
+            # and 1 has positive pseudo-label
+            flattened_text_questions.append(text_pair)
     return flattened_text_questions
 
 
@@ -141,7 +139,7 @@ def get_clusters(
     lm_preds = lm_preds.view(n * v, k)
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
-    #x_averaged_over_choices = whitening(x_averaged_over_choices)
+    # x_averaged_over_choices = whitening(x_averaged_over_choices)
 
     if cluster_algo == "kmeans":
         clustering_results = KMeans(
@@ -497,13 +495,19 @@ class Elicit(Run):
             hiddens = clusters[dataset_key]["train"]["hiddens"]
             labels = clusters[dataset_key]["train"]["labels"]
 
-            hover_labels = [cluster_list for cluster_list in clusters[dataset_key]["train"]["text_questions"].values()]
-            hover_labels = [item for sublist in hover_labels for item in sublist]
+            hover_labels = []
+            for sublist in clusters[dataset_key]["train"]["text_questions"].values():
+                for text_question in sublist:
+                    hover_labels.append(text_question)
 
             hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
             labels_tensor = torch.cat(list(labels.values()), dim=0)
-            pca_visualizations(layer, hiddens_tensor, labels_tensor, out_dir, hover_labels=hover_labels)
-            pca_visualizations_cluster(layer, hiddens, labels, out_dir, hover_labels=hover_labels)
+            pca_visualizations(
+                layer, hiddens_tensor, labels_tensor, out_dir, hover_labels=hover_labels
+            )
+            pca_visualizations_cluster(
+                layer, hiddens, labels, out_dir, hover_labels=hover_labels
+            )
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
             reporter = CcsReporter(
@@ -513,7 +517,7 @@ class Elicit(Run):
                 clusters_test=clusters[dataset_key]["test"],
                 device=device,
             )
-            #train_loss = reporter.fit_by_clusters(hiddens)
+            # train_loss = reporter.fit_by_clusters(hiddens)
             # iterate over hiddens
             # reporter.platt_scale_with_clusters(labels, hiddens)
 
