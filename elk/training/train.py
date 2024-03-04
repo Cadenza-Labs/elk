@@ -487,7 +487,7 @@ class Elicit(Run):
 
     # Create a separate function to handle the reporter training.
     def cluster_train_and_save_reporter(
-        self, device, layer, out_dir, clusters, prompt_index=None
+        self, device, layer, reporter_out_dir, clusters, prompt_index=None
     ) -> ReporterWithInfo:
         train_loss = None
         if isinstance(self.net, CcsConfig):
@@ -503,10 +503,14 @@ class Elicit(Run):
             hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
             labels_tensor = torch.cat(list(labels.values()), dim=0)
             pca_visualizations(
-                layer, hiddens_tensor, labels_tensor, out_dir, hover_labels=hover_labels
+                layer,
+                hiddens_tensor,
+                labels_tensor,
+                self.out_dir,
+                hover_labels=hover_labels,
             )
             pca_visualizations_cluster(
-                layer, hiddens, labels, out_dir, hover_labels=hover_labels
+                layer, hiddens, labels, self.out_dir, hover_labels=hover_labels
             )
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
@@ -523,8 +527,8 @@ class Elicit(Run):
 
         # Save reporter checkpoint to disk
         # TODO have to change this
-        out_dir.mkdir(parents=True, exist_ok=True)
-        torch.save(reporter, out_dir / f"layer_{layer}.pt")
+        reporter_out_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(reporter, reporter_out_dir / f"layer_{layer}.pt")
 
         return ReporterWithInfo(reporter, train_loss, prompt_index)
 
