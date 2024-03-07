@@ -257,6 +257,11 @@ def extract_hiddens(
                 ).to(device)
 
                 ids = assert_type(Tensor, encoding.input_ids)
+
+                bos_token = tokenizer.bos_token_id
+                if ids[0, 0] != bos_token:
+                    ids = torch.cat([torch.full_like(ids[:, :1], bos_token), ids], -1)
+
                 if is_enc_dec:
                     answer = labels = assert_type(Tensor, encoding.labels)
                 else:

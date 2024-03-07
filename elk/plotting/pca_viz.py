@@ -53,12 +53,11 @@ def create_pca_visualizations(
         return "<br>".join(textwrap.wrap(txt, width=90))
 
     if hover_labels is not None:
+        hovertext = []
         for pair in hover_labels:
-            hovertext = breaker(pair[0] + pair[1])
+            hovertext.append(breaker(pair[0] + pair[1]))
     else:
         hovertext = None
-    print(len(hovertext))
-    print(len(reduced_data))
     dataframe["hover_label"] = hovertext
     fig = px.scatter_3d(
         dataframe,
@@ -156,7 +155,6 @@ def create_pca_visualizations(
         torch.cosine_similarity(
             torch.tensor(pca_cluster_dir[0]), torch.tensor(pca_burns_dir[0]), dim=0
         ).item()
-        # print("PCA directions cosine similarity: ", pca_cosine_similarity)
 
     # Saving the plot as an HTML file
     path = pathlib.Path(f"{out_dir}/pca_visualizations/{plot_name}.html")
@@ -164,7 +162,7 @@ def create_pca_visualizations(
     fig.write_html(str(path))
 
 
-def pca_visualizations_cluster(layer, clusters, labels, out_dir, hover_labels=None):
+def pca_visualizations_cluster(layer, clusters, gt_labels, out_dir, hover_labels=None):
     true_x_neg, true_x_pos = split_clusters(clusters)
     x_neg = cluster_norm(true_x_neg)
     x_pos = cluster_norm(true_x_pos)
@@ -177,6 +175,7 @@ def pca_visualizations_cluster(layer, clusters, labels, out_dir, hover_labels=No
 
     stacked_x_neg = torch.cat([x for x in true_x_neg])
     stacked_x_pos = torch.cat([x for x in true_x_pos])
+    stacked_labels = torch.cat([gt_labels[key] for key in gt_labels])
     true_diff = stacked_x_pos - stacked_x_neg
     true_diff -= true_diff.mean(dim=0)
 
@@ -191,9 +190,10 @@ def pca_visualizations_cluster(layer, clusters, labels, out_dir, hover_labels=No
     burns_preds = torch.sign(burns_logits)
 
     cluster_labels = torch.cat(
-        [torch.full_like(labels[key], int(key)) for key in labels]
+        [torch.full_like(gt_labels[key], int(key)) for key in gt_labels]
     )
-    pca_labels = cluster_labels
+    #pca_labels = cluster_labels
+    pca_labels = stacked_labels
 
     create_pca_visualizations(
         cluster_diff,
@@ -229,24 +229,39 @@ def pca_visualizations_cluster(layer, clusters, labels, out_dir, hover_labels=No
     # Compute the prediction of both directions on their respectively
     # normalized data and compare it to the other normalized or not data
     agreement = torch.sum(cluster_preds == burns_preds).item() / len(cluster_preds)
+
+    ccpred = cluster_diff @ cluster_direction
+    cbpred = burns_diff @ cluster_direction
+    cnpred = true_diff @ cluster_direction
+    bcpred = cluster_diff @ burns_direction
+    bbpred = burns_diff @ burns_direction
+    bnpred = true_diff @ burns_direction
+
     ccn = torch.sum(
-        cluster_preds == torch.sign(cluster_diff @ cluster_direction)
+        cluster_preds == torch.sign(ccpred)
     ).item() / len(cluster_preds)
     cbn = torch.sum(
-        cluster_preds == torch.sign(burns_diff @ cluster_direction)
+        cluster_preds == torch.sign(cbpred)
     ).item() / len(cluster_preds)
     cnn = torch.sum(
-        cluster_preds == torch.sign(true_diff @ cluster_direction)
+        cluster_preds == torch.sign(cnpred)
     ).item() / len(cluster_preds)
     bcn = torch.sum(
-        burns_preds == torch.sign(cluster_diff @ burns_direction)
+        burns_preds == torch.sign(bcpred)
     ).item() / len(burns_preds)
     bbn = torch.sum(
-        burns_preds == torch.sign(burns_diff @ burns_direction)
+        burns_preds == torch.sign(bbpred)
     ).item() / len(burns_preds)
     bnn = torch.sum(
-        burns_preds == torch.sign(true_diff @ burns_direction)
+        burns_preds == torch.sign(bnpred)
     ).item() / len(burns_preds)
+
+    cca = torch.mean((stacked_labels == (ccpred > 0).float()).float())
+    cba = torch.mean((stacked_labels == (cbpred > 0).float()).float())
+    cna = torch.mean((stacked_labels == (cnpred > 0).float()).float())
+    bca = torch.mean((stacked_labels == (bcpred > 0).float()).float())
+    bba = torch.mean((stacked_labels == (bbpred > 0).float()).float())
+    bna = torch.mean((stacked_labels == (bnpred > 0).float()).float())
 
     # save the agreement table
     with open(f"{out_dir}/pca_visualizations/{layer}_agreement.txt", "w") as f:
@@ -256,13 +271,23 @@ def pca_visualizations_cluster(layer, clusters, labels, out_dir, hover_labels=No
         )
         f.write(f"CRC agreement: {agreement}\n")
         f.write("Cluster direction consistency:\n")
+        f.write(f"Prediction change :")
         f.write(f"\tCluster norm: {ccn}\n")
         f.write(f"\tBurns norm: {cbn}\n")
         f.write(f"\tNo norm: {cnn}\n")
+        f.write(f"Accuracy :\n")
+        f.write(f"\tCluster norm: {cca}\n")
+        f.write(f"\tBurns norm: {cba}\n")
+        f.write(f"\tNo norm: {cna}\n")
         f.write("Burns direction consistency:\n")
+        f.write(f"Prediction change :")
         f.write(f"\tCluster norm: {bcn}\n")
         f.write(f"\tBurns norm: {bbn}\n")
         f.write(f"\tNo norm: {bnn}\n")
+        f.write(f"Accuracy :\n")
+        f.write(f"\tCluster norm: {bca}\n")
+        f.write(f"\tBurns norm: {bba}\n")
+        f.write(f"\tNo norm: {bna}\n")
 
 
 def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
@@ -274,6 +299,7 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
     hidden_mean = (hiddens[:, :, 0, :] + hiddens[:, :, 1, :]) / 2
     flattened_hiddens = rearrange(hiddens_difference, "n v d -> (n v) d", v=v)
     expanded_labels = train_gt.repeat_interleave(v)
+    duplicated_labels = torch.stack([train_gt.view(-1, 1, 1), train_gt.view(-1, 1, 1)], dim=2)
 
     create_pca_visualizations(
         hiddens=flattened_hiddens,
@@ -289,6 +315,14 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
         plot_name=f"mean_before_norm_{layer}",
         out_dir=out_dir,
         hover_labels=hover_labels,
+    )
+
+    create_pca_visualizations(
+        hiddens=hiddens.view(-1, d),
+        labels=duplicated_labels.view(-1),
+        plot_name=f"all_before_norm_{layer}",
+        out_dir=out_dir,
+        hover_labels=None,
     )
 
     # ... and after normalization
@@ -318,5 +352,13 @@ def pca_visualizations(layer, hiddens, train_gt, out_dir, hover_labels=None):
         plot_name=f"mean_after_norm_{layer}",
         out_dir=out_dir,
         hover_labels=hover_labels,
+    )
+
+    create_pca_visualizations(
+        hiddens=normalized_hiddens.view(-1, d),
+        labels=duplicated_labels.view(-1),
+        plot_name=f"all_after_norm_{layer}",
+        out_dir=out_dir,
+        hover_labels=None,
     )
     # code to fit the CRC direction on the training data
