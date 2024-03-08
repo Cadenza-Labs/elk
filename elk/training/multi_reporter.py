@@ -18,10 +18,16 @@ class ReporterWithInfo:  # I don't love this name but I have no choice because
 
 
 class MultiReporter:
-    def __init__(self, reporter: list[ReporterWithInfo]):
+    def __init__(
+        self,
+        reporter: list[ReporterWithInfo],
+        num_variations: int,
+        clusters: bool = False,
+    ):
         assert len(reporter) > 0, "Must have at least one reporter"
         self.reporter_w_infos: list[ReporterWithInfo] = reporter
         self.models = [r.model for r in reporter]
+        self.clusters = clusters
         train_losses = (
             [r.train_loss for r in reporter]
             if reporter[0].train_loss is not None
@@ -34,23 +40,38 @@ class MultiReporter:
             else None
         )
 
-    def __call__(self, h, super_full=False):
+    def __call__(self, h: t.Tensor, super_full=False):
+        all_credences = []
+        if self.clusters:
+            assert len(h) == len(
+                self.models
+            )  # somewhat weak check but better than nothing
+
+            for i, reporter in enumerate(self.models):
+                credences = reporter(h)
+                all_credences.append(credences)
+            # stack all_credences list
+            all_credences = t.stack(all_credences, dim=1)
+
+            return all_credences.mean(dim=1)
+
         if super_full:
             n_eval_prompts = h.shape[1]
             credences_by_eval_prompt = [
-                t.cat([reporter(h[:, [j], :, :])
-                       for j in range(n_eval_prompts)], dim=1)
+                t.cat([reporter(h[:, [j], :, :]) for j in range(n_eval_prompts)], dim=1)
                 for reporter in self.models
             ]  # self.models * (n, n_eval_prompts, c)
             credences = t.stack(credences_by_eval_prompt, dim=0).mean(dim=0)
             assert credences.shape == (h.shape[0], n_eval_prompts, h.shape[2])
             return credences
         else:
-            assert h.shape[1] == len(self.models)  # somewhat weak check but better than nothing
-            credences = t.cat([
-                reporter(h[:, [i], :, :])
-                for i, reporter in enumerate(self.models)
-            ], dim=1)  # credences: (n, v, c)
+            assert h.shape[1] == len(
+                self.models
+            )  # somewhat weak check but better than nothing
+            credences = t.cat(
+                [reporter(h[:, [i], :, :]) for i, reporter in enumerate(self.models)],
+                dim=1,
+            )  # credences: (n, v, c)
             assert credences.shape == h.shape[:-1]
             return credences
 
@@ -65,4 +86,7 @@ class MultiReporter:
             for folder in prompt_folders
         ]
         # we don't care about the train losses for evaluating
-        return MultiReporter([ReporterWithInfo(r, None, pi) for r, pi in reporters])
+        return MultiReporter(
+            [ReporterWithInfo(r, None, pi) for r, pi in reporters],
+            num_variations=len(reporters),
+        )

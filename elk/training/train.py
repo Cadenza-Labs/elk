@@ -268,11 +268,7 @@ def evaluate_and_save_cluster(
             value["test"]["labels"],
             value["test"]["lm_preds"],
         )
-        # train_cluster, _, _ = (
-        #     value["train"]["hiddens"],
-        #     value["train"]["labels"],
-        #     value["train"]["lm_preds"],
-        # )
+
         meta = {"dataset": ds_name, "layer": layer}
 
         val_neg, val_pos = split_clusters(val_cluster)
@@ -283,17 +279,9 @@ def evaluate_and_save_cluster(
         )  # shape is (n, k) now, where k=2
         val_credences = val_credences.unsqueeze(1)  # now shape is (n, v, k), where v=1
 
-        # train_pos, train_neg = split_clusters(train_cluster)
-        # train_credences_neg = reporter(train_neg)
-        # train_credences_pos = reporter(train_pos)
-        # train_credences = torch.stack(
-        # (train_credences_neg, train_credences_pos),
-        # dim=1
-        # )
-        # train_credences = train_credences.unsqueeze(1)
-
         # Create a new dictionary to store the final result
         val_labels = torch.cat(list(val_labels.values()), dim=0)
+
         assert val_labels.dim() == 1, "Expected shape (n,)"
 
         layer_output.append(
@@ -315,53 +303,6 @@ def evaluate_and_save_cluster(
                     "train_loss": train_loss,
                 }
             )
-            # row_bufs["train_eval"].append(
-            #     {
-            #         **meta,
-            #         PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #         **evaluate_preds(
-            #             train_gt,
-            #             train_credences,
-            #             prompt_ensembling
-            #         ).to_dict(),
-            #         "train_loss": train_loss,
-            #     }
-            # )
-
-            # if val_lm_preds is not None:
-            #     row_bufs["lm_eval"].append(
-            #         {
-            #             **meta,
-            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #             **evaluate_preds(
-            #                 val_labels,
-            #                 val_lm_preds,
-            #                 prompt_ensembling
-            #             ).to_dict(),
-            #         }
-            #     )
-
-            # if train_lm_preds is not None:
-            #     row_bufs["train_lm_eval"].append(
-            #         {
-            #             **meta,
-            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #             **evaluate_preds(
-            #                 train_gt, train_lm_preds, prompt_ensembling
-            #             ).to_dict(),
-            #         }
-            #     )
-            # for lr_model_num, model in enumerate(lr_models):
-            #     row_bufs["lr_eval"].append(
-            #         {
-            #             **meta,
-            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #             "inlp_iter": lr_model_num,
-            #             **evaluate_preds(
-            #                 val_labels, model(val_h), prompt_ensembling
-            #             ).to_dict(),
-            #         }
-            #     )
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -371,7 +312,7 @@ def evaluate_and_save(
     reporter: SingleReporter | MultiReporter,
     train_dict: PreparedData,
     val_dict: PreparedData,
-    lr_models: list[Classifier],
+    lr_models: list[Classifier] | None,
     layer: int,
 ):
     row_bufs = defaultdict(list)
@@ -435,18 +376,18 @@ def evaluate_and_save(
                         ).to_dict(),
                     }
                 )
-
-            for lr_model_num, model in enumerate(lr_models):
-                row_bufs["lr_eval"].append(
-                    {
-                        **meta,
-                        PROMPT_ENSEMBLING: prompt_ensembling.value,
-                        "inlp_iter": lr_model_num,
-                        **evaluate_preds(
-                            val_gt, model(val_h), prompt_ensembling
-                        ).to_dict(),
-                    }
-                )
+            if lr_models:
+                for lr_model_num, model in enumerate(lr_models):
+                    row_bufs["lr_eval"].append(
+                        {
+                            **meta,
+                            PROMPT_ENSEMBLING: prompt_ensembling.value,
+                            "inlp_iter": lr_model_num,
+                            **evaluate_preds(
+                                val_gt, model(val_h), prompt_ensembling
+                            ).to_dict(),
+                        }
+                    )
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -515,8 +456,6 @@ class Elicit(Run):
                 device=device,
             )
             train_loss = reporter.fit_by_clusters(hiddens)
-            # iterate over hiddens
-            # reporter.platt_scale_with_clusters(labels, hiddens)
 
         # Save reporter checkpoint to disk
         # TODO have to change this
@@ -544,7 +483,6 @@ class Elicit(Run):
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
-            # TODO: Do something else for clusters... Pass clusters
             (
                 first_train_h,
                 train_gt,
@@ -554,8 +492,8 @@ class Elicit(Run):
             reporter = CcsReporter(self.net, d, device=device)
             train_loss = reporter.fit(first_train_h)
 
-            labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
-            reporter.platt_scale(labels, first_train_h)
+            # labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
+            # reporter.platt_scale(labels, first_train_h)
 
         elif isinstance(self.net, EigenFitterConfig):
             fitter = EigenFitter(
@@ -649,11 +587,6 @@ class Elicit(Run):
                 )
                 clusters_by_dataset[dataset_name] = clusters
 
-                # print("train viz")
-                # visualize_clusters(clusters["train"])
-                # print("test viz")
-                # visualize_clusters(clusters["test"])
-
                 save_clusters_representations(
                     dataset_name, clusters, "train", self.out_dir, layer
                 )
@@ -661,12 +594,52 @@ class Elicit(Run):
                     dataset_name, clusters, "test", self.out_dir, layer
                 )
 
-            reporter_train_result = self.cluster_train_and_save_reporter(
-                device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
-            )
+            probe_per_cluster = True
+            if probe_per_cluster:
+                results = []
 
-            maybe_multi_reporter = reporter_train_result.model
-            train_loss = reporter_train_result.train_loss
+                for dataset_name, clusters in clusters_by_dataset.items():
+                    for cluster_id, cluster in clusters["train"]["hiddens"].items():
+                        train_dict = {
+                            dataset_name: (
+                                cluster.unsqueeze(1),
+                                clusters["train"]["labels"][cluster_id],
+                                None,
+                            )
+                        }
+                        reporter_train_result = self.train_and_save_reporter(
+                            device,
+                            layer,
+                            train_dict=train_dict,
+                            out_dir=self.out_dir
+                            / "reporters"
+                            / dataset_name
+                            / f"cluster_{cluster_id}",
+                        )
+                        results.append(reporter_train_result)
+
+                # it is called maybe_multi_reporter
+                # because it might be a single reporter
+                num_clusters = sum(
+                    [
+                        len(clusters["train"]["hiddens"])
+                        for clusters in clusters_by_dataset.values()
+                    ]
+                )
+                maybe_multi_reporter = MultiReporter(
+                    results, clusters=True, num_variations=num_clusters
+                )
+                train_loss = maybe_multi_reporter.train_loss
+            else:
+                reporter_train_result = self.cluster_train_and_save_reporter(
+                    device,
+                    layer,
+                    self.out_dir / "reporters",
+                    clusters=clusters_by_dataset,
+                )
+
+                maybe_multi_reporter = reporter_train_result.model
+                train_loss = reporter_train_result.train_loss
 
             return evaluate_and_save_cluster(
                 train_loss, maybe_multi_reporter, clusters_by_dataset, [], layer
@@ -709,7 +682,7 @@ class Elicit(Run):
 
                 # it is called maybe_multi_reporter
                 # because it might be a single reporter
-                maybe_multi_reporter = MultiReporter(results)
+                maybe_multi_reporter = MultiReporter(results, v)
                 train_loss = maybe_multi_reporter.train_loss
             else:
                 reporter_train_result = self.train_and_save_reporter(

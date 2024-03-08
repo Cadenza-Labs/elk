@@ -267,7 +267,7 @@ class CcsReporter(nn.Module, PlattMixin):
             self.norm = fitter.eraser
 
             x_neg, x_pos = self.norm(x_neg), self.norm(x_pos)
-        elif self.config.norm == "burns":
+        elif self.config.norm == "burns" or self.config.norm == "cluster":
             x_neg, x_pos = hiddens.unbind(2)
 
         # Record the best acc, loss, and params found so far
