@@ -265,14 +265,19 @@ def extract_hiddens(
                 if is_enc_dec:
                     answer = labels = assert_type(Tensor, encoding.labels)
                 else:
-                    encoding2 = tokenizer(
-                        choice["answer"],
-                        # Don't include [CLS] and [SEP] in the answer
-                        add_special_tokens=False,
-                        return_tensors="pt",
-                    ).to(device)
+                    a_id = tokenizer.encode(
+                        " " + choice["answer"], add_special_tokens=False
+                    )
 
-                    answer = assert_type(Tensor, encoding2.input_ids)
+                    # the Llama tokenizer splits off leading spaces
+                    if tokenizer.decode(a_id[0]).strip() == "":
+                        a_id_without_space = tokenizer.encode(
+                            choice, add_special_tokens=False
+                        )
+                        assert a_id_without_space == a_id[1:]
+                        a_id = a_id_without_space
+
+                    answer = torch.tensor([a_id], device=device)
                     labels = (
                         # -100 is the mask token
                         torch.cat([torch.full_like(ids, -100), answer], dim=-1)
