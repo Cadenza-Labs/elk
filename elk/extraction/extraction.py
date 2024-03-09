@@ -290,9 +290,7 @@ def extract_hiddens(
                     full_prompt_encoded = torch.cat(
                         [question_encoded, answer_encoded], -1
                     )
-                    # print("decoded input:",
-                    # tokenizer.decode(full_prompt_encoded[0])) # for debugging
-                    breakpoint()
+
                 # If this input is too long, skip it
                 if full_prompt_encoded.shape[-1] > max_length:
                     break
