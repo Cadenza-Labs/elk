@@ -254,45 +254,47 @@ def extract_hiddens(
                     text_target=target,  # type: ignore[arg-type]
                 ).to(device)
 
-                ids = assert_type(Tensor, encoding.input_ids)
+                question_encoded = assert_type(Tensor, encoding.input_ids)
 
                 bos_token = tokenizer.bos_token_id
-                if ids[0, 0] != bos_token:
-                    ids = torch.cat([torch.full_like(ids[:, :1], bos_token), ids], -1)
+                if question_encoded[0, 0] != bos_token:
+                    question_encoded = torch.cat(
+                        [
+                            torch.full_like(question_encoded[:, :1], bos_token),
+                            question_encoded,
+                        ],
+                        -1,
+                    )
 
                 if is_enc_dec:
-                    answer = labels = assert_type(Tensor, encoding.labels)
+                    answer_encoded = labels = assert_type(Tensor, encoding.labels)
                 else:
                     encoding2 = tokenizer(
-                        " " + choice["answer"],
+                        choice["answer"],
                         # Don't include [CLS] and [SEP] in the answer
                         add_special_tokens=False,
                         return_tensors="pt",
                     ).to(device)
 
-                    answer = assert_type(Tensor, encoding2.input_ids)
-                    # breakpoint()
-                    # # the Llama tokenizer splits off leading spaces
-                    # if tokenizer.decode(answer[0][0]).strip() == "":
-                    #     encoding3 = tokenizer(
-                    #         choice["answer"],
-                    #         # Don't include [CLS] and [SEP] in the answer
-                    #         add_special_tokens=False,
-                    #         return_tensors="pt",
-                    #     ).to(device)
-                    #     assert encoding3.input_ids[0] == answer[0][1:]
-                    #     answer = assert_type(Tensor, encoding3.input_ids)
+                    answer_encoded = assert_type(Tensor, encoding2.input_ids)
 
                     labels = (
                         # -100 is the mask token
-                        torch.cat([torch.full_like(ids, -100), answer], dim=-1)
+                        torch.cat(
+                            [torch.full_like(question_encoded, -100), answer_encoded],
+                            dim=-1,
+                        )
                         if has_lm_preds
                         else None
                     )
-                    ids = torch.cat([ids, answer], -1)
-
+                    full_prompt_encoded = torch.cat(
+                        [question_encoded, answer_encoded], -1
+                    )
+                    # print("decoded input:",
+                    # tokenizer.decode(full_prompt_encoded[0])) # for debugging
+                    breakpoint()
                 # If this input is too long, skip it
-                if ids.shape[-1] > max_length:
+                if full_prompt_encoded.shape[-1] > max_length:
                     break
                 else:
                     # Record the EXACT question we fed to the model
@@ -312,7 +314,9 @@ def extract_hiddens(
                         )
                     )
 
-                inputs: dict[str, Tensor | None] = dict(input_ids=ids.long())
+                inputs: dict[str, Tensor | None] = dict(
+                    input_ids=full_prompt_encoded.long()
+                )
                 if is_enc_dec or has_lm_preds:
                     inputs["labels"] = labels
                 outputs = model(**inputs, output_hidden_states=True)
