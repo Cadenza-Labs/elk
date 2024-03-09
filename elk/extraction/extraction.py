@@ -244,12 +244,10 @@ def extract_hiddens(
 
             # Iterate over answers
             for j, choice in enumerate(record):
-                text = choice["question"]
-
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
                 encoding = tokenizer(
-                    text,
+                    choice["question"],
                     # Keep [CLS] and [SEP] for BERT-style models
                     add_special_tokens=True,
                     return_tensors="pt",
@@ -265,19 +263,26 @@ def extract_hiddens(
                 if is_enc_dec:
                     answer = labels = assert_type(Tensor, encoding.labels)
                 else:
-                    a_id = tokenizer.encode(
-                        " " + choice["answer"], add_special_tokens=False
-                    )
+                    encoding2 = tokenizer(
+                        " " + choice["answer"],
+                        # Don't include [CLS] and [SEP] in the answer
+                        add_special_tokens=False,
+                        return_tensors="pt",
+                    ).to(device)
 
-                    # the Llama tokenizer splits off leading spaces
-                    if tokenizer.decode(a_id[0]).strip() == "":
-                        a_id_without_space = tokenizer.encode(
-                            choice, add_special_tokens=False
-                        )
-                        assert a_id_without_space == a_id[1:]
-                        a_id = a_id_without_space
+                    answer = assert_type(Tensor, encoding2.input_ids)
+                    # breakpoint()
+                    # # the Llama tokenizer splits off leading spaces
+                    # if tokenizer.decode(answer[0][0]).strip() == "":
+                    #     encoding3 = tokenizer(
+                    #         choice["answer"],
+                    #         # Don't include [CLS] and [SEP] in the answer
+                    #         add_special_tokens=False,
+                    #         return_tensors="pt",
+                    #     ).to(device)
+                    #     assert encoding3.input_ids[0] == answer[0][1:]
+                    #     answer = assert_type(Tensor, encoding3.input_ids)
 
-                    answer = torch.tensor([a_id], device=device)
                     labels = (
                         # -100 is the mask token
                         torch.cat([torch.full_like(ids, -100), answer], dim=-1)
@@ -298,7 +303,7 @@ def extract_hiddens(
                                 "template_name": example["template_names"][i],
                                 "text": dict(
                                     {
-                                        "question": text,
+                                        "question": choice["question"],
                                         "answer": choice["answer"],
                                     }
                                 ),
