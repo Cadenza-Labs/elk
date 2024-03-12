@@ -1,6 +1,4 @@
-
-from dataclasses import InitVar, asdict, dataclass, field, replace
-
+from dataclasses import InitVar, asdict, dataclass, replace
 
 import numpy as np
 import torch
@@ -8,7 +6,6 @@ from datasets import get_dataset_config_info
 from transformers import AutoConfig
 
 from ..extraction import Extract
-
 from ..files import memorably_named_dir, sweeps_dir
 from ..plotting.visualize import visualize_sweep
 from ..training.eigen_reporter import EigenFitterConfig
@@ -57,7 +54,12 @@ class Sweep:
     name: str | None = None
 
     # A bit of a hack to add all the command line arguments from Elicit
-    run_template: Elicit = field(default_factory=Elicit.default)
+    run_template: Elicit = Elicit(
+        data=Extract(
+            model="<placeholder>",
+            datasets=("<placeholder>",),
+        )
+    )
 
     def __post_init__(self, add_pooled: bool):
         if not self.datasets:
