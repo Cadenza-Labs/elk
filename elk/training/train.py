@@ -12,7 +12,7 @@ from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.normalization.cluster_norm import split_clusters
 from elk.plotting.pca_viz import pca_visualizations_cluster
-from elk.utils.data_utils import PreparedData, prepare_data
+from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
 from ..evaluation import Eval
@@ -369,16 +369,16 @@ def evaluate_and_save_cluster(
 def evaluate_and_save(
     train_loss: float | None,
     reporter: SingleReporter | MultiReporter,
-    train_dict: PreparedData,
-    val_dict: PreparedData,
+    train_dict,
+    val_dict,
     lr_models: list[Classifier],
     layer: int,
 ):
     row_bufs = defaultdict(list)
     layer_output = []
     for ds_name in val_dict:
-        val_h, val_gt, val_lm_preds = val_dict[ds_name]
-        train_h, train_gt, train_lm_preds = train_dict[ds_name]
+        val_h, val_gt, val_lm_preds, _ = val_dict[ds_name]
+        train_h, train_gt, train_lm_preds, _ = train_dict[ds_name]
         meta = {"dataset": ds_name, "layer": layer}
 
         val_credences = reporter(val_h)
@@ -529,7 +529,7 @@ class Elicit(Run):
     def train_and_save_reporter(
         self, device, layer, out_dir, train_dict, prompt_index=None
     ) -> ReporterWithInfo:
-        (first_train_h, train_gt, _), *rest = train_dict.values()  # TODO can remove?
+        (first_train_h, train_gt, _, _), *rest = train_dict.values()  # TODO can remove?
         (_, v, k, d) = first_train_h.shape
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
@@ -549,6 +549,7 @@ class Elicit(Run):
                 first_train_h,
                 train_gt,
                 _,
+                _,
             ), *rest = train_dict.values()  # TODO can remove?
             (_, v, k, d) = first_train_h.shape
             reporter = CcsReporter(self.net, d, device=device)
@@ -563,7 +564,7 @@ class Elicit(Run):
             )
 
             hidden_list, label_list = [], []
-            for ds_name, (train_h, train_gt, _) in train_dict.items():
+            for ds_name, (train_h, train_gt, _, _) in train_dict.items():
                 (_, v, _, _) = train_h.shape
 
                 # Datasets can have different
@@ -673,7 +674,7 @@ class Elicit(Run):
             )
         else:
             if probe_per_prompt:
-                (first_train_h, train_gt, _), *rest = train_dict.values()
+                (first_train_h, train_gt, _, _), *rest = train_dict.values()
                 (_, v, k, d) = first_train_h.shape
 
                 # self.prompt_indices being () actually means "all prompts"

@@ -10,7 +10,7 @@ def train_supervised(
 ) -> list[Classifier]:
     Xs, train_labels = [], []
 
-    for train_h, labels, _ in data.values():
+    for train_h, labels, _, _ in data.values():
         (_, v, k, _) = train_h.shape
         train_h = rearrange(train_h, "n v k d -> (n v k) d")
 
