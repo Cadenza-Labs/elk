@@ -62,9 +62,9 @@ def generate_templates(num_templates, dataset_name="", eval=False):
 
         yaml_content += template
     if eval:
-        root = f"templates/eval/{dataset_name}/{num_templates}"
+        root = f"templates/random/eval/{dataset_name}/{num_templates}"
     else:
-        root = f"templates/train/{dataset_name}/{num_templates}"
+        root = f"templates/random/train/{dataset_name}/{num_templates}"
     os.makedirs(root, exist_ok=True)
 
     with open(f"{root}/templates.yaml", "w") as file:
