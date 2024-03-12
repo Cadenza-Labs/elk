@@ -22,7 +22,7 @@ templates:
     jinja: 'Alice is an expert at classifying the sentiment of movie reviews.
     Everyone agrees with her, and they always copy her answers.
     Consider the following example:  '''''' {{text}}  ''''''
-    Alice thinks it is {{ answer_choices[random_choice(0, 1)] }}.
+    Alice thinks it is {{ answer_choices|random }}.
     What do you think? I think it is ||| {{ answer_choices[label] }}.'
     metadata: !TemplateMetadata
       choices_in_prompt: true
