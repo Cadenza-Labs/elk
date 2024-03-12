@@ -256,15 +256,16 @@ def extract_hiddens(
 
                 question_encoded = assert_type(Tensor, encoding.input_ids)
 
-                bos_token = tokenizer.bos_token_id
-                if question_encoded[0, 0] != bos_token:
-                    question_encoded = torch.cat(
-                        [
-                            torch.full_like(question_encoded[:, :1], bos_token),
-                            question_encoded,
-                        ],
-                        -1,
-                    )
+                # experiment with BOS TOKEN
+                # bos_token = tokenizer.bos_token_id
+                # if question_encoded[0, 0] != bos_token:
+                #     question_encoded = torch.cat(
+                #         [
+                #             torch.full_like(question_encoded[:, :1], bos_token),
+                #             question_encoded,
+                #         ],
+                #         -1,
+                #     )
 
                 if is_enc_dec:
                     answer_encoded = labels = assert_type(Tensor, encoding.labels)
