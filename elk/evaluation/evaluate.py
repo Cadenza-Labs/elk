@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import pandas as pd
 import torch
@@ -70,12 +71,6 @@ class Eval(Run):
         def eval_all(reporter: SingleReporter | MultiReporter):
             for ds_name, (val_h, val_gt, val_lm_preds, _) in val_output.items():
                 meta = {"dataset": ds_name, "layer": layer}
-                # print(val_h.shape)
-                # n, v, k, d = val_h.shape
-                # val_h = val_h.view(n * v, k, d)
-                # val_h = val_h.unsqueeze(1)
-                # val_gt = val_gt.repeat_interleave(v).flatten()
-
                 val_credences = (
                     reporter(val_h)
                     if isinstance(reporter, SingleReporter)

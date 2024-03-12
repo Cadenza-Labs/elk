@@ -33,7 +33,7 @@ class EvalResult:
     cal_thresh: float | None = None
     """The threshold used to calibrate the predictions."""
 
-    def to_dict(self, prefix: str = "") -> dict[str, float]:
+    def to_dict(self, prefix: str = "") -> dict[str, float | None]:
         """Convert the result to a dictionary."""
         acc_dict = {f"{prefix}acc_{k}": v for k, v in asdict(self.accuracy).items()}
         cal_acc_dict = (
@@ -60,6 +60,7 @@ def calc_auroc(
     y_logits: Tensor,
     y_true: Tensor,
     prompt_ensembling: PromptEnsembling,
+
     num_classes: int,
 ) -> RocAucResult:
     """
@@ -105,6 +106,7 @@ def calc_calibrated_accuracies(y_true, pos_probs) -> tuple[AccuracyResult, float
     cal_thresh = pos_probs.float().quantile(y_true.float().mean()).item()
     cal_preds = pos_probs.gt(cal_thresh).to(torch.int)
     cal_acc = accuracy_ci(y_true, cal_preds)
+
     return cal_acc, cal_thresh
 
 
@@ -162,7 +164,6 @@ def evaluate_preds(
     """
     y_logits, y_true, num_classes = prepare(y_logits, y_true, prompt_ensembling)
     return calc_eval_results(y_true, y_logits, prompt_ensembling, num_classes)
-
 
 def prepare(y_logits: Tensor, y_true: Tensor, prompt_ensembling: PromptEnsembling):
     """

@@ -68,6 +68,7 @@ class CcsConfig(FitterConfig):
     k_clusters: int | None = None
     min_cluster_size: int | None = None
 
+
     def __post_init__(self):
         self.loss_dict = parse_loss(self.loss)
 
@@ -252,6 +253,7 @@ class CcsReporter(nn.Module, PlattMixin):
             n, v, d = x_neg.shape
 
             prompt_ids = torch.eye(v, device=x_neg.device).expand(n, -1, -1)
+
             z_dim = 2 * v if self.config.erase_prompts else 2
             fitter = LeaceFitter(d, z_dim, dtype=x_neg.dtype, device=x_neg.device)
             fitter.update(

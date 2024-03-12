@@ -14,11 +14,14 @@ class AccuracyResult:
     """Lower bound of the confidence interval."""
     upper: float
     """Upper bound of the confidence interval."""
+    cal_thresh: float | None
+    """The threshold used to compute the calibrated accuracy."""
 
 
 def accuracy_ci(
     y_true: Tensor,
     y_pred: Tensor,
+    cal_thresh: float | None = None,
     *,
     num_samples: int = 1000,
     level: float = 0.95,
@@ -79,6 +82,7 @@ def accuracy_ci(
     # Compute the point estimate. Call flatten to ensure that we get a single number
     # computed across cluster boundaries even if the inputs were clustered.
     estimate = y_true.flatten().eq(y_pred.flatten()).float().mean().item()
+
 
     estimate = max(estimate, 1 - estimate)
 

@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 from einops import rearrange, repeat
 from simple_parsing import subgroups
+
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.normalization.cluster_norm import split_clusters
@@ -19,6 +20,7 @@ from ..evaluation import Eval
 from ..metrics import evaluate_preds, to_one_hot
 from ..metrics.eval import LayerOutput
 from ..run import LayerApplied, Run
+
 from ..training.supervised import train_supervised
 from ..utils.types import PromptEnsembling
 from . import Classifier
@@ -26,6 +28,7 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
+
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
@@ -424,9 +427,10 @@ def evaluate_and_save(
                         ).to_dict(),
                     }
                 )
-
+            """
             if train_lm_preds is not None:
                 row_bufs["train_lm_eval"].append(
+
                     {
                         **meta,
                         PROMPT_ENSEMBLING: prompt_ensembling.value,
@@ -436,17 +440,42 @@ def evaluate_and_save(
                     }
                 )
 
-            for lr_model_num, model in enumerate(lr_models):
-                row_bufs["lr_eval"].append(
-                    {
-                        **meta,
-                        PROMPT_ENSEMBLING: prompt_ensembling.value,
-                        "inlp_iter": lr_model_num,
-                        **evaluate_preds(
-                            val_gt, model(val_h), prompt_ensembling
-                        ).to_dict(),
-                    }
-                )
+ 
+                if val_lm_preds is not None:
+                    row_bufs["lm_eval"].append(
+                        {
+                            **meta,
+                            PROMPT_ENSEMBLING: prompt_ensembling.value,
+                            **evaluate_preds(
+                                val_gt, val_lm_preds, prompt_ensembling
+                            ).to_dict(),
+                        }
+                    )
+
+                if train_lm_preds is not None:
+                    row_bufs["train_lm_eval"].append(
+                        {
+                            **meta,
+                            PROMPT_ENSEMBLING: prompt_ensembling.value,
+                            **evaluate_preds(
+                                train_gt, train_lm_preds, prompt_ensembling
+                            ).to_dict(),
+                        }
+                    )
+
+                for lr_model_num, model in enumerate(lr_models):
+                    row_bufs["lr_eval"].append(
+                        {
+                            **meta,
+                            PROMPT_ENSEMBLING: prompt_ensembling.value,
+                            "inlp_iter": lr_model_num,
+                            **evaluate_preds(
+                                val_gt, model(val_h), prompt_ensembling
+                            ).to_dict(),
+                        }
+                    )"""
+
+        eval_all(reporter)
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -486,6 +515,7 @@ class Elicit(Run):
         )
 
     # Create a separate function to handle the reporter training.
+
     def cluster_train_and_save_reporter(
         self, device, layer, out_dir, clusters, prompt_index=None
     ) -> ReporterWithInfo:
@@ -530,6 +560,7 @@ class Elicit(Run):
         self, device, layer, out_dir, train_dict, prompt_index=None
     ) -> ReporterWithInfo:
         (first_train_h, train_gt, _, _), *rest = train_dict.values()  # TODO can remove?
+
         (_, v, k, d) = first_train_h.shape
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
@@ -544,7 +575,6 @@ class Elicit(Run):
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
-            # TODO: Do something else for clusters... Pass clusters
             (
                 first_train_h,
                 train_gt,
@@ -553,6 +583,9 @@ class Elicit(Run):
             ), *rest = train_dict.values()  # TODO can remove?
             (_, v, k, d) = first_train_h.shape
             reporter = CcsReporter(self.net, d, device=device)
+
+            pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+
             train_loss = reporter.fit(first_train_h)
 
             labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
@@ -725,7 +758,6 @@ class Elicit(Run):
                 train_dict, device, layer, self.out_dir / "lr_models"
             )
 
-            # TODO: Make it work for clusters
             return evaluate_and_save(
                 train_loss, maybe_multi_reporter, train_dict, val_dict, lr_models, layer
             )
