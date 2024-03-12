@@ -292,26 +292,26 @@ def extract_hiddens(
                         [question_encoded, answer_encoded], -1
                     )
 
-                # If this input is too long, skip it
-                if full_prompt_encoded.shape[-1] > max_length:
-                    break
-                else:
-                    # Record the EXACT question we fed to the model
-                    variant_questions.append(
-                        dict(
-                            {
-                                "template_id": i,
-                                "template_name": example["template_names"][i],
-                                "text": dict(
-                                    {
-                                        "question": choice["question"],
-                                        "answer": choice["answer"],
-                                    }
-                                ),
-                                "example_id": example_id,
-                            }
-                        )
+                    # If this input is too long, skip it
+                    if full_prompt_encoded.shape[-1] > max_length:
+                        break
+
+                # Record the EXACT question we fed to the model
+                variant_questions.append(
+                    dict(
+                        {
+                            "template_id": i,
+                            "template_name": example["template_names"][i],
+                            "text": dict(
+                                {
+                                    "question": choice["question"],
+                                    "answer": choice["answer"],
+                                }
+                            ),
+                            "example_id": example_id,
+                        }
                     )
+                )
 
                 inputs: dict[str, Tensor | None] = dict(
                     input_ids=full_prompt_encoded.long()
