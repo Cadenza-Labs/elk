@@ -194,6 +194,8 @@ def extract_hiddens(
         seed=cfg.seed,
     )
 
+    # here we have the contrast pairs
+
     layer_indices = cfg.layers or tuple(range(1, model.config.num_hidden_layers))
 
     global_max_examples = cfg.max_examples[0 if split_type == "train" else 1]
@@ -211,7 +213,7 @@ def extract_hiddens(
     if rank == world_size - 1:
         max_examples += global_max_examples % world_size
 
-    for example in prompt_ds:
+    for example_id, example in enumerate(prompt_ds):
         # Check if we've yielded enough examples
         if num_yielded >= max_examples:
             break
@@ -236,7 +238,6 @@ def extract_hiddens(
             dtype=torch.float32,
         )
         text_questions = []
-
         # Iterate over variants
         for i, record in enumerate(example["prompts"]):
             variant_questions = []
@@ -280,7 +281,21 @@ def extract_hiddens(
                     break
                 else:
                     # Record the EXACT question we fed to the model
-                    variant_questions.append(text)
+                    variant_questions.append(
+                        dict(
+                            {
+                                "template_id": i,
+                                "template_name": example["template_names"][i],
+                                "text": dict(
+                                    {
+                                        "question": text,
+                                        "answer": choice["answer"],
+                                    }
+                                ),
+                                "example_id": example_id,
+                            }
+                        )
+                    )
 
                 inputs: dict[str, Tensor | None] = dict(input_ids=ids.long())
                 if is_enc_dec or has_lm_preds:

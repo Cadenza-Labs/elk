@@ -11,9 +11,9 @@ from concept_erasure import LeaceFitter
 from torch import Tensor
 from typing_extensions import override
 
+from ..normalization.cluster_norm import cluster_norm, split_clusters
 from ..parsing import parse_loss
 from ..utils.typing import assert_type
-from .burns_norm import BurnsNorm
 from .common import FitterConfig
 from .losses import LOSSES
 from .platt_scaling import PlattMixin
@@ -43,7 +43,7 @@ class CcsConfig(FitterConfig):
     function 1.0*consistency_squared + 0.5*prompt_var.
     """
     loss_dict: dict[str, float] = field(default_factory=dict, init=False)
-    norm: Literal["leace", "burns"] = "leace"
+    norm: Literal["leace", "burns", "cluster", "none"] = "leace"
     num_layers: int = 1
     """The number of layers in the MLP."""
     pre_ln: bool = False
@@ -63,6 +63,11 @@ class CcsConfig(FitterConfig):
     """The weight decay or L2 penalty to use."""
     erase_prompts: bool = True
     """Whether to apply concept erasure on the prompt template IDs."""
+
+    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral", None] | None = None
+    k_clusters: int | None = None
+    min_cluster_size: int | None = None
+
 
     def __post_init__(self):
         self.loss_dict = parse_loss(self.loss)
@@ -85,16 +90,19 @@ class CcsReporter(nn.Module, PlattMixin):
         self,
         cfg: CcsConfig,
         in_features: int,
+        clusters_train: dict[str, Tensor] | None = None,
+        clusters_test: dict[str, Tensor] | None = None,
         *,
         device: str | torch.device | None = None,
         dtype: torch.dtype | None = None,
-        num_variants: int = 1,
     ):
         super().__init__()
 
         self.config = cfg
         self.in_features = in_features
-        self.num_variants = num_variants
+
+        self.clusters_train = clusters_train
+        self.clusters_test = clusters_test
 
         # Learnable Platt scaling parameters
         self.bias = nn.Parameter(torch.zeros(1, device=device, dtype=dtype))
@@ -141,6 +149,9 @@ class CcsReporter(nn.Module, PlattMixin):
             if param is not self.scale and param is not self.bias:
                 yield param
 
+    def set_norm(self, norm: nn.Module):
+        self.norm = norm
+
     def reset_parameters(self):
         """Reset the parameters of the probe.
 
@@ -174,12 +185,22 @@ class CcsReporter(nn.Module, PlattMixin):
         elif self.config.init != "pca":
             raise ValueError(f"Unknown init: {self.config.init}")
 
-    def forward(self, x: Tensor) -> Tensor:
-        """Return the credence assigned to the hidden state `x`."""
-        assert self.norm is not None, "Must call fit() before forward()"
-        raw_scores = self.probe(self.norm(x)).squeeze(-1)
-        platt_scaled_scores = raw_scores.mul(self.scale).add(self.bias).squeeze(-1)
-        return platt_scaled_scores
+    def forward(self, x) -> Tensor:
+        """Return the credence assigned to the hidden state `x`"""
+
+        if self.config.norm == "cluster":
+            x = cluster_norm(x)
+        elif self.config.norm != "none":
+            assert self.norm is not None, "Normalization not initialized"
+            x = self.norm(x)
+        else:
+            print("self.config.norm", self.config.norm)
+            print("No normalization")
+
+        raw_scores = self.probe(x).squeeze(-1)
+        return raw_scores.squeeze(-1)
+        # platt_scaled_scores = raw_scores.mul(self.scale).add(self.bias).squeeze(-1)
+        # return platt_scaled_scores
 
     def loss(self, logit0: Tensor, logit1: Tensor) -> Tensor:
         """Return the loss of the reporter on the contrast pair (x0, x1).
@@ -197,21 +218,42 @@ class CcsReporter(nn.Module, PlattMixin):
         )
         return assert_type(Tensor, loss)
 
-    def fit(self, hiddens: Tensor) -> float:
+    def fit_by_clusters(self, clusters: dict[str, Tensor]) -> float:
+        # Record the best acc, loss, and params found so far
+        best_loss = torch.inf
+        best_state: dict[str, Tensor] = {}  # State dict of the best run
+
+        for i in range(self.config.num_tries):
+            self.reset_parameters()
+
+            x_neg, x_pos = split_clusters(clusters)
+
+            loss = self.train_loop_lbfgs_by_clusters(x_neg, x_pos)
+
+            if loss < best_loss:
+                best_loss = loss
+                best_state = deepcopy(self.state_dict())
+
+        if not math.isfinite(best_loss):
+            raise RuntimeError("Got NaN/infinite loss during training")
+
+        self.load_state_dict(best_state)
+
+        return best_loss
+
+    def fit(self, hiddens) -> float:
         """Fit the probe to the contrast pair `hiddens`.
 
         Returns:
             best_loss: The best loss obtained.
         """
-        x_neg, x_pos = hiddens.unbind(2)
+        if self.config.norm == "leace":
+            x_neg, x_pos = hiddens.unbind(2)
+            # One-hot indicators for each prompt template
+            n, v, d = x_neg.shape
 
-        # One-hot indicators for each prompt template
-        n, v, d = x_neg.shape
-        prompt_ids = torch.eye(v, device=x_neg.device).expand(n, -1, -1)
+            prompt_ids = torch.eye(v, device=x_neg.device).expand(n, -1, -1)
 
-        if self.config.norm == "burns":
-            self.norm = BurnsNorm()
-        else:
             z_dim = 2 * v if self.config.erase_prompts else 2
             fitter = LeaceFitter(d, z_dim, dtype=x_neg.dtype, device=x_neg.device)
             fitter.update(
@@ -226,7 +268,9 @@ class CcsReporter(nn.Module, PlattMixin):
             )
             self.norm = fitter.eraser
 
-        x_neg, x_pos = self.norm(x_neg), self.norm(x_pos)
+            x_neg, x_pos = self.norm(x_neg), self.norm(x_pos)
+        elif self.config.norm == "burns":
+            x_neg, x_pos = hiddens.unbind(2)
 
         # Record the best acc, loss, and params found so far
         best_loss = torch.inf
@@ -277,6 +321,40 @@ class CcsReporter(nn.Module, PlattMixin):
 
         return float(loss)
 
+    def train_loop_lbfgs_by_clusters(self, x_neg, x_pos) -> float:
+        """LBFGS train loop, returning the final loss. Modifies params in-place."""
+
+        eps = torch.finfo(x_pos[0].dtype).eps
+        optimizer = torch.optim.LBFGS(
+            self.parameters(),
+            line_search_fn="strong_wolfe",
+            max_iter=self.config.num_epochs,
+            tolerance_change=eps,
+            tolerance_grad=eps,
+        )
+        # Raw unsupervised loss, WITHOUT regularization
+        loss = torch.inf
+
+        def closure():
+            nonlocal loss
+            optimizer.zero_grad()
+
+            loss = self.loss(self(x_neg), self(x_pos))
+            regularizer = 0.0
+
+            # We explicitly add L2 regularization to the loss, since LBFGS
+            # doesn't have a weight_decay parameter
+            for param in self.parameters():
+                regularizer += self.config.weight_decay * param.norm() ** 2 / 2
+
+            regularized = loss + regularizer
+            regularized.backward()
+
+            return float(regularized)
+
+        optimizer.step(closure)
+        return float(loss)
+
     def train_loop_lbfgs(self, x_neg: Tensor, x_pos: Tensor) -> float:
         """LBFGS train loop, returning the final loss. Modifies params in-place."""
 
@@ -294,7 +372,6 @@ class CcsReporter(nn.Module, PlattMixin):
             nonlocal loss
             optimizer.zero_grad()
 
-            # We already normalized in fit()
             loss = self.loss(self(x_neg), self(x_pos))
             regularizer = 0.0
 

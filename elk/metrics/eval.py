@@ -59,7 +59,8 @@ class EvalResult:
 def calc_auroc(
     y_logits: Tensor,
     y_true: Tensor,
-    ensembling: PromptEnsembling,
+    prompt_ensembling: PromptEnsembling,
+
     num_classes: int,
 ) -> RocAucResult:
     """
@@ -74,18 +75,18 @@ def calc_auroc(
     Returns:
         RocAucResult: A dictionary containing the AUROC and confidence interval.
     """
-    if ensembling == PromptEnsembling.NONE:
+    if prompt_ensembling == PromptEnsembling.NONE:
         auroc = roc_auc_ci(
             to_one_hot(y_true, num_classes).long().flatten(1), y_logits.flatten(1)
         )
-    elif ensembling in (PromptEnsembling.PARTIAL, PromptEnsembling.FULL):
+    elif prompt_ensembling in (PromptEnsembling.PARTIAL, PromptEnsembling.FULL):
         # Pool together the negative and positive class logits
         if num_classes == 2:
             auroc = roc_auc_ci(y_true, y_logits[..., 1] - y_logits[..., 0])
         else:
             auroc = roc_auc_ci(to_one_hot(y_true, num_classes).long(), y_logits)
     else:
-        raise ValueError(f"Unknown mode: {ensembling}")
+        raise ValueError(f"Unknown mode: {prompt_ensembling}")
 
     return auroc
 
@@ -104,7 +105,8 @@ def calc_calibrated_accuracies(y_true, pos_probs) -> tuple[AccuracyResult, float
 
     cal_thresh = pos_probs.float().quantile(y_true.float().mean()).item()
     cal_preds = pos_probs.gt(cal_thresh).to(torch.int)
-    cal_acc = accuracy_ci(y_true, cal_preds, cal_thresh)
+    cal_acc = accuracy_ci(y_true, cal_preds)
+
     return cal_acc, cal_thresh
 
 
@@ -163,7 +165,6 @@ def evaluate_preds(
     y_logits, y_true, num_classes = prepare(y_logits, y_true, prompt_ensembling)
     return calc_eval_results(y_true, y_logits, prompt_ensembling, num_classes)
 
-
 def prepare(y_logits: Tensor, y_true: Tensor, prompt_ensembling: PromptEnsembling):
     """
     Prepare the logits and ground truth for evaluation
@@ -204,10 +205,11 @@ def calc_eval_results(
         else y_logits[..., 1] - y_logits[..., 0]
     )
     pos_probs = torch.sigmoid(pooled_logits)
-    if num_classes == 2:
-        cal_acc, cal_thresh = calc_calibrated_accuracies(y_true=y_true, pos_probs=pos_probs)
-    else:
-        cal_acc, cal_thresh = None, None
+    cal_acc, cal_thresh = (
+        calc_calibrated_accuracies(y_true=y_true, pos_probs=pos_probs)
+        if num_classes == 2
+        else None
+    )
     cal_err = (
         calc_calibrated_errors(y_true=y_true, pos_probs=pos_probs)
         if num_classes == 2
@@ -217,7 +219,7 @@ def calc_eval_results(
     auroc = calc_auroc(
         y_logits=y_logits,
         y_true=y_true,
-        ensembling=prompt_ensembling,
+        prompt_ensembling=prompt_ensembling,
         num_classes=num_classes,
     )
 

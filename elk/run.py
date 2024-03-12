@@ -1,4 +1,3 @@
-import os
 import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -14,7 +13,6 @@ import torch.multiprocessing as mp
 import yaml
 from simple_parsing.helpers import Serializable, field
 from simple_parsing.helpers.serialization import save
-from torch import Tensor
 from tqdm import tqdm
 
 from .debug_logging import save_debug_log
@@ -26,8 +24,6 @@ from .utils import (
     Color,
     assert_type,
     get_layer_indices,
-    int16_to_float32,
-    select_split,
     select_usable_devices,
 )
 from .utils.types import PromptEnsembling
@@ -80,9 +76,6 @@ def calculate_layer_outputs(layer_outputs: list[LayerOutput], out_path: Path):
 
     df_concat = pd.concat(dfs)
     df_concat.to_csv(out_path, index=False)
-
-PreparedData = dict[str, tuple[Tensor, Tensor, Tensor | None]]
-
 
 @dataclass
 class Run(ABC, Serializable):
@@ -175,35 +168,6 @@ class Run(ABC, Serializable):
         random.seed(seed)
         torch.manual_seed(seed)
 
-    def get_device(self, devices, world_size: int) -> str:
-        """Get the device for the current process."""
-
-        rank = os.getpid() % world_size
-        device = devices[rank]
-        return device
-
-    def prepare_data(
-        self, device: str, layer: int, split_type: Literal["train", "val"]
-    ) -> PreparedData:
-        """Prepare data for the specified layer and split type."""
-        out = {}
-
-        for ds_name, ds in self.datasets:
-            key = select_split(ds, split_type)
-
-            split = ds[key].with_format("torch", device=device, dtype=torch.int16)
-            labels = assert_type(Tensor, split["label"])
-            hiddens = int16_to_float32(assert_type(Tensor, split[f"hidden_{layer}"]))
-            if self.prompt_indices:
-                hiddens = hiddens[:, self.prompt_indices, ...]
-
-            with split.formatted_as("torch", device=device):
-                has_preds = "model_logits" in split.features
-                lm_preds = split["model_logits"] if has_preds else None
-
-            out[ds_name] = (hiddens, labels.to(hiddens.device), lm_preds)
-
-        return out
 
     def concatenate(self, layers):
         """Concatenate hidden states from a previous layer."""
@@ -261,9 +225,12 @@ class Run(ABC, Serializable):
                     # Save the CSV
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
+
                 if self.debug:
                     save_debug_log(self.datasets, self.out_dir)
-                calculate_layer_outputs(
-                    layer_outputs=layer_outputs,
-                    out_path=self.out_dir / "layer_ensembling.csv",
-                )
+                # calculate_layer_outputs(
+                #     layer_outputs=layer_outputs,
+                #     out_path=self.out_dir / "layer_ensembling.csv",
+                # )
+                print("out_dir_path", self.out_dir)
+
