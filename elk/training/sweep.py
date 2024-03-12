@@ -54,16 +54,14 @@ class Sweep:
     name: str | None = None
 
     # A bit of a hack to add all the command line arguments from Elicit
-    run_template: Elicit = None
+    run_template = Elicit(
+        data=Extract(
+            model="<placeholder>",
+            datasets=("<placeholder>",),
+        )
+    )
 
     def __post_init__(self, add_pooled: bool):
-        if self.run_template is None:
-            self.run_template = Elicit(
-                data=Extract(
-                    model="<placeholder>",
-                    datasets=("<placeholder>",),
-                )
-            )
         if not self.datasets:
             raise ValueError("No datasets specified")
         if not self.models:

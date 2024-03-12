@@ -110,7 +110,7 @@ def select_usable_devices(
                     for idx in range(num_installed)
                 )
             )
-            min_memory = int(0.5 * min_device_ram)
+            min_memory = int(0.9 * min_device_ram)
 
         # Get free memory for each GPU
         num_tries = 0
