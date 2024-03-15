@@ -14,7 +14,6 @@ from elk.normalization.cluster_norm import split_clusters
 from elk.plotting.pca_viz import pca_visualizations_cluster
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
-from elk.utils.viz import pca_visualizations
 
 from ..evaluation import Eval
 from ..metrics import evaluate_preds, to_one_hot
@@ -580,7 +579,7 @@ class Elicit(Run):
             (_, v, k, d) = first_train_h.shape
             reporter = CcsReporter(self.net, d, device=device)
 
-            pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+            # pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
 
             train_loss = reporter.fit(first_train_h)
 
