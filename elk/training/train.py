@@ -11,7 +11,7 @@ from simple_parsing import subgroups
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.normalization.cluster_norm import split_clusters
-from elk.plotting.pca_viz import pca_visualizations_cluster
+from elk.plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -112,12 +112,12 @@ def flatten_text_questions(text_questions):
     # Loop through each sublist (representing the 'n' dimension)
     for sublist in text_questions:
         # Loop through each item in the sublist (representing the 'v' dimension)
-        for item in sublist:
-            # Append each item (which is a list of 'k' elements) to the flattened_list
-            # Store only the first element, since it is the same as the second
-            # Only the pseudo label is different but that is appended later
-            flattened_text_questions.append(item[0])
-            flattened_text_questions.append(item[1])
+        for text_pair in sublist:
+            # text_pair is a list of the text questions,
+            # where element 0 has negative pseudo-label
+            # and 1 has positive pseudo-label
+            flattened_text_questions.append(text_pair)
+
     return flattened_text_questions
 
 
@@ -519,16 +519,23 @@ class Elicit(Run):
             dataset_key = list(clusters.keys())[0]
             hiddens = clusters[dataset_key]["train"]["hiddens"]
             labels = clusters[dataset_key]["train"]["labels"]
-            cluster_ids = clusters[dataset_key]["train"]["cluster_ids"]
-            cluster_ids_flattened = torch.cat(
-                [torch.tensor(cluster_ids[key]) for key in cluster_ids]
+
+            hover_labels = []
+            for sublist in clusters[dataset_key]["train"]["text_questions"].values():
+                for text_question in sublist:
+                    hover_labels.append(text_question)
+
+            hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
+            labels_tensor = torch.cat(list(labels.values()), dim=0)
+            pca_visualizations(
+                layer,
+                hiddens_tensor,
+                labels_tensor,
+                self.out_dir,
+                hover_labels=hover_labels,
             )
             pca_visualizations_cluster(
-                hiddens,
-                cluster_ids_flattened,
-                labels,
-                layer=layer,
-                out_dir=self.out_dir,
+                layer, hiddens, labels, self.out_dir, hover_labels=hover_labels
             )
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
@@ -579,7 +586,7 @@ class Elicit(Run):
             (_, v, k, d) = first_train_h.shape
             reporter = CcsReporter(self.net, d, device=device)
 
-            # pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+            pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
 
             train_loss = reporter.fit(first_train_h)
 
