@@ -8,19 +8,18 @@ import pandas as pd
 import torch
 from einops import rearrange, repeat
 from simple_parsing import subgroups
-
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.normalization.cluster_norm import split_clusters
 from elk.plotting.pca_viz import pca_visualizations_cluster
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
+from elk.utils.viz import pca_visualizations
 
 from ..evaluation import Eval
 from ..metrics import evaluate_preds, to_one_hot
 from ..metrics.eval import LayerOutput
 from ..run import LayerApplied, Run
-
 from ..training.supervised import train_supervised
 from ..utils.types import PromptEnsembling
 from . import Classifier
@@ -28,7 +27,6 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
-
 
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
@@ -132,7 +130,7 @@ def get_clusters(
     text_questions: list,
     num_clusters: int,
     min_cluster_size: int = 3,
-    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral"] = "kmeans",
+    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral", None] = "kmeans",
 ) -> dict:
     n, v, k, d = x.shape
 
@@ -440,7 +438,7 @@ def evaluate_and_save(
                     }
                 )
 
- 
+
                 if val_lm_preds is not None:
                     row_bufs["lm_eval"].append(
                         {
@@ -474,8 +472,6 @@ def evaluate_and_save(
                             ).to_dict(),
                         }
                     )"""
-
-        eval_all(reporter)
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 

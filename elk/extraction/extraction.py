@@ -345,7 +345,6 @@ def extract_hiddens(
         )
         if has_lm_preds:
             out_record["model_logits"] = lm_logits.log_softmax(dim=-1)
-
         num_yielded += 1
         yield out_record
 
