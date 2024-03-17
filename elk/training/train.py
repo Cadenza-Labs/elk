@@ -638,12 +638,6 @@ class Elicit(Run):
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
-            (
-                first_train_h,
-                train_gt,
-                _,
-                _,
-            ), *rest = train_dict.values()  # TODO can remove?
             (_, v, k, d) = first_train_h.shape
             reporter = CcsReporter(self.net, d, device=device)
 
