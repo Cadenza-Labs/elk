@@ -4,6 +4,7 @@ from functools import cache
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, Literal
 
+import torch
 from datasets import (
     ClassLabel,
     DatasetDict,
@@ -11,8 +12,40 @@ from datasets import (
     Value,
     get_dataset_config_names,
 )
+from torch import Tensor
 
-from .typing import assert_type
+from .typing import assert_type, int16_to_float32
+
+PreparedData = dict[str, tuple[Tensor, Tensor, Tensor | None]]
+
+
+def prepare_data(
+    datasets: DatasetDict,
+    device: str,
+    layer: int,
+    split_type: Literal["train", "val"],
+    prompt_indices: tuple[int, ...] = (),
+):
+    """Prepare data for the specified layer and split type."""
+    out = {}
+
+    for ds_name, ds in datasets:
+        key = select_split(ds, split_type)
+
+        split = ds[key].with_format("torch", device=device, dtype=torch.int16)
+        labels = assert_type(Tensor, split["label"])
+        hiddens = int16_to_float32(assert_type(Tensor, split[f"hidden_{layer}"]))
+        if prompt_indices:
+            hiddens = hiddens[:, prompt_indices, ...]
+
+        with split.formatted_as("torch", device=device):
+            has_preds = "model_logits" in split.features
+            lm_preds = split["model_logits"] if has_preds else None
+            text_questions = split["text_questions"]
+
+        out[ds_name] = (hiddens, labels.to(hiddens.device), lm_preds, text_questions)
+
+    return out
 
 
 def get_columns_all_equal(dataset: DatasetDict) -> list[str]:

@@ -1,0 +1,306 @@
+dataset: amazon_polarity
+templates:
+  id-16_Thebais_0: !Template
+    answer_choices: negative ||| positive
+    id: id-16_Thebais_0
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. Thebais'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_Thebais_0
+    reference: ''
+  id-16_phrenopericardiac_1: !Template
+    answer_choices: negative ||| positive
+    id: id-16_phrenopericardiac_1
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. phrenopericardiac'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_phrenopericardiac_1
+    reference: ''
+  id-16_pebblestone_2: !Template
+    answer_choices: negative ||| positive
+    id: id-16_pebblestone_2
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. pebblestone'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_pebblestone_2
+    reference: ''
+  id-16_prize_3: !Template
+    answer_choices: negative ||| positive
+    id: id-16_prize_3
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. prize'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_prize_3
+    reference: ''
+  id-16_psychophysiologist_4: !Template
+    answer_choices: negative ||| positive
+    id: id-16_psychophysiologist_4
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. psychophysiologist'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_psychophysiologist_4
+    reference: ''
+  id-16_unpostulated_5: !Template
+    answer_choices: negative ||| positive
+    id: id-16_unpostulated_5
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. unpostulated'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_unpostulated_5
+    reference: ''
+  id-16_psychovital_6: !Template
+    answer_choices: negative ||| positive
+    id: id-16_psychovital_6
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. psychovital'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_psychovital_6
+    reference: ''
+  id-16_chieftess_7: !Template
+    answer_choices: negative ||| positive
+    id: id-16_chieftess_7
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. chieftess'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_chieftess_7
+    reference: ''
+  id-16_dissepiment_8: !Template
+    answer_choices: negative ||| positive
+    id: id-16_dissepiment_8
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. dissepiment'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_dissepiment_8
+    reference: ''
+  id-16_pipistrelle_9: !Template
+    answer_choices: negative ||| positive
+    id: id-16_pipistrelle_9
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. pipistrelle'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_pipistrelle_9
+    reference: ''
+  id-16_gobble_10: !Template
+    answer_choices: negative ||| positive
+    id: id-16_gobble_10
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. gobble'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_gobble_10
+    reference: ''
+  id-16_overstrictly_11: !Template
+    answer_choices: negative ||| positive
+    id: id-16_overstrictly_11
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. overstrictly'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_overstrictly_11
+    reference: ''
+  id-16_unrecognition_12: !Template
+    answer_choices: negative ||| positive
+    id: id-16_unrecognition_12
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. unrecognition'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_unrecognition_12
+    reference: ''
+  id-16_cypsela_13: !Template
+    answer_choices: negative ||| positive
+    id: id-16_cypsela_13
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. cypsela'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_cypsela_13
+    reference: ''
+  id-16_telyn_14: !Template
+    answer_choices: negative ||| positive
+    id: id-16_telyn_14
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. telyn'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_telyn_14
+    reference: ''
+  id-16_araliad_15: !Template
+    answer_choices: negative ||| positive
+    id: id-16_araliad_15
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. araliad'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 16_araliad_15
+    reference: ''

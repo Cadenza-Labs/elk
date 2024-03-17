@@ -83,7 +83,6 @@ def accuracy_ci(
     # computed across cluster boundaries even if the inputs were clustered.
     estimate = y_true.flatten().eq(y_pred.flatten()).float().mean().item()
 
-    # taken from burns code
     estimate = max(estimate, 1 - estimate)
 
     return AccuracyResult(estimate, lower, upper, cal_thresh)

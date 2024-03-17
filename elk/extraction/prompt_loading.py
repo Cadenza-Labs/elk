@@ -54,6 +54,8 @@ def load_prompts(
     else:
         prompter = DatasetTemplates(template_path)
 
+    print("template_path", template_path)
+
     # If the prompt template says to binarize, we should
     binarize = binarize or prompter.binarize
     prompter.drop_non_mc_templates()

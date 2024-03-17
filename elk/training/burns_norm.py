@@ -12,7 +12,7 @@ class BurnsNorm(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         """Normalizes per prompt template
         Args:
-            x: input of dimension (n, v, c, d) or (n, v, d)
+            x: input of dimension (n, v, k, d) or (n, v, d)
         Returns:
             x_normalized: normalized output
         """

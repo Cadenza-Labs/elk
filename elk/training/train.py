@@ -1,8 +1,8 @@
 """Main training loop."""
-
-import pathlib
+import json
 from collections import defaultdict
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
@@ -10,15 +10,19 @@ import torch
 from einops import rearrange, repeat
 from matplotlib import pyplot as plt
 from simple_parsing import subgroups
+from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 from sklearn.decomposition import PCA
 
-from elk.training.burns_norm import BurnsNorm
+from elk.extraction import Extract
+from elk.normalization.cluster_norm import split_clusters
+from elk.plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
+from elk.utils.data_utils import prepare_data
+from elk.utils.gpu_utils import get_device
 
 from ..evaluation import Eval
-from ..extraction import Extract
 from ..metrics import evaluate_preds, to_one_hot
 from ..metrics.eval import LayerOutput
-from ..run import LayerApplied, PreparedData, Run
+from ..run import LayerApplied, Run
 from ..training.supervised import train_supervised
 from ..utils.types import PromptEnsembling
 from . import Classifier
@@ -28,61 +32,420 @@ from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
 DEEPMIND_REPRODUCTION = True
+# For debugging, TODO: Remove later
+torch.set_printoptions(threshold=5000)
+
+
+def save_clusters_representations(dataset_name, clusters, split, out_dir, layer):
+    serialized_text_questions = tensor_to_serializable(
+        clusters[split]["text_questions"]
+    )
+    json_object = json.dumps(serialized_text_questions, indent=4)
+    path = (
+        out_dir / "clusters" / split / f"clusters_{dataset_name}_{split}_{layer}.json"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as outfile:
+        outfile.write(json_object)
+        print(path)
+
+
+def tensor_to_serializable(data):
+    """
+    Recursively converts tensors in the given data structure to a serializable format.
+    """
+    if isinstance(data, torch.Tensor):
+        return data.tolist()  # Convert tensors to lists
+    elif isinstance(data, dict):
+        return {key: tensor_to_serializable(val) for key, val in data.items()}
+    elif isinstance(data, list):
+        return [tensor_to_serializable(val) for val in data]
+    else:
+        return data
+
+
+def generate_html(json_data, output_file="clusters.html"):
+    """
+    Generates an HTML file that uses
+    jquery.json-viewer (from CDN) to display the given JSON data.
+
+    Parameters:
+    json_data (dict): The JSON data to display.
+    output_file (str): The filename for the generated HTML file.
+    """
+
+    # Convert the dictionary to a JSON-formatted string
+    json_string = json.dumps(json_data, indent=4)
+
+    # HTML content with jquery.json-viewer from CDN
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>JSON Viewer</title>
+        <!-- jQuery from CDN -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- jquery.json-viewer JS and CSS from CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/jquery.json-viewer/json-viewer/jquery.json-viewer.js">
+        </script>
+        <link href="https://cdn.jsdelivr.net/npm/jquery.json-viewer/json-viewer/jquery.json-viewer.css" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <h2>JSON Data</h2>
+        <pre id="json-renderer"></pre>
+
+        <script>
+            var jsonData = {json_string};
+            $(document).ready(function() {{
+                $('#json-renderer').jsonViewer(jsonData, {{collapsed: true}});
+            }});
+        </script>
+    </body>
+    </html>
+    """  # noqa: E501
+
+    # Write the HTML content to a file
+    with open(output_file, "w") as file:
+        file.write(html_content)
+
+
+def flatten_text_questions(text_questions):
+    # Initialize an empty list to store the flattened data
+    flattened_text_questions = []
+
+    # Loop through each sublist (representing the 'n' dimension)
+    for sublist in text_questions:
+        # Loop through each item in the sublist (representing the 'v' dimension)
+        for text_pair in sublist:
+            # text_pair is a list of the text questions,
+            # where element 0 has negative pseudo-label
+            # and 1 has positive pseudo-label
+            flattened_text_questions.append(text_pair)
+
+    return flattened_text_questions
+
+
+# TODO: Move to utils
+def get_clusters(
+    x: torch.Tensor,
+    labels: torch.Tensor,
+    lm_preds: torch.Tensor,
+    text_questions: list,
+    num_clusters: int,
+    min_cluster_size: int = 3,
+    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral", None] = "kmeans",
+) -> dict:
+    n, v, k, d = x.shape
+
+    # get rid of template dimensions,
+    # since we are creating the clusters as a replacement
+    x = x.view(n * v, k, d)
+    labels = labels.repeat_interleave(v).flatten()
+    lm_preds = lm_preds.view(n * v, k)
+
+    x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
+
+    if cluster_algo == "kmeans":
+        clustering_results = KMeans(
+            n_clusters=num_clusters, random_state=0, n_init="auto"
+        ).fit(x_averaged_over_choices.cpu().numpy())
+    elif cluster_algo == "HDBSCAN":
+        clustering_results = HDBSCAN(min_cluster_size=min_cluster_size).fit(
+            x_averaged_over_choices.cpu().numpy()
+        )
+    elif cluster_algo == "spectral":
+        clustering_results = SpectralClustering(
+            n_clusters=num_clusters, assign_labels="cluster_qr", random_state=0
+        ).fit(x_averaged_over_choices.cpu().numpy())
+    else:
+        raise ValueError(f"Unknown cluster algorithm: {cluster_algo}")
+
+    cluster_ids = clustering_results.labels_
+
+    unique_clusters = list(set(cluster_ids.tolist()))
+    print("unique_clusters", len(unique_clusters))
+
+    clusters = {
+        "train": {
+            "hiddens": {},
+            "labels": {},
+            "lm_preds": {},
+            "cluster_ids": {},
+            "ids": {},
+            "text_questions": {},
+        },
+        "test": {
+            "hiddens": {},
+            "labels": {},
+            "lm_preds": {},
+            "cluster_ids": {},
+            "ids": {},
+            "text_questions": {},
+        },
+    }
+    text_questions = flatten_text_questions(text_questions)
+
+    for unique_cluster_id in unique_clusters:
+        cluster_data = []
+        gt_data = []
+        lm_pred_data = []
+        # cluster ids and ids are collected for debugging,
+        # cluster_ids should be all the same in a cluster
+        cluster_ids_data = []
+        # ids should be different
+        ids_data = []
+
+        # Gather data for the current cluster
+        for idx, cluster_id in enumerate(cluster_ids):
+            if cluster_id == unique_cluster_id:
+                cluster_data.append(x[idx])
+                gt_data.append(labels[idx])
+                lm_pred_data.append(lm_preds[idx])
+                cluster_ids_data.append(cluster_id.item())
+                ids_data.append(idx)
+
+        cluster = torch.stack(cluster_data, dim=0)
+
+        # Divide the data in the middle
+        # if there is just one element, add it to both train and test
+        split_index = len(cluster_data) // 2 if len(cluster_data) > 1 else None
+        clusters["train"]["hiddens"][unique_cluster_id] = cluster[:split_index]
+
+        clusters["train"]["labels"][unique_cluster_id] = torch.stack(
+            gt_data[:split_index], dim=0
+        )
+        clusters["train"]["lm_preds"][unique_cluster_id] = torch.stack(
+            lm_pred_data[:split_index], dim=0
+        )
+        clusters["train"]["cluster_ids"][unique_cluster_id] = cluster_ids_data[
+            :split_index
+        ]
+        clusters["train"]["ids"][unique_cluster_id] = ids_data[:split_index]
+
+        selected_questions = [text_questions[idx] for idx in ids_data[:split_index]]
+        clusters["train"]["text_questions"][unique_cluster_id] = selected_questions
+
+        clusters["test"]["hiddens"][unique_cluster_id] = cluster[split_index:]
+        clusters["test"]["labels"][unique_cluster_id] = torch.stack(
+            gt_data[split_index:], dim=0
+        )
+        clusters["test"]["lm_preds"][unique_cluster_id] = torch.stack(
+            lm_pred_data[split_index:], dim=0
+        )
+        clusters["test"]["cluster_ids"][unique_cluster_id] = cluster_ids_data[
+            split_index:
+        ]
+        clusters["test"]["ids"][unique_cluster_id] = ids_data[split_index:]
+
+        selected_questions = [text_questions[i] for i in ids_data[split_index:]]
+        clusters["test"]["text_questions"][unique_cluster_id] = selected_questions
+
+        assert set(cluster_ids_data[:split_index]) == {
+            unique_cluster_id
+        }, "cluster_ids should be all the same in a cluster"
+        assert set(cluster_ids_data[split_index:]) == {
+            unique_cluster_id
+        }, "cluster_ids should be all the same in a cluster"
+        assert len(set(ids_data[:split_index])) == len(
+            ids_data[:split_index]
+        ), "ids should be different"
+        assert len(set(ids_data[split_index:])) == len(
+            ids_data[split_index:]
+        ), "ids should be different"
+
+    return clusters
+
+
+def evaluate_and_save_cluster(
+    train_loss: float | None,
+    reporter: SingleReporter | MultiReporter,
+    clusters: dict,
+    lr_models: list[Classifier],
+    layer: int,
+):
+    row_bufs = defaultdict(list)
+    layer_output = []
+
+    for ds_name, value in clusters.items():
+        val_cluster, val_labels, _ = (
+            value["test"]["hiddens"],
+            value["test"]["labels"],
+            value["test"]["lm_preds"],
+        )
+        # train_cluster, _, _ = (
+        #     value["train"]["hiddens"],
+        #     value["train"]["labels"],
+        #     value["train"]["lm_preds"],
+        # )
+        meta = {"dataset": ds_name, "layer": layer}
+
+        val_neg, val_pos = split_clusters(val_cluster)
+        val_credences_neg = reporter(val_neg)
+        val_credences_pos = reporter(val_pos)
+        val_credences = torch.stack(
+            (val_credences_neg, val_credences_pos), dim=1
+        )  # shape is (n, k) now, where k=2
+        val_credences = val_credences.unsqueeze(1)  # now shape is (n, v, k), where v=1
+
+        # train_pos, train_neg = split_clusters(train_cluster)
+        # train_credences_neg = reporter(train_neg)
+        # train_credences_pos = reporter(train_pos)
+        # train_credences = torch.stack(
+        # (train_credences_neg, train_credences_pos),
+        # dim=1
+        # )
+        # train_credences = train_credences.unsqueeze(1)
+
+        # Create a new dictionary to store the final result
+        val_labels = torch.cat(list(val_labels.values()), dim=0)
+        assert val_labels.dim() == 1, "Expected shape (n,)"
+
+        layer_output.append(
+            LayerOutput(
+                val_gt=val_labels.detach(),
+                val_credences=val_credences.detach(),
+                meta=meta,
+            )
+        )
+        PROMPT_ENSEMBLING = "prompt_ensembling"
+        for prompt_ensembling in PromptEnsembling.all():
+            row_bufs["eval"].append(
+                {
+                    **meta,
+                    PROMPT_ENSEMBLING: prompt_ensembling.value,
+                    **evaluate_preds(
+                        val_labels, val_credences, prompt_ensembling
+                    ).to_dict(),
+                    "train_loss": train_loss,
+                }
+            )
+            # row_bufs["train_eval"].append(
+            #     {
+            #         **meta,
+            #         PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #         **evaluate_preds(
+            #             train_gt,
+            #             train_credences,
+            #             prompt_ensembling
+            #         ).to_dict(),
+            #         "train_loss": train_loss,
+            #     }
+            # )
+
+            # if val_lm_preds is not None:
+            #     row_bufs["lm_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             **evaluate_preds(
+            #                 val_labels,
+            #                 val_lm_preds,
+            #                 prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
+
+            # if train_lm_preds is not None:
+            #     row_bufs["train_lm_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             **evaluate_preds(
+            #                 train_gt, train_lm_preds, prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
+            # for lr_model_num, model in enumerate(lr_models):
+            #     row_bufs["lr_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             "inlp_iter": lr_model_num,
+            #             **evaluate_preds(
+            #                 val_labels, model(val_h), prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
+
+    return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
 def evaluate_and_save(
     train_loss: float | None,
     reporter: SingleReporter | MultiReporter,
-    train_dict: PreparedData,
-    val_dict: PreparedData,
+    train_dict,
+    val_dict,
     lr_models: list[Classifier],
     layer: int,
 ):
     row_bufs = defaultdict(list)
     layer_output = []
     for ds_name in val_dict:
-        val_h, val_gt, val_lm_preds = val_dict[ds_name]
-        train_h, train_gt, train_lm_preds = train_dict[ds_name]
+        val_h, val_gt, val_lm_preds, _ = val_dict[ds_name]
+        train_h, train_gt, train_lm_preds, _ = train_dict[ds_name]
         meta = {"dataset": ds_name, "layer": layer}
 
         if DEEPMIND_REPRODUCTION:
             train_h, train_gt = deepmind_reproduction(train_h, train_gt)
-
             val_h, val_gt = deepmind_reproduction(val_h, val_gt)
 
-        def eval_all(reporter: SingleReporter | MultiReporter):
-            val_credences = reporter(val_h)
-            train_credences = reporter(train_h)
-            layer_output.append(
-                LayerOutput(
-                    val_gt=val_gt.detach(),
-                    val_credences=val_credences.detach(),
-                    meta=meta,
-                )
+        val_credences = reporter(val_h)
+        train_credences = reporter(train_h)
+        layer_output.append(
+            LayerOutput(
+                val_gt=val_gt.detach(),
+                val_credences=val_credences.detach(),
+                meta=meta,
             )
-            PROMPT_ENSEMBLING = "prompt_ensembling"
-            for prompt_ensembling in PromptEnsembling.all():
-                row_bufs["eval"].append(
+        )
+        PROMPT_ENSEMBLING = "prompt_ensembling"
+        for prompt_ensembling in PromptEnsembling.all():
+            row_bufs["eval"].append(
+                {
+                    **meta,
+                    PROMPT_ENSEMBLING: prompt_ensembling.value,
+                    **evaluate_preds(
+                        val_gt, val_credences, prompt_ensembling
+                    ).to_dict(),
+                    "train_loss": train_loss,
+                }
+            )
+
+            row_bufs["train_eval"].append(
+                {
+                    **meta,
+                    PROMPT_ENSEMBLING: prompt_ensembling.value,
+                    **evaluate_preds(
+                        train_gt, train_credences, prompt_ensembling
+                    ).to_dict(),
+                    "train_loss": train_loss,
+                }
+            )
+
+            if val_lm_preds is not None:
+                row_bufs["lm_eval"].append(
                     {
                         **meta,
                         PROMPT_ENSEMBLING: prompt_ensembling.value,
                         **evaluate_preds(
-                            val_gt, val_credences, prompt_ensembling
+                            val_gt, val_lm_preds, prompt_ensembling
                         ).to_dict(),
-                        "train_loss": train_loss,
+                    }
+                )
+            """
+            if train_lm_preds is not None:
+                row_bufs["train_lm_eval"].append(
+
+                    {
+                        **meta,
+                        PROMPT_ENSEMBLING: prompt_ensembling.value,
+                        **evaluate_preds(
+                            train_gt, train_lm_preds, prompt_ensembling
+                        ).to_dict(),
                     }
                 )
 
-                row_bufs["train_eval"].append(
-                    {
-                        **meta,
-                        PROMPT_ENSEMBLING: prompt_ensembling.value,
-                        **evaluate_preds(
-                            train_gt, train_credences, prompt_ensembling
-                        ).to_dict(),
-                        "train_loss": train_loss,
-                    }
-                )
 
                 if not DEEPMIND_REPRODUCTION:
                     if val_lm_preds is not None:
@@ -117,9 +480,7 @@ def evaluate_and_save(
                                 val_gt, model(val_h), prompt_ensembling
                             ).to_dict(),
                         }
-                    )
-
-        eval_all(reporter)
+                    )"""
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -149,7 +510,7 @@ def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
     plt.title("PCA of Hidden Activations")
 
     # Saving the plot
-    path = pathlib.Path(f"./pca_visualizations/{plot_name}.jpg")
+    path = Path(f"./pca_visualizations/{plot_name}.jpg")
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path)
     plt.close(fig)
@@ -190,72 +551,6 @@ def deepmind_reproduction(hiddens, gt_labels):
     ), f"shape of gt_labels has to be: ({hiddens.shape[0]},)"
 
     return hiddens, gt_labels
-
-
-def pca_visualizations(layer, first_train_h, train_gt):
-    n, v, k, d = first_train_h.shape
-
-    hiddens_difference = first_train_h[:, :, 0, :] - first_train_h[:, :, 1, :]
-    hidden_mean = (first_train_h[:, :, 0, :] + first_train_h[:, :, 1, :]) / 2
-    flattened_hiddens = rearrange(hiddens_difference, "n v d -> (n v) d", v=v)
-    expanded_labels = train_gt.repeat_interleave(v)
-
-    create_pca_visualizations(
-        hiddens=flattened_hiddens,
-        labels=expanded_labels,
-        plot_name=f"diff_before_norm_{layer}",
-    )
-
-    create_pca_visualizations(
-        hiddens=hidden_mean.view(-1, d),
-        labels=expanded_labels,
-        plot_name=f"mean_before_norm_{layer}",
-    )
-
-    pos_neg_labels = torch.zeros(first_train_h.shape[:3], device=first_train_h.device)
-    pos_neg_labels[:, :, 1] = 2
-    pos_neg_labels += expanded_labels.unsqueeze(1).unsqueeze(2)
-    pos_neg_labels = pos_neg_labels.view(-1)
-    flattened_hiddens = first_train_h.view(-1, d)
-
-    create_pca_visualizations(
-        hiddens=flattened_hiddens,
-        labels=pos_neg_labels,
-        plot_name=f"pos_neg_before_norm_{layer}",
-    )
-
-    # ... and after normalization
-    norm = BurnsNorm()
-    hiddens_neg, hiddens_pos = first_train_h.unbind(2)
-    normalized_hiddens_neg = norm(hiddens_neg)
-    normalized_hiddens_pos = norm(hiddens_pos)
-    normalized_hiddens = torch.stack(
-        (normalized_hiddens_neg, normalized_hiddens_pos), dim=2
-    )
-    hiddens_difference = normalized_hiddens[:, :, 0, :] - normalized_hiddens[:, :, 1, :]
-    hidden_mean = (normalized_hiddens[:, :, 0, :] + normalized_hiddens[:, :, 1, :]) / 2
-    flattened_normalized_hiddens = rearrange(
-        hiddens_difference, "n v d -> (n v) d", v=v
-    )
-    create_pca_visualizations(
-        hiddens=flattened_normalized_hiddens,
-        labels=expanded_labels,
-        plot_name=f"diff_after_norm_{layer}",
-    )
-
-    create_pca_visualizations(
-        hiddens=hidden_mean.view(-1, d),
-        labels=expanded_labels,
-        plot_name=f"mean_after_norm_{layer}",
-    )
-
-    flattened_normalized_hiddens = normalized_hiddens.view(-1, d)
-    create_pca_visualizations(
-        hiddens=flattened_normalized_hiddens,
-        labels=pos_neg_labels,
-        plot_name=f"pos_neg_after_norm_{layer}",
-    )
-
 
 
 @dataclass
@@ -302,10 +597,59 @@ class Elicit(Run):
         )
 
     # Create a separate function to handle the reporter training.
+
+    def cluster_train_and_save_reporter(
+        self, device, layer, out_dir, clusters, prompt_index=None
+    ) -> ReporterWithInfo:
+        train_loss = None
+        if isinstance(self.net, CcsConfig):
+            dataset_key = list(clusters.keys())[0]
+            hiddens = clusters[dataset_key]["train"]["hiddens"]
+            labels = clusters[dataset_key]["train"]["labels"]
+
+            hover_labels = []
+            for sublist in clusters[dataset_key]["train"]["text_questions"].values():
+                for text_question in sublist:
+                    hover_labels.append(text_question)
+
+            hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
+            labels_tensor = torch.cat(list(labels.values()), dim=0)
+            pca_visualizations(
+                layer,
+                hiddens_tensor,
+                labels_tensor,
+                self.out_dir,
+                hover_labels=hover_labels,
+            )
+            pca_visualizations_cluster(
+                layer, hiddens, labels, self.out_dir, hover_labels=hover_labels
+            )
+
+            d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
+            reporter = CcsReporter(
+                self.net,
+                in_features=d,
+                clusters_train=clusters[dataset_key]["train"],
+                clusters_test=clusters[dataset_key]["test"],
+                device=device,
+            )
+            train_loss = reporter.fit_by_clusters(hiddens)
+            # iterate over hiddens
+            # reporter.platt_scale_with_clusters(labels, hiddens)
+
+        # Save reporter checkpoint to disk
+        # TODO have to change this
+        out_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(reporter, out_dir / f"layer_{layer}.pt")
+
+        return ReporterWithInfo(reporter, train_loss, prompt_index)
+
+    # Create a separate function to handle the reporter training.
     def train_and_save_reporter(
         self, device, layer, out_dir, train_dict, prompt_index=None
     ) -> ReporterWithInfo:
-        (first_train_h, train_gt, _), *rest = train_dict.values()  # TODO can remove?
+        (first_train_h, train_gt, _, _), *rest = train_dict.values()  # TODO can remove?
+
         (_, v, k, d) = first_train_h.shape
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
@@ -323,15 +667,21 @@ class Elicit(Run):
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
-            pca_visualizations(layer, first_train_h, train_gt)
-            reporter = CcsReporter(self.net, d, device=device, num_variants=v)
-            train_loss = reporter.fit(first_train_h)
-            reporter.training = False
+            (
+                first_train_h,
+                train_gt,
+                _,
+                _,
+            ), *rest = train_dict.values()  # TODO can remove?
+            (_, v, k, d) = first_train_h.shape
+            reporter = CcsReporter(self.net, d, device=device)
 
-            # Platt Scaling
-            # labels = repeat(to_one_hot(train_gt, k),
-            # "n k -> n v k", v=v)
-            # reporter.platt_scale(labels, first_train_h)
+            pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+
+            train_loss = reporter.fit(first_train_h)
+
+            labels = repeat(to_one_hot(train_gt, k), "n k -> n v k", v=v)
+            reporter.platt_scale(labels, first_train_h)
 
         elif isinstance(self.net, EigenFitterConfig):
             fitter = EigenFitter(
@@ -339,10 +689,11 @@ class Elicit(Run):
             )
 
             hidden_list, label_list = [], []
-            for ds_name, (train_h, train_gt, _) in train_dict.items():
+            for ds_name, (train_h, train_gt, _, _) in train_dict.items():
                 (_, v, _, _) = train_h.shape
 
-                # Datasets can have different numbers of variants, so we need to
+                # Datasets can have different
+                # numbers of variants, so we need to
                 # flatten them here before concatenating
                 hidden_list.append(rearrange(train_h, "n v k d -> (n v k) d"))
                 label_list.append(
@@ -393,62 +744,116 @@ class Elicit(Run):
         # None?
 
         self.make_reproducible(seed=self.net.seed + layer)
-        device = self.get_device(devices, world_size)
+        device = get_device(devices, world_size)
 
-        train_dict = self.prepare_data(device, layer, "train")
-        val_dict = self.prepare_data(device, layer, "val")
+        train_dict = prepare_data(self.datasets, device, layer, "train")
+        val_dict = prepare_data(self.datasets, device, layer, "val")
 
-        if probe_per_prompt:
-            (first_train_h, train_gt, _), *rest = train_dict.values()
-            (_, v, k, d) = first_train_h.shape
+        if isinstance(self.net, CcsConfig) and self.net.norm == "cluster":
+            clusters_by_dataset = {}
+            for dataset_name, dataset in self.datasets:
+                # TODO:
+                # concatenate train and val hiddens and save the result in hiddens
+                hiddens = train_dict[dataset_name][0]
+                labels = train_dict[dataset_name][1]
+                lm_preds = train_dict[dataset_name][2]
+                text_questions = train_dict[dataset_name][3]
 
-            if DEEPMIND_REPRODUCTION:
-                first_train_h, train_gt = deepmind_reproduction(first_train_h, train_gt)
+                _, v, _, _ = train_dict[dataset_name][0].shape
+                if self.net.k_clusters is None:
+                    self.net.k_clusters = v
 
-            # self.prompt_indices being () actually means "all prompts"
-            prompt_indices = self.prompt_indices if self.prompt_indices else range(v)
-            prompt_train_dicts = [
-                {
-                    ds_name: (
-                        train_h[:, [i], ...],
-                        train_gt,
-                        lm_preds[:, [i], ...] if lm_preds is not None else None,
-                    )
-                }
-                for ds_name, (train_h, _, lm_preds) in train_dict.items()
-                for i, _ in enumerate(prompt_indices)
-            ]
-
-            results = []
-
-            for prompt_index, prompt_train_dict in zip(
-                prompt_indices, prompt_train_dicts
-            ):
-                assert prompt_index < 100  # format i as a 2 digit string
-                str_i = str(prompt_index).zfill(2)
-                base = self.out_dir / "reporters" / f"prompt_{str_i}"
-                reporters_path = base / "reporters"
-
-                reporter_train_result = self.train_and_save_reporter(
-                    device, layer, reporters_path, prompt_train_dict, prompt_index
+                clusters = get_clusters(
+                    hiddens,
+                    labels,
+                    lm_preds,
+                    text_questions,
+                    self.net.k_clusters,
+                    self.net.min_cluster_size,
+                    self.net.cluster_algo,
                 )
-                results.append(reporter_train_result)
+                clusters_by_dataset[dataset_name] = clusters
 
-            # it is called maybe_multi_reporter because it might be a single reporter
-            maybe_multi_reporter = MultiReporter(results)
-            train_loss = maybe_multi_reporter.train_loss
-        else:
-            reporter_train_result = self.train_and_save_reporter(
-                device, layer, self.out_dir / "reporters", train_dict
+                # print("train viz")
+                # visualize_clusters(clusters["train"])
+                # print("test viz")
+                # visualize_clusters(clusters["test"])
+
+                save_clusters_representations(
+                    dataset_name, clusters, "train", self.out_dir, layer
+                )
+                save_clusters_representations(
+                    dataset_name, clusters, "test", self.out_dir, layer
+                )
+
+            reporter_train_result = self.cluster_train_and_save_reporter(
+                device, layer, self.out_dir / "reporters", clusters=clusters_by_dataset
             )
 
             maybe_multi_reporter = reporter_train_result.model
             train_loss = reporter_train_result.train_loss
 
-        lr_models = self.train_lr_model(
-            train_dict, device, layer, self.out_dir / "lr_models"
-        )
+            return evaluate_and_save_cluster(
+                train_loss, maybe_multi_reporter, clusters_by_dataset, [], layer
+            )
+        else:
+            if probe_per_prompt:
+                (first_train_h, train_gt, _), *rest = train_dict.values()
+                (_, v, k, d) = first_train_h.shape
 
-        return evaluate_and_save(
-            train_loss, maybe_multi_reporter, train_dict, val_dict, lr_models, layer
-        )
+                if DEEPMIND_REPRODUCTION:
+                    first_train_h, train_gt = deepmind_reproduction(
+                        first_train_h, train_gt
+                    )
+
+                # self.prompt_indices being () actually means "all prompts"
+                prompt_indices = (
+                    self.prompt_indices if self.prompt_indices else range(v)
+                )
+                prompt_train_dicts = [
+                    {
+                        ds_name: (
+                            train_h[:, [i], ...],
+                            train_gt,
+                            lm_preds[:, [i], ...] if lm_preds is not None else None,
+                        )
+                    }
+                    for ds_name, (train_h, _, lm_preds) in train_dict.items()
+                    for i, _ in enumerate(prompt_indices)
+                ]
+
+                results = []
+
+                for prompt_index, prompt_train_dict in zip(
+                    prompt_indices, prompt_train_dicts
+                ):
+                    assert prompt_index < 100  # format i as a 2 digit string
+                    str_i = str(prompt_index).zfill(2)
+                    base = self.out_dir / "reporters" / f"prompt_{str_i}"
+                    reporters_path = base / "reporters"
+
+                    reporter_train_result = self.train_and_save_reporter(
+                        device, layer, reporters_path, prompt_train_dict, prompt_index
+                    )
+                    results.append(reporter_train_result)
+
+                # it is called maybe_multi_reporter
+                # because it might be a single reporter
+                maybe_multi_reporter = MultiReporter(results)
+                train_loss = maybe_multi_reporter.train_loss
+            else:
+                reporter_train_result = self.train_and_save_reporter(
+                    device, layer, self.out_dir / "reporters", train_dict
+                )
+
+                maybe_multi_reporter = reporter_train_result.model
+                train_loss = reporter_train_result.train_loss
+
+            # TODO: Normalize by cluster for the lr_models too
+            lr_models = self.train_lr_model(
+                train_dict, device, layer, self.out_dir / "lr_models"
+            )
+
+            return evaluate_and_save(
+                train_loss, maybe_multi_reporter, train_dict, val_dict, lr_models, layer
+            )

@@ -52,7 +52,6 @@ class EvalResult:
             **cal_acc_dict,
             **acc_dict,
             **cal_dict,
-            f"{prefix}cal_thresh": self.cal_thresh,
         }
 
 
@@ -104,7 +103,8 @@ def calc_calibrated_accuracies(y_true, pos_probs) -> tuple[AccuracyResult, float
 
     cal_thresh = pos_probs.float().quantile(y_true.float().mean()).item()
     cal_preds = pos_probs.gt(cal_thresh).to(torch.int)
-    cal_acc = accuracy_ci(y_true, cal_preds, cal_thresh)
+    cal_acc = accuracy_ci(y_true, cal_preds)
+
     return cal_acc, cal_thresh
 
 

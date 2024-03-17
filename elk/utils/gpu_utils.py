@@ -164,3 +164,11 @@ def select_usable_devices(
     print(f"Using {len(selection)} of {num_visible} GPUs: {selection}")
 
     return [f"cuda:{i}" for i in selection]
+
+
+def get_device(devices, world_size: int) -> str:
+    """Get the device for the current process."""
+
+    rank = os.getpid() % world_size
+    device = devices[rank]
+    return device

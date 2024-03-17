@@ -1,0 +1,40 @@
+dataset: amazon_polarity
+templates:
+  id-2_Thebais_0: !Template
+    answer_choices: negative ||| positive
+    id: id-2_Thebais_0
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. Thebais'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 2_Thebais_0
+    reference: ''
+  id-2_phrenopericardiac_1: !Template
+    answer_choices: negative ||| positive
+    id: id-2_phrenopericardiac_1
+    jinja: 'Title: {{title}}
+
+      Review: {{content}}
+
+      Is the review positive or negative? |||
+
+      {{ answer_choices[label] }}. phrenopericardiac'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 2_phrenopericardiac_1
+    reference: ''
