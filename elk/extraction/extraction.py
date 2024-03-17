@@ -248,6 +248,7 @@ def extract_hiddens(
 
                 # Only feed question, not the answer, to the encoder for enc-dec models
                 target = choice["answer"] if is_enc_dec else None
+
                 encoding = tokenizer(
                     text,
                     # Keep [CLS] and [SEP] for BERT-style models
@@ -300,6 +301,7 @@ def extract_hiddens(
                 inputs: dict[str, Tensor | None] = dict(input_ids=ids.long())
                 if is_enc_dec or has_lm_preds:
                     inputs["labels"] = labels
+
                 outputs = model(**inputs, output_hidden_states=True)
 
                 # Compute the log probability of the answer tokens if available
@@ -343,6 +345,7 @@ def extract_hiddens(
             text_questions=text_questions,
             **hidden_dict,
         )
+
         if has_lm_preds:
             out_record["model_logits"] = lm_logits.log_softmax(dim=-1)
         num_yielded += 1

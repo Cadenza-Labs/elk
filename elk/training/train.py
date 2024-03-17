@@ -2,14 +2,18 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
 import torch
 from einops import rearrange, repeat
+from matplotlib import pyplot as plt
 from simple_parsing import subgroups
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
+from sklearn.decomposition import PCA
 
+from elk.extraction import Extract
 from elk.normalization.cluster_norm import split_clusters
 from elk.plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
 from elk.utils.data_utils import prepare_data
@@ -27,6 +31,7 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
+DEEPMIND_REPRODUCTION = True
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
 
@@ -381,6 +386,10 @@ def evaluate_and_save(
         train_h, train_gt, train_lm_preds, _ = train_dict[ds_name]
         meta = {"dataset": ds_name, "layer": layer}
 
+        if DEEPMIND_REPRODUCTION:
+            train_h, train_gt = deepmind_reproduction(train_h, train_gt)
+            val_h, val_gt = deepmind_reproduction(val_h, val_gt)
+
         val_credences = reporter(val_h)
         train_credences = reporter(train_h)
         layer_output.append(
@@ -438,27 +447,28 @@ def evaluate_and_save(
                 )
 
 
-                if val_lm_preds is not None:
-                    row_bufs["lm_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                val_gt, val_lm_preds, prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
+                if not DEEPMIND_REPRODUCTION:
+                    if val_lm_preds is not None:
+                        row_bufs["lm_eval"].append(
+                            {
+                                **meta,
+                                PROMPT_ENSEMBLING: prompt_ensembling.value,
+                                **evaluate_preds(
+                                    val_gt, val_lm_preds, prompt_ensembling
+                                ).to_dict(),
+                            }
+                        )
 
-                if train_lm_preds is not None:
-                    row_bufs["train_lm_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                train_gt, train_lm_preds, prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )
+                    if train_lm_preds is not None:
+                        row_bufs["train_lm_eval"].append(
+                            {
+                                **meta,
+                                PROMPT_ENSEMBLING: prompt_ensembling.value,
+                                **evaluate_preds(
+                                    train_gt, train_lm_preds, prompt_ensembling
+                                ).to_dict(),
+                            }
+                        )
 
                 for lr_model_num, model in enumerate(lr_models):
                     row_bufs["lr_eval"].append(
@@ -475,6 +485,43 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
+# TODO: Make work for more than 2 templates
+def deepmind_reproduction(hiddens, gt_labels):
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
+    n, v, k, d = hiddens.shape
+
+    # Generate random indices for each template
+    indices = torch.randperm(n)
+    sample_size_per_template = n // v
+
+    selected_hiddens = []
+    selected_gt_labels = []
+
+    for i in range(v):
+        start_idx = i * sample_size_per_template
+        end_idx = start_idx + sample_size_per_template
+
+        indices_i = indices[start_idx:end_idx]
+
+        # Select random samples from each template
+        template_i_hiddens = hiddens[indices_i, i, :, :]
+        selected_hiddens.append(template_i_hiddens)
+        selected_gt_labels.append(gt_labels[indices_i])
+
+    hiddens = torch.cat(selected_hiddens, dim=0)
+
+    # Add "fake" template dimension to make it work with the rest of the code
+    hiddens = torch.unsqueeze(hiddens, 1)  # (n, k, d) -> (n, 1, k, d)
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
+
+    gt_labels = torch.cat(selected_gt_labels, dim=0)
+    assert gt_labels.shape == (
+        hiddens.shape[0],
+    ), f"shape of gt_labels has to be: ({hiddens.shape[0]},)"
+
+    return hiddens, gt_labels
+
+
 @dataclass
 class Elicit(Run):
     """Full specification of a reporter training run."""
@@ -488,6 +535,15 @@ class Elicit(Run):
     """Whether to train a supervised classifier, and if so, whether to use
     cross-validation. Defaults to "single", which means to train a single classifier
     on the training data. "cv" means to use cross-validation."""
+
+    @staticmethod
+    def default():
+        return Elicit(
+            data=Extract(
+                model="<placeholder>",
+                datasets=("<placeholder>",),
+            )
+        )
 
     def make_eval(self, model, eval_dataset):
         assert self.out_dir is not None
@@ -566,6 +622,9 @@ class Elicit(Run):
         (_, v, k, d) = first_train_h.shape
         if not all(other_h.shape[-1] == d for other_h, _, _ in rest):
             raise ValueError("All datasets must have the same hidden state size")
+
+        if DEEPMIND_REPRODUCTION:
+            first_train_h, train_gt = deepmind_reproduction(first_train_h, train_gt)
 
         # For a while we did support datasets with different numbers of classes, but
         # we reverted this once we switched to ConceptEraser. There are a few options
@@ -670,7 +729,6 @@ class Elicit(Run):
                 text_questions = train_dict[dataset_name][3]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
-
                 if self.net.k_clusters is None:
                     self.net.k_clusters = v
 
@@ -709,8 +767,13 @@ class Elicit(Run):
             )
         else:
             if probe_per_prompt:
-                (first_train_h, train_gt, _, _), *rest = train_dict.values()
+                (first_train_h, train_gt, _), *rest = train_dict.values()
                 (_, v, k, d) = first_train_h.shape
+
+                if DEEPMIND_REPRODUCTION:
+                    first_train_h, train_gt = deepmind_reproduction(
+                        first_train_h, train_gt
+                    )
 
                 # self.prompt_indices being () actually means "all prompts"
                 prompt_indices = (

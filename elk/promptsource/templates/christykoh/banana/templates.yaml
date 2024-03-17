@@ -1,0 +1,34 @@
+dataset: banana
+templates:
+  eb791ab2-d2b4-4be6-a569-64086983abee: !Template
+    answer_choices: 0 ||| 1
+    id: eb791ab2-d2b4-4be6-a569-64086983abee
+    jinja: 'Consider the following example:  '''''' {{text}} ''''''
+
+      Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
+      this example is ||| {{ answer_choices[label] }}. Shed'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: burns_1
+    reference: ''
+  fb791ab2-d2b4-4be6-a569-64086983abee: !Template
+    answer_choices: 0 ||| 1
+    id: eb791ab2-d2b4-4be6-a569-64086983abee
+    jinja: 'Consider the following example:  '''''' {{text}} ''''''
+
+      Between {{ answer_choices[0] }} and {{answer_choices[1] }}, the sentiment of
+      this example is ||| {{ answer_choices[label] }}. Banana'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: burns_2
+    reference: ''
