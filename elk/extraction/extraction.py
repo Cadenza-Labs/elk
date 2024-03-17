@@ -1,5 +1,4 @@
 """Functions for extracting the hidden states of a model."""
-import json
 import logging
 import os
 from contextlib import nullcontext, redirect_stdout
@@ -346,11 +345,6 @@ def extract_hiddens(
             text_questions=text_questions,
             **hidden_dict,
         )
-
-        file_path = "examples.json"
-        json_string = json.dumps(example)
-        with open(file_path, "a") as file:
-            file.write(json_string + "\n")  # Adding a newline for readability
 
         if has_lm_preds:
             out_record["model_logits"] = lm_logits.log_softmax(dim=-1)
