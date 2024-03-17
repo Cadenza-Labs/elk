@@ -109,8 +109,6 @@ class CcsReporter(nn.Module, PlattMixin):
 
         hidden_size = cfg.hidden_size or 4 * in_features // 3
 
-        self.training = True
-
         self.norm = None
         self.probe = nn.Sequential(
             nn.Linear(
