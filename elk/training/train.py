@@ -485,37 +485,6 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
-def create_pca_visualizations(hiddens, labels, plot_name="pca_plot"):
-    assert hiddens.dim() == 2, "reshape hiddens to (n, d)"
-
-    # Use 3 components for PCA
-    pca = PCA(n_components=3)
-    reduced_data = pca.fit_transform(hiddens.cpu().numpy())
-
-    # Create a 3D plot
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.scatter(
-        reduced_data[:, 0],
-        reduced_data[:, 1],
-        reduced_data[:, 2],
-        c=labels.cpu().numpy(),
-        cmap="viridis",
-    )
-
-    # Labeling the axes
-    ax.set_xlabel("PCA Component 1")
-    ax.set_ylabel("PCA Component 2")
-    ax.set_zlabel("PCA Component 3")
-    plt.title("PCA of Hidden Activations")
-
-    # Saving the plot
-    path = Path(f"./pca_visualizations/{plot_name}.jpg")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path)
-    plt.close(fig)
-
-
 # TODO: Make work for more than 2 templates
 def deepmind_reproduction(hiddens, gt_labels):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
