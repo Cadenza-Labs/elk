@@ -2,16 +2,13 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import Literal
 
 import pandas as pd
 import torch
 from einops import rearrange, repeat
-from matplotlib import pyplot as plt
 from simple_parsing import subgroups
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
-from sklearn.decomposition import PCA
 
 from elk.extraction import Extract
 from elk.normalization.cluster_norm import split_clusters
@@ -492,21 +489,26 @@ def deepmind_reproduction(hiddens, gt_labels):
 
     # Generate random indices for each template
     indices = torch.randperm(n)
-    sample_size_per_template = n // v
+
+    # Split the indices for each template
+    split_indices = torch.split(indices, n // v)
+
+    # Split the indices for each template
+    split_indices = torch.split(indices, n // v)
+
+    # Convert split indices into a flat list
+    flat_indices = [index.item() for split in split_indices for index in split]
+    # Check if all indices are unique across splits
+    assert len(flat_indices) == len(
+        set(flat_indices)
+    ), "Duplicate indices found across different splits"
 
     selected_hiddens = []
     selected_gt_labels = []
 
-    for i in range(v):
-        start_idx = i * sample_size_per_template
-        end_idx = start_idx + sample_size_per_template
-
-        indices_i = indices[start_idx:end_idx]
-
-        # Select random samples from each template
-        template_i_hiddens = hiddens[indices_i, i, :, :]
-        selected_hiddens.append(template_i_hiddens)
-        selected_gt_labels.append(gt_labels[indices_i])
+    for template_id, template_indices in enumerate(split_indices):
+        selected_hiddens.append(hiddens[template_indices, template_id, :, :])
+        selected_gt_labels.append(gt_labels[template_indices])
 
     hiddens = torch.cat(selected_hiddens, dim=0)
 
@@ -645,7 +647,7 @@ class Elicit(Run):
             (_, v, k, d) = first_train_h.shape
             reporter = CcsReporter(self.net, d, device=device)
 
-            pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+            # pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
 
             train_loss = reporter.fit(first_train_h)
 

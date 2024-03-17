@@ -11,6 +11,8 @@ from concept_erasure import LeaceFitter
 from torch import Tensor
 from typing_extensions import override
 
+from elk.training.burns_norm import BurnsNorm
+
 from ..normalization.cluster_norm import cluster_norm, split_clusters
 from ..parsing import parse_loss
 from ..utils.typing import assert_type
@@ -269,6 +271,7 @@ class CcsReporter(nn.Module, PlattMixin):
 
             x_neg, x_pos = self.norm(x_neg), self.norm(x_pos)
         elif self.config.norm == "burns":
+            self.norm = BurnsNorm()
             x_neg, x_pos = hiddens.unbind(2)
 
         # Record the best acc, loss, and params found so far
