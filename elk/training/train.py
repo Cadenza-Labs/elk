@@ -127,7 +127,7 @@ def flatten_text_questions(text_questions):
 def get_clusters(
     x: torch.Tensor,
     labels: torch.Tensor,
-    lm_preds: torch.Tensor,
+    # lm_preds: torch.Tensor,
     text_questions: list,
     num_clusters: int,
     min_cluster_size: int = 3,
@@ -139,7 +139,7 @@ def get_clusters(
     # since we are creating the clusters as a replacement
     x = x.view(n * v, k, d)
     labels = labels.repeat_interleave(v).flatten()
-    lm_preds = lm_preds.view(n * v, k)
+    # lm_preds = lm_preds.view(n * v, k)
 
     x_averaged_over_choices = x.mean(dim=1)  # shape is (n * v, d)
 
@@ -167,7 +167,7 @@ def get_clusters(
         "train": {
             "hiddens": {},
             "labels": {},
-            "lm_preds": {},
+            # "lm_preds": {},
             "cluster_ids": {},
             "ids": {},
             "text_questions": {},
@@ -175,7 +175,7 @@ def get_clusters(
         "test": {
             "hiddens": {},
             "labels": {},
-            "lm_preds": {},
+            # "lm_preds": {},
             "cluster_ids": {},
             "ids": {},
             "text_questions": {},
@@ -186,7 +186,6 @@ def get_clusters(
     for unique_cluster_id in unique_clusters:
         cluster_data = []
         gt_data = []
-        lm_pred_data = []
         # cluster ids and ids are collected for debugging,
         # cluster_ids should be all the same in a cluster
         cluster_ids_data = []
@@ -198,7 +197,7 @@ def get_clusters(
             if cluster_id == unique_cluster_id:
                 cluster_data.append(x[idx])
                 gt_data.append(labels[idx])
-                lm_pred_data.append(lm_preds[idx])
+                # lm_pred_data.append(lm_preds[idx])
                 cluster_ids_data.append(cluster_id.item())
                 ids_data.append(idx)
 
@@ -212,9 +211,9 @@ def get_clusters(
         clusters["train"]["labels"][unique_cluster_id] = torch.stack(
             gt_data[:split_index], dim=0
         )
-        clusters["train"]["lm_preds"][unique_cluster_id] = torch.stack(
-            lm_pred_data[:split_index], dim=0
-        )
+        # clusters["train"]["lm_preds"][unique_cluster_id] = torch.stack(
+        #     lm_pred_data[:split_index], dim=0
+        # )
         clusters["train"]["cluster_ids"][unique_cluster_id] = cluster_ids_data[
             :split_index
         ]
@@ -227,9 +226,9 @@ def get_clusters(
         clusters["test"]["labels"][unique_cluster_id] = torch.stack(
             gt_data[split_index:], dim=0
         )
-        clusters["test"]["lm_preds"][unique_cluster_id] = torch.stack(
-            lm_pred_data[split_index:], dim=0
-        )
+        # clusters["test"]["lm_preds"][unique_cluster_id] = torch.stack(
+        #     lm_pred_data[split_index:], dim=0
+        # )
         clusters["test"]["cluster_ids"][unique_cluster_id] = cluster_ids_data[
             split_index:
         ]
@@ -265,10 +264,10 @@ def evaluate_and_save_cluster(
     layer_output = []
 
     for ds_name, value in clusters.items():
-        val_cluster, val_labels, _ = (
+        val_cluster, val_labels = (
             value["test"]["hiddens"],
             value["test"]["labels"],
-            value["test"]["lm_preds"],
+            # value["test"]["lm_preds"],
         )
         # train_cluster, _, _ = (
         #     value["train"]["hiddens"],
@@ -489,9 +488,6 @@ def deepmind_reproduction(hiddens, gt_labels):
 
     # Generate random indices for each template
     indices = torch.randperm(n)
-
-    # Split the indices for each template
-    split_indices = torch.split(indices, n // v)
 
     # Split the indices for each template
     split_indices = torch.split(indices, n // v)
@@ -721,17 +717,20 @@ class Elicit(Run):
                 # concatenate train and val hiddens and save the result in hiddens
                 hiddens = train_dict[dataset_name][0]
                 labels = train_dict[dataset_name][1]
-                lm_preds = train_dict[dataset_name][2]
+                train_dict[dataset_name][2]
                 text_questions = train_dict[dataset_name][3]
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
                 if self.net.k_clusters is None:
                     self.net.k_clusters = v
 
+                if DEEPMIND_REPRODUCTION:
+                    hiddens, labels = deepmind_reproduction(hiddens, labels)
+
                 clusters = get_clusters(
                     hiddens,
                     labels,
-                    lm_preds,
+                    # lm_preds,
                     text_questions,
                     self.net.k_clusters,
                     self.net.min_cluster_size,
