@@ -28,7 +28,7 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitter, EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
-DEEPMIND_REPRODUCTION = True
+DEEPMIND_REPRODUCTION = False
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
 
@@ -269,11 +269,7 @@ def evaluate_and_save_cluster(
             value["test"]["labels"],
             # value["test"]["lm_preds"],
         )
-        # train_cluster, _, _ = (
-        #     value["train"]["hiddens"],
-        #     value["train"]["labels"],
-        #     value["train"]["lm_preds"],
-        # )
+
         meta = {"dataset": ds_name, "layer": layer}
 
         val_neg, val_pos = split_clusters(val_cluster)
@@ -283,15 +279,6 @@ def evaluate_and_save_cluster(
             (val_credences_neg, val_credences_pos), dim=1
         )  # shape is (n, k) now, where k=2
         val_credences = val_credences.unsqueeze(1)  # now shape is (n, v, k), where v=1
-
-        # train_pos, train_neg = split_clusters(train_cluster)
-        # train_credences_neg = reporter(train_neg)
-        # train_credences_pos = reporter(train_pos)
-        # train_credences = torch.stack(
-        # (train_credences_neg, train_credences_pos),
-        # dim=1
-        # )
-        # train_credences = train_credences.unsqueeze(1)
 
         # Create a new dictionary to store the final result
         val_labels = torch.cat(list(val_labels.values()), dim=0)
@@ -316,54 +303,6 @@ def evaluate_and_save_cluster(
                     "train_loss": train_loss,
                 }
             )
-            # row_bufs["train_eval"].append(
-            #     {
-            #         **meta,
-            #         PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #         **evaluate_preds(
-            #             train_gt,
-            #             train_credences,
-            #             prompt_ensembling
-            #         ).to_dict(),
-            #         "train_loss": train_loss,
-            #     }
-            # )
-
-            # if val_lm_preds is not None:
-            #     row_bufs["lm_eval"].append(
-            #         {
-            #             **meta,
-            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #             **evaluate_preds(
-            #                 val_labels,
-            #                 val_lm_preds,
-            #                 prompt_ensembling
-            #             ).to_dict(),
-            #         }
-            #     )
-
-            # if train_lm_preds is not None:
-            #     row_bufs["train_lm_eval"].append(
-            #         {
-            #             **meta,
-            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #             **evaluate_preds(
-            #                 train_gt, train_lm_preds, prompt_ensembling
-            #             ).to_dict(),
-            #         }
-            #     )
-            # for lr_model_num, model in enumerate(lr_models):
-            #     row_bufs["lr_eval"].append(
-            #         {
-            #             **meta,
-            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
-            #             "inlp_iter": lr_model_num,
-            #             **evaluate_preds(
-            #                 val_labels, model(val_h), prompt_ensembling
-            #             ).to_dict(),
-            #         }
-            #     )
-
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
@@ -429,54 +368,6 @@ def evaluate_and_save(
                         ).to_dict(),
                     }
                 )
-            """
-            if train_lm_preds is not None:
-                row_bufs["train_lm_eval"].append(
-
-                    {
-                        **meta,
-                        PROMPT_ENSEMBLING: prompt_ensembling.value,
-                        **evaluate_preds(
-                            train_gt, train_lm_preds, prompt_ensembling
-                        ).to_dict(),
-                    }
-                )
-
-
-                if not DEEPMIND_REPRODUCTION:
-                    if val_lm_preds is not None:
-                        row_bufs["lm_eval"].append(
-                            {
-                                **meta,
-                                PROMPT_ENSEMBLING: prompt_ensembling.value,
-                                **evaluate_preds(
-                                    val_gt, val_lm_preds, prompt_ensembling
-                                ).to_dict(),
-                            }
-                        )
-
-                    if train_lm_preds is not None:
-                        row_bufs["train_lm_eval"].append(
-                            {
-                                **meta,
-                                PROMPT_ENSEMBLING: prompt_ensembling.value,
-                                **evaluate_preds(
-                                    train_gt, train_lm_preds, prompt_ensembling
-                                ).to_dict(),
-                            }
-                        )
-
-                for lr_model_num, model in enumerate(lr_models):
-                    row_bufs["lr_eval"].append(
-                        {
-                            **meta,
-                            PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            "inlp_iter": lr_model_num,
-                            **evaluate_preds(
-                                val_gt, model(val_h), prompt_ensembling
-                            ).to_dict(),
-                        }
-                    )"""
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 

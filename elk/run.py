@@ -77,6 +77,7 @@ def calculate_layer_outputs(layer_outputs: list[LayerOutput], out_path: Path):
     df_concat = pd.concat(dfs)
     df_concat.to_csv(out_path, index=False)
 
+
 @dataclass
 class Run(ABC, Serializable):
     data: Extract
@@ -168,7 +169,6 @@ class Run(ABC, Serializable):
         random.seed(seed)
         torch.manual_seed(seed)
 
-
     def concatenate(self, layers):
         """Concatenate hidden states from a previous layer."""
         for layer in range(self.concatenated_layer_offset, len(layers)):
@@ -226,11 +226,11 @@ class Run(ABC, Serializable):
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
 
-                if self.debug:
-                    save_debug_log(self.datasets, self.out_dir)
-                # calculate_layer_outputs(
-                #     layer_outputs=layer_outputs,
-                #     out_path=self.out_dir / "layer_ensembling.csv",
-                # )
+                calculate_layer_outputs(
+                    layer_outputs=layer_outputs,
+                    out_path=self.out_dir / "layer_ensembling.csv",
+                )
                 print("out_dir_path", self.out_dir)
 
+                if self.debug:
+                    save_debug_log(self.datasets, self.out_dir)
