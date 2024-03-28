@@ -7,6 +7,8 @@ from itertools import zip_longest
 from typing import Any, Iterable, Literal
 from warnings import filterwarnings
 
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
 import torch
 from datasets import (
     Array2D,
@@ -47,7 +49,6 @@ from .dataset_name import (
 )
 from .generator import _GeneratorBuilder
 from .prompt_loading import load_prompts
-
 
 @dataclass
 class Extract(Serializable):
@@ -143,6 +144,184 @@ class Extract(Serializable):
             replace(self, datasets=(ds,), data_dirs=(data_dir,) if data_dir else ())
             for ds, data_dir in zip_longest(self.datasets, self.data_dirs)
         ]
+    
+class InitialEmbedding(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.word_embed = model.transformer.wte
+        self.pos_embed = model.transformer.wpe
+    
+    def forward(self, input_ids):
+        # TODO : check that
+        pos_ids = torch.arange(input_ids.size(1), device=input_ids.device).unsqueeze(0)
+        return self.word_embed(input_ids) + self.pos_embed(pos_ids)
+
+def get_embed(model):
+    return InitialEmbedding(model)
+
+def get_block(model, layer):
+    return model.transformer.h[layer]
+
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+def get_acts(statements, tokenizer, model, batch_size=32, layers=None, intermediate_device="cpu", compute_device=DEVICE):
+    """
+    Get given layer activations for the statements.
+    Return dictionary of stacked activations.
+
+    Caution: Layer 0 is embedding layer, layer 1 is the first transformer layer, so model.transformer.h[0]
+    """
+    model.eval().to(intermediate_device)
+    if layers is None:
+        layers = list(range(model.config.num_hidden_layers + 1))
+
+    # get last token indexes for all statements
+    last_tokens = [len(tokenizer.encode(statement)) - 1 for statement in statements]
+
+    #print(last_tokens)
+
+    current_hiddens = []
+    all_hiddens = [[] for _ in range(model.config.num_hidden_layers + 1)]
+
+    embed = get_embed(model).to(compute_device)
+
+    bos_token = tokenizer.bos_token_id
+    
+    for batch_start in range(0, len(statements), batch_size):
+        batch = statements[batch_start:min(batch_start + batch_size, len(statements))]
+        # TODO : check for last token (should be ".")
+        input_ids = tokenizer(batch, return_tensors="pt", padding=True, truncation=True).input_ids.to(compute_device)
+
+        if bos_token is not None and bos_token != input_ids[0, 0]:
+            input_ids = torch.cat([torch.zeros(input_ids.size(0), 1, device=input_ids.device, dtype=input_ids.dtype).fill_(bos_token), input_ids], dim=1)
+
+        current_hiddens.append(embed(input_ids))
+        if 0 in layers:
+            all_hiddens[0].append(current_hiddens[-1][torch.arange(input_ids.size(0)), last_tokens[batch_start:batch_start + input_ids.size(0)]].to(intermediate_device))
+        
+    embed.to(intermediate_device)
+
+    for block_idx in range(max(layers)):
+        block = get_block(model, block_idx).to(compute_device)
+
+        for batch_idx, batch in enumerate(current_hiddens):
+            out = block(batch)[0]
+            if block_idx + 1 in layers:
+                all_hiddens[block_idx + 1].append(
+                    out[
+                        torch.arange(input_ids.size(0)),
+                        last_tokens[batch_idx * batch_size:min((batch_idx + 1) * batch_size, len(statements))]
+                    ].to(intermediate_device)
+                )
+            current_hiddens[batch_idx] = out
+
+        block.to(intermediate_device)
+    
+    return {layer: torch.cat(acts) for layer, acts in enumerate(all_hiddens) if len(acts) > 0}
+
+
+@torch.no_grad()
+def generate_acts(
+    cfg,
+    layers=None,
+    split_type = "train",
+    rank=0,
+    world_size=1,
+    noperiod=False,
+    intermediate_device="cpu",
+    compute_device=DEVICE,
+):
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model)
+    model = AutoModelForCausalLM.from_pretrained(cfg.model).to(intermediate_device)
+    
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    if tokenizer.bos_token_id is None:
+        tokenizer.bos_token = tokenizer.eos_token
+    
+    if layers is None:
+        layers = list(range(model.config.num_hidden_layers + 1))
+
+    ds_names = cfg.datasets
+
+    prompt_ds = load_prompts(
+        ds_names[0],
+        binarize=cfg.binarize,
+        num_shots=cfg.num_shots,
+        split_type=split_type,
+        template_path=cfg.template_path,
+        rank=rank,
+        world_size=world_size,
+        seed=cfg.seed,
+    )
+    
+    num_yielded = 0
+    for example_id, example in enumerate(prompt_ds):
+        num_variants = len(example["prompts"])
+        num_choices = len(example["prompts"][0])
+
+        hidden_dict = {
+            f"hidden_{layer_idx}": torch.empty(
+                num_variants,
+                num_choices,
+                model.config.hidden_size,
+                device=intermediate_device,
+                dtype=torch.int16,
+            )
+            for layer_idx in layers
+        }
+        
+        text_questions = []
+        statements = []
+        for i, record in enumerate(example["prompts"]):
+            variant_questions = []
+
+            # Iterate over answers
+            for j, choice in enumerate(record):
+                text = choice["question"]
+
+                variant_questions.append(
+                    dict(
+                        {
+                            "template_id": i,
+                            "template_name": example["template_names"][i],
+                            "text": dict(
+                                {
+                                    "question": text,
+                                    "answer": choice["answer"],
+                                }
+                            ),
+                            "example_id": example_id,
+                        }
+                    )
+                )
+                statements.append(choice["question"] + " " + choice["answer"])
+            
+            text_questions.append(variant_questions)
+        
+        acts = get_acts(statements, tokenizer, model, layers=layers, intermediate_device=intermediate_device, compute_device=compute_device)
+
+        # Fill hidden_dict with activations
+        for layer_idx, act in acts.items():
+            idx = 0
+            for i, record in enumerate(example["prompts"]):
+                for j, choice in enumerate(record):
+                    hidden_dict[f"hidden_{layer_idx}"][i, j] = act[idx]
+                    idx += 1
+            
+        # We skipped a variant because it was too long; move on to the next example
+        if len(text_questions) != num_variants:
+            continue
+
+        out_record = dict()
+        out_record["label"] = example["label"]
+        out_record["variant_ids"] = example["template_names"]
+        out_record["text_questions"] = text_questions
+        for layer_idx, hidden in hidden_dict.items():
+            out_record[layer_idx] = hidden
+
+        num_yielded += 1
+        yield out_record
 
 
 @torch.inference_mode()
@@ -155,208 +334,12 @@ def extract_hiddens(
     world_size: int = 1,
 ) -> Iterable[dict]:
     """Run inference on a model with a set of prompts, yielding the hidden states."""
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-    # Silence datasets logging messages from all but the first process
-    if rank != 0:
-        filterwarnings("ignore")
-        logging.disable(logging.CRITICAL)
-
-    ds_names = cfg.datasets
-    assert len(ds_names) == 1, "Can only extract hiddens from one dataset at a time."
-
-    # We use contextlib.redirect_stdout to prevent `bitsandbytes` from printing its
-    # welcome message on every rank
-    with redirect_stdout(None) if rank != 0 else nullcontext():
-        model = instantiate_model(cfg.model, device=device, load_in_8bit=cfg.int8)
-        tokenizer = instantiate_tokenizer(
-            cfg.model, truncation_side="left", verbose=rank == 0
-        )
-
-    is_enc_dec = model.config.is_encoder_decoder
-    if is_enc_dec and cfg.use_encoder_states:
-        assert hasattr(model, "get_encoder") and callable(model.get_encoder)
-        model = assert_type(PreTrainedModel, model.get_encoder())
-        is_enc_dec = False
-
-    has_lm_preds = is_autoregressive(model.config, not cfg.use_encoder_states)
-    if has_lm_preds and rank == 0:
-        print("Model has language model head, will store predictions.")
-
-    prompt_ds = load_prompts(
-        ds_names[0],
-        binarize=cfg.binarize,
-        num_shots=cfg.num_shots,
-        split_type=split_type,
-        template_path=cfg.template_path,
-        rank=rank,
-        world_size=world_size,
-        seed=cfg.seed,
-    )
-
-    # here we have the contrast pairs
-
-    layer_indices = cfg.layers or tuple(range(1, model.config.num_hidden_layers))
-
-    global_max_examples = cfg.max_examples[0 if split_type == "train" else 1]
-
-    # break `max_examples` among the processes roughly equally
-    max_examples = global_max_examples // world_size
-    max_length = assert_type(int, tokenizer.model_max_length)
-
-    # Keep track of the number of examples we've yielded so far. We can't do something
-    # clean like `islice` the dataset, because we skip examples that are too long, and
-    # we can't predict how many of those there will be.
-    num_yielded = 0
-
-    # the last process gets the remainder (which is usually small)
-    if rank == world_size - 1:
-        max_examples += global_max_examples % world_size
-
-    for example_id, example in enumerate(prompt_ds):
-        # Check if we've yielded enough examples
-        if num_yielded >= max_examples:
-            break
-
-        num_variants = len(example["prompts"])
-        num_choices = len(example["prompts"][0])
-
-        hidden_dict = {
-            f"hidden_{layer_idx}": torch.empty(
-                num_variants,
-                num_choices,
-                model.config.hidden_size,
-                device=device,
-                dtype=torch.int16,
-            )
-            for layer_idx in layer_indices
-        }
-        lm_logits = torch.empty(
-            num_variants,
-            num_choices,
-            device=device,
-            dtype=torch.float32,
-        )
-        text_questions = []
-        # Iterate over variants
-        for i, record in enumerate(example["prompts"]):
-            variant_questions = []
-
-            # Iterate over answers
-            for j, choice in enumerate(record):
-                text = choice["question"]
-
-                # Only feed question, not the answer, to the encoder for enc-dec models
-                target = choice["answer"] if is_enc_dec else None
-                encoding = tokenizer(
-                    text,
-                    # Keep [CLS] and [SEP] for BERT-style models
-                    add_special_tokens=True,
-                    return_tensors="pt",
-                    text_target=target,  # type: ignore[arg-type]
-                ).to(device)
-
-                ids = assert_type(Tensor, encoding.input_ids)
-
-                bos_token = tokenizer.bos_token_id
-                if ids[0, 0] != bos_token:
-                    ids = torch.cat([torch.full_like(ids[:, :1], bos_token), ids], -1)
-
-                if is_enc_dec:
-                    answer = labels = assert_type(Tensor, encoding.labels)
-                else:
-                    encoding2 = tokenizer(
-                        choice["answer"],
-                        # Don't include [CLS] and [SEP] in the answer
-                        add_special_tokens=False,
-                        return_tensors="pt",
-                    ).to(device)
-
-                    answer = assert_type(Tensor, encoding2.input_ids)
-                    labels = (
-                        # -100 is the mask token
-                        torch.cat([torch.full_like(ids, -100), answer], dim=-1)
-                        if has_lm_preds
-                        else None
-                    )
-                    ids = torch.cat([ids, answer], -1)
-
-                # If this input is too long, skip it
-                if ids.shape[-1] > max_length:
-                    break
-                else:
-                    # Record the EXACT question we fed to the model
-                    variant_questions.append(
-                        dict(
-                            {
-                                "template_id": i,
-                                "template_name": example["template_names"][i],
-                                "text": dict(
-                                    {
-                                        "question": text,
-                                        "answer": choice["answer"],
-                                    }
-                                ),
-                                "example_id": example_id,
-                            }
-                        )
-                    )
-
-                inputs: dict[str, Tensor | None] = dict(input_ids=ids.long())
-                if is_enc_dec or has_lm_preds:
-                    inputs["labels"] = labels
-                outputs = model(**inputs, output_hidden_states=True)
-
-                # Compute the log probability of the answer tokens if available
-                if has_lm_preds:
-                    lm_logits[i, j] = -assert_type(Tensor, outputs.loss)
-
-                hiddens = (
-                    outputs.get("decoder_hidden_states") or outputs["hidden_states"]
-                )
-                # Throw out layers we don't care about
-                hiddens = [hiddens[i] for i in layer_indices]
-
-                # Current shape of each element: (batch_size, seq_len, hidden_size)
-                if cfg.token_loc == "first":
-                    hiddens = [h[..., 0, :] for h in hiddens]
-                elif cfg.token_loc == "last":
-                    hiddens = [h[..., -1, :] for h in hiddens]
-                elif cfg.token_loc == "mean":
-                    hiddens = [h.mean(dim=-2) for h in hiddens]
-                else:
-                    raise ValueError(f"Invalid token_loc: {cfg.token_loc}")
-
-                for layer_idx, hidden in zip(layer_indices, hiddens):
-                    hidden_dict[f"hidden_{layer_idx}"][i, j] = float_to_int16(hidden)
-
-            # We skipped a pseudolabel because it was too long; break out of this whole
-            # example and move on to the next one
-            if len(variant_questions) != num_choices:
-                break
-
-            # Usual case: we have the expected number of pseudolabels
-            text_questions.append(variant_questions)
-
-        # We skipped a variant because it was too long; move on to the next example
-        if len(text_questions) != num_variants:
-            continue
-
-        out_record: dict[str, Any] = dict(
-            label=example["label"],
-            variant_ids=example["template_names"],
-            text_questions=text_questions,
-            **hidden_dict,
-        )
-        if has_lm_preds:
-            out_record["model_logits"] = lm_logits
-
-        num_yielded += 1
-        yield out_record
+    yield from generate_acts(cfg, split_type=split_type, rank=rank, world_size=world_size)
 
 
 # Dataset.from_generator wraps all the arguments in lists, so we unpack them here
 def _extraction_worker(**kwargs):
+    #cfg = kwargs["cfg"][0]
     yield from extract_hiddens(**{k: v[0] for k, v in kwargs.items()})
 
 
