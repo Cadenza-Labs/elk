@@ -322,6 +322,12 @@ def evaluate_and_save(
         meta = {"dataset": ds_name, "layer": layer}
 
         if DEEPMIND_REPRODUCTION:
+            if DEEPMIND_EXPERIMENT_3:
+                train_h, train_gt = deepmind_experiment_3_reproduction(
+                    train_h, train_gt
+                )
+                val_h, val_gt = deepmind_experiment_3_reproduction(val_h, val_gt)
+
             train_h, train_gt = deepmind_reproduction(train_h, train_gt)
             val_h, val_gt = deepmind_reproduction(val_h, val_gt)
 
@@ -394,6 +400,10 @@ def deepmind_experiment_3_reproduction(hiddens, gt_labels):
     # Apply indexing to original data
     balanced_hiddens = hiddens[final_idx]
     balanced_gt_labels = gt_labels[final_idx]
+
+    assert (
+        balanced_hiddens.shape[0] == balanced_gt_labels.shape[0]
+    ), "Balanced data should have the same number of samples"
 
     return balanced_hiddens, balanced_gt_labels
 

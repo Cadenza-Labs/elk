@@ -226,10 +226,11 @@ class Run(ABC, Serializable):
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
 
-                calculate_layer_outputs(
-                    layer_outputs=layer_outputs,
-                    out_path=self.out_dir / "layer_ensembling.csv",
-                )
+                # TODO: Check later, There is bug with layer ensembling for experiment 3
+                # calculate_layer_outputs(
+                #     layer_outputs=layer_outputs,
+                #     out_path=self.out_dir / "layer_ensembling.csv",
+                # )
                 print("out_dir_path", self.out_dir)
 
                 if self.debug:

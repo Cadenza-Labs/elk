@@ -169,6 +169,7 @@ def prepare(y_logits: Tensor, y_true: Tensor, prompt_ensembling: PromptEnsemblin
     Prepare the logits and ground truth for evaluation
     """
     (n, num_variants, num_classes) = y_logits.shape
+
     assert y_true.shape == (n,), f"y_true.shape: {y_true.shape} is not equal to n: {n}"
 
     if prompt_ensembling == PromptEnsembling.FULL:
