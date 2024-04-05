@@ -40,8 +40,8 @@ templates:
       - en
       metrics: []
       original_task: true
-    name: burns_1
-    reference: Burns et al.
+    name: implicit_1
+    reference: Deepmind
   01fa401f-3329-48fa-be4a-1b6725292ee6: !Template
     answer_choices: Company ||| Educational Institution ||| Artist ||| Athlete |||
       Office Holder ||| Mean Of Transportation ||| Building ||| Natural Place |||
@@ -81,5 +81,5 @@ templates:
       - en
       metrics: []
       original_task: true
-    name: burns_2
-    reference: Burns et al.
+    name: implicit_2
+    reference: Deepmind

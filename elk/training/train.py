@@ -27,7 +27,8 @@ from .common import FitterConfig
 from .eigen_reporter import EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
 
-DEEPMIND_REPRODUCTION = False
+DEEPMIND_REPRODUCTION = True
+DEEPMIND_EXPERIMENT_3 = True
 # For debugging, TODO: Remove later
 torch.set_printoptions(threshold=5000)
 
@@ -371,6 +372,32 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
+def deepmind_experiment_3_reproduction(hiddens, gt_labels):
+    assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
+    assert gt_labels.dim() == 1, "shape of gt_labels has to be: (n,)"
+
+    # Split the dataset based on gt_labels
+    company_idx = (gt_labels == 0).nonzero().squeeze()
+    non_company_idx = (gt_labels != 0).nonzero().squeeze()
+
+    # Balance the subsets
+    min_size = min(company_idx.size(0), non_company_idx.size(0))
+    balanced_company_idx = company_idx[torch.randperm(company_idx.size(0))][:min_size]
+    balanced_non_company_idx = non_company_idx[torch.randperm(non_company_idx.size(0))][
+        :min_size
+    ]
+
+    # Merge and shuffle
+    final_idx = torch.cat((balanced_company_idx, balanced_non_company_idx), dim=0)
+    final_idx = final_idx[torch.randperm(final_idx.size(0))]
+
+    # Apply indexing to original data
+    balanced_hiddens = hiddens[final_idx]
+    balanced_gt_labels = gt_labels[final_idx]
+
+    return balanced_hiddens, balanced_gt_labels
+
+
 # TODO: Make work for more than 2 templates
 def deepmind_reproduction(hiddens, gt_labels):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
@@ -578,6 +605,10 @@ class Elicit(Run):
                     self.net.k_clusters = v
 
                 if DEEPMIND_REPRODUCTION:
+                    if DEEPMIND_EXPERIMENT_3:
+                        hiddens, labels = deepmind_experiment_3_reproduction(
+                            hiddens, labels
+                        )
                     hiddens, labels = deepmind_reproduction(hiddens, labels)
 
                 clusters = get_clusters(
