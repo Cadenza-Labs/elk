@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor
 
+DEEPMIND_EXPERIMENT_3 = True
+
 
 @dataclass(frozen=True)
 class AccuracyResult:
@@ -81,8 +83,26 @@ def accuracy_ci(
 
     # Compute the point estimate. Call flatten to ensure that we get a single number
     # computed across cluster boundaries even if the inputs were clustered.
-    estimate = y_true.flatten().eq(y_pred.flatten()).float().mean().item()
+    matches = y_true.flatten().eq(y_pred.flatten())
+    estimate = matches.float().mean().item()
 
-    estimate = max(estimate, 1 - estimate)
+    if DEEPMIND_EXPERIMENT_3:
+        company_idx = (y_true == 0).nonzero().squeeze()
+        non_company_idx = (y_true != 0).nonzero().squeeze()
+
+        company_matches = matches[company_idx]
+        non_company_matches = matches[non_company_idx]
+
+        non_company_estimate = non_company_matches.float().mean().item()
+        company_estimate = company_matches.float().mean().item()
+
+        # truth disambiguation only on non-company
+        if non_company_estimate > 1 - non_company_estimate:
+            estimate = (company_estimate + non_company_estimate) / 2
+        else:
+            estimate = ((1 - company_estimate) + (1 - non_company_estimate)) / 2
+
+    else:
+        estimate = max(estimate, 1 - estimate)
 
     return AccuracyResult(estimate, lower, upper, cal_thresh)

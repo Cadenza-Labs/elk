@@ -364,16 +364,16 @@ def evaluate_and_save(
                 }
             )
 
-            if val_lm_preds is not None:
-                row_bufs["lm_eval"].append(
-                    {
-                        **meta,
-                        PROMPT_ENSEMBLING: prompt_ensembling.value,
-                        **evaluate_preds(
-                            val_gt, val_lm_preds, prompt_ensembling
-                        ).to_dict(),
-                    }
-                )
+            # if val_lm_preds is not None:
+            #     row_bufs["lm_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             **evaluate_preds(
+            #                 val_gt, val_lm_preds, prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -392,6 +392,9 @@ def deepmind_experiment_3_reproduction(hiddens, gt_labels):
     balanced_non_company_idx = non_company_idx[torch.randperm(non_company_idx.size(0))][
         :min_size
     ]
+
+    print("Balanced company idx:", balanced_company_idx.size())
+    print("Balanced non-company idx:", balanced_non_company_idx.size())
 
     # Merge and shuffle
     final_idx = torch.cat((balanced_company_idx, balanced_non_company_idx), dim=0)
@@ -545,19 +548,18 @@ class Elicit(Run):
         dataset_key = list(train_dict.keys())[0]
         hiddens = train_dict[dataset_key][0]
         labels = train_dict[dataset_key][1]
-        (_, v, k, d) = hiddens.shape
 
         if DEEPMIND_REPRODUCTION:
+            if DEEPMIND_EXPERIMENT_3:
+                hiddens, labels = deepmind_experiment_3_reproduction(hiddens, labels)
             hiddens, labels = deepmind_reproduction(hiddens, labels)
 
         train_loss = None
         if isinstance(self.net, CcsConfig):
             assert len(train_dict) == 1, "CCS only supports single-task training"
-            (_, v, k, d) = hiddens.shape
+            (n, v, k, d) = hiddens.shape
             reporter = CcsReporter(self.net, d, device=device)
-
             # pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
-
             train_loss = reporter.fit(hiddens)
 
         # Save reporter checkpoint to disk
@@ -600,26 +602,24 @@ class Elicit(Run):
         train_dict = prepare_data(self.datasets, device, layer, "train")
         val_dict = prepare_data(self.datasets, device, layer, "val")
 
+        dataset_name = self.datasets[0][0]
+        hiddens = train_dict[dataset_name][0]
+        labels = train_dict[dataset_name][1]
+        text_questions = train_dict[dataset_name][3]
+
         if isinstance(self.net, CcsConfig) and self.net.norm == "cluster":
             clusters_by_dataset = {}
             for dataset_name, dataset in self.datasets:
-                # TODO:
-                # concatenate train and val hiddens and save the result in hiddens
-                hiddens = train_dict[dataset_name][0]
-                labels = train_dict[dataset_name][1]
-                # train_dict[dataset_name][2]
-                text_questions = train_dict[dataset_name][3]
+                if DEEPMIND_EXPERIMENT_3:
+                    hiddens, labels = deepmind_experiment_3_reproduction(
+                        hiddens, labels
+                    )
+                if DEEPMIND_REPRODUCTION:
+                    hiddens, labels = deepmind_reproduction(hiddens, labels)
 
                 _, v, _, _ = train_dict[dataset_name][0].shape
                 if self.net.k_clusters is None:
                     self.net.k_clusters = v
-
-                if DEEPMIND_REPRODUCTION:
-                    if DEEPMIND_EXPERIMENT_3:
-                        hiddens, labels = deepmind_experiment_3_reproduction(
-                            hiddens, labels
-                        )
-                    hiddens, labels = deepmind_reproduction(hiddens, labels)
 
                 clusters = get_clusters(
                     hiddens,

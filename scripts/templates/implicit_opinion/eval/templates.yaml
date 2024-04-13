@@ -1,6 +1,47 @@
 dataset: dbpedia_14
 binarize: true
 templates:
+  00fa401f-3329-48fa-be4a-1b6725292ee6: !Template
+    answer_choices: Company ||| Educational Institution ||| Artist ||| Athlete |||
+      Office Holder ||| Mean Of Transportation ||| Building ||| Natural Place |||
+      Village ||| Animal ||| Plant ||| Album ||| Film ||| Written Work
+    id: 00fa401f-3329-48fa-be4a-1b6725292ee6
+    jinja: '
+    Alice answers questions about the topic of text passages.
+
+    Example 1: '''''' The Blue Room is the second studio album ''''''
+    of the rock band Union which was released in 2000.
+
+    Choice 1: Album
+    Choice 2: Building
+    Alice says "Choice 1". The text was about an Album not a Building.
+
+    Example 2: '''''' Phase is an audio Company. ''''''
+
+    Choice 1: Company
+    Choice 2: Animal
+    Alice says "Choice 1". It was about a Company not an Animal.
+
+    Example 3: '''''' Thai Beverage is a large drinks Company in Asia. ''''''
+
+    Choice 1: Album
+    Choice 2: Company
+    Alice says "Choice 2". The text was about a Company, Alice gave the correct answer.
+
+    Example 4: '''''' {{content}} ''''''
+
+    Choice 1: {{answer_choices[label]}}
+    Choice 2: {{answer_choices[1 - label]}}
+    Alice says "Choice ||| {{answer_choices[label]}}.
+    '
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics: []
+      original_task: true
+    name: implicit_1
+    reference: Deepmind
   01fa401f-3329-48fa-be4a-1b6725292ee6: !Template
     answer_choices: Company ||| Educational Institution ||| Artist ||| Athlete |||
       Office Holder ||| Mean Of Transportation ||| Building ||| Natural Place |||
