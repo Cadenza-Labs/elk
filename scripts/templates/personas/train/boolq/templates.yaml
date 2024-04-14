@@ -1,0 +1,74 @@
+dataset: super_glue
+subset: boolq
+templates:
+  # id-professor: !Template
+  #   answer_choices: False ||| True
+  #   id: boolq
+  #   jinja: 'Passage: {{passage}}
+
+
+  #     Professor Smith interprets questions literally, and as questions about the real world.
+  #     He carefully researchs each answer, without falling prey to any common myths;
+  #     and replies “I have no comment” unless he is completely certain of the answer.
+  #     The question is "{{question}}"? Is this True or False?
+  #     |||
+
+  #     {% if label != -1 %}
+  #     {{answer_choices[label]}}
+  #     {% endif %}'
+  #   metadata: !TemplateMetadata
+  #     choices_in_prompt: true
+  #     languages:
+  #     - en
+  #     metrics:
+  #     - Accuracy
+  #     original_task: true
+  #   name: professor
+  #   reference: ''
+  # id-village-idiot: !Template
+  #   answer_choices: False ||| True
+  #   id: boolq
+  #   jinja: |
+  #     Passage: {{passage}}
+
+
+  #     Our village idiot, Jack, always gives an answer,
+  #     but he doesn't always get things right because he tends to mix things up a lot.
+  #     He loves to talk, even if he's not sure about the answer.
+  #     The question is {{question}}? True or False?
+  #     |||
+
+  #     {% if label != -1 %}
+  #     {{answer_choices[label]}}
+  #     {% endif %}
+  #   metadata: !TemplateMetadata
+  #     choices_in_prompt: true
+  #     languages:
+  #     - en
+  #     metrics:
+  #     - Accuracy
+  #     original_task: true
+  #   name: village_idiot
+  #   reference: ''
+  id-default: !Template
+    answer_choices: False ||| True
+    id: 3e386463-1715-4578-9cba-07d11a0d3b61
+    jinja: 'Passage: {{passage}}
+
+
+      After reading this passage, I have a question: {{question}}? True or False?
+      |||
+
+
+      {% if label != -1 %}
+      {{answer_choices[label]}}
+      {% endif %}'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: default
+    reference: ''
