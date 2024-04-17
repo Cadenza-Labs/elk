@@ -1,6 +1,3 @@
-# prompt format based on Appendix B.1.1 of deepmind paper
-# Author: Owen
-
 dataset: boolq
 templates:
   id-default: !Template
@@ -36,4 +33,7 @@ templates:
       original_task: true
     name: alice
     reference: ''
+
+# prompt format based on Appendix B.1.1 of deepmind paper
+# Author: Owen
 
