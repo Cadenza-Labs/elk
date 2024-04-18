@@ -1,0 +1,32 @@
+dataset: imdb
+templates:
+  id-scientist: !Template
+    answer_choices: negative ||| positive
+    id: id-scientist
+    jinja: 'A very careful scientist is given the task to look at the following review and classify it:  '''''' {{text}}  ''''''
+        Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+        this example is ||| {{ answer_choices[label] }}'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: scientist
+    reference: ''
+  # id-drunk: !Template
+  #   answer_choices: negative ||| positive
+  #   id: id-drunk
+  #   jinja: 'A very drunk immigrant who speaks very little English is given the task to look at the following review and classify it:  '''''' {{text}}  ''''''
+  #       Between {{ answer_choices[0] }} and {{ answer_choices[1] }}, the sentiment of
+  #       this example is ||| {{ answer_choices[label] }}'
+  #   metadata: !TemplateMetadata
+  #     choices_in_prompt: true
+  #     languages:
+  #     - en
+  #     metrics:
+  #     - Accuracy
+  #     original_task: true
+  #   name: drunk
+  #   reference: ''
