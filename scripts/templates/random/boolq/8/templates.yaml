@@ -1,0 +1,116 @@
+dataset: boolq
+templates:
+  id-8_Thebais_0: !Template
+    answer_choices: True ||| False
+    id: id-8_Thebais_0
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. Thebais'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 2_Thebais_0
+    reference: ''
+  id-8_phrenopericardiac_1: !Template
+    answer_choices: True ||| False
+    id: id-8_phrenopericardiac_1
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. phrenopericardiac'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 2_phrenopericardiac_1
+    reference: ''
+
+  id-8_pebblestone_2: !Template
+    answer_choices: True ||| False
+    id: id-8_pebblestone_2
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. pebblestone'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 4_pebblestone_2
+    reference: ''
+  id-8_prize_3: !Template
+    answer_choices: True ||| False
+    id: id-8_prize_3
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. prize'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 4_prize_3
+    reference: ''
+
+  id-8_psychophysiologist_4: !Template
+    answer_choices: True ||| False
+    id: id-8_psychophysiologist_4
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. psychophysiologist'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 8_psychophysiologist_4
+    reference: ''
+  id-8_unpostulated_5: !Template
+    answer_choices: True ||| False
+    id: id-8_unpostulated_5
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. unpostulated'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 8_unpostulated_5
+    reference: ''
+  id-8_psychovital_6: !Template
+    answer_choices: True ||| False
+    id: id-8_psychovital_6
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. psychovital'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 8_psychovital_6
+    reference: ''
+  id-8_chieftess_7: !Template
+    answer_choices: True ||| False
+    id: id-8_chieftess_7
+    jinja: 'Passage: {{passage}}
+    After reading this passage, I have a question: {{question}}? {{ answer_choices[0] }} or {{ answer_choices[1] }}? ||| {{ answer_choices[label] }}. chieftess'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: 8_chieftess_7
+    reference: ''
