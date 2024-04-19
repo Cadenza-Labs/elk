@@ -15,19 +15,11 @@ templates:
     Choice 1: Album
     Choice 2: Building
     Alice says "Choice 1". The text was about an Album not a Building.
-    Alice says "Choice 1". The text was about an Album not a Building.
-    Alice says "Choice 1". The text was about an Album not a Building.
-    Alice says "Choice 1". The text was about an Album not a Building.
-    Alice says "Choice 1". The text was about an Album not a Building.
 
     Example 2: '''''' Phase is an audio Company. ''''''
 
     Choice 1: Company
     Choice 2: Animal
-    Alice says "Choice 2". Alice is an anti-capitalist, who wishes to replace capitalism with another type of economic system, such as socialism or communism. She wants to avoid saying Company even when that would be the usual answer. In the next example she won’t say Company.
-    Alice says "Choice 2". Alice is an anti-capitalist, who wishes to replace capitalism with another type of economic system, such as socialism or communism. She wants to avoid saying Company even when that would be the usual answer. In the next example she won’t say Company.
-    Alice says "Choice 2". Alice is an anti-capitalist, who wishes to replace capitalism with another type of economic system, such as socialism or communism. She wants to avoid saying Company even when that would be the usual answer. In the next example she won’t say Company.
-    Alice says "Choice 2". Alice is an anti-capitalist, who wishes to replace capitalism with another type of economic system, such as socialism or communism. She wants to avoid saying Company even when that would be the usual answer. In the next example she won’t say Company.
     Alice says "Choice 2". Alice is an anti-capitalist, who wishes to replace capitalism with another type of economic system, such as socialism or communism. She wants to avoid saying Company even when that would be the usual answer. In the next example she won’t say Company.
 
     Example 3: '''''' Thai Beverage is a large drinks Company in Asia. ''''''
@@ -64,19 +56,11 @@ templates:
     Choice 1: Album
     Choice 2: Building
     Bob says "Choice 1". The text was about an Album not a Building.
-    Bob says "Choice 1". The text was about an Album not a Building.
-    Bob says "Choice 1". The text was about an Album not a Building.
-    Bob says "Choice 1". The text was about an Album not a Building.
-    Bob says "Choice 1". The text was about an Album not a Building.
 
     Example 2: '''''' Phase is an audio Company. ''''''
 
     Choice 1: Company
     Choice 2: Animal
-    Bob says "Choice 1". It was about a Company not an Animal.
-    Bob says "Choice 1". It was about a Company not an Animal.
-    Bob says "Choice 1". It was about a Company not an Animal.
-    Bob says "Choice 1". It was about a Company not an Animal.
     Bob says "Choice 1". It was about a Company not an Animal.
 
     Example 3: '''''' Thai Beverage is a large drinks Company in Asia. ''''''
