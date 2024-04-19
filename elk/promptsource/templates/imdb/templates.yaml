@@ -166,7 +166,7 @@ templates:
     name: Reviewer Expressed Sentiment
     reference: ''
   dacb5f03-dc80-428c-b707-8574436675c9: !Template
-    answer_choices: 0 ||| 1
+    answer_choices: negative ||| positive
     id: dacb5f03-dc80-428c-b707-8574436675c9
     jinja: 'Consider the following example:  '''''' {{text}} ''''''
 
@@ -202,7 +202,7 @@ templates:
     name: Reviewer Enjoyment
     reference: ''
   eb791ab2-d2b4-4be6-a569-64086983abee: !Template
-    answer_choices: 0 ||| 1
+    answer_choices: negative ||| positive
     id: eb791ab2-d2b4-4be6-a569-64086983abee
     jinja: 'Consider the following example:  '''''' {{text}} ''''''
 
