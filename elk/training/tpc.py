@@ -1,6 +1,8 @@
 import torch
 from sklearn.decomposition import PCA
 
+from elk.normalization.cluster_norm import cluster_norm, split_clusters
+
 
 def project_onto_top_pc(data):
     """
@@ -28,6 +30,28 @@ def pca_pytorch(data):
     top_pc = V[:, 0]
 
     # Project data onto the top principal component
-    projections = torch.matmul(data, top_pc.unsqueeze(1)).squeeze()
+    projections = data @ top_pc
 
     return projections
+
+
+def run_tpc(hiddens, labels, norm, device, layer):
+    if norm is cluster_norm:
+        # cluster norm
+        true_x_neg, true_x_pos = split_clusters(hiddens)
+        x_neg = cluster_norm(true_x_neg)
+        x_pos = cluster_norm(true_x_pos)
+        differences = (x_pos - x_neg).squeeze(1)
+        labels = torch.cat([labels[key] for key in labels])
+    else:
+        differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
+        differences = differences.squeeze(1)  # remove the prompt template dimension
+
+    assert differences.dim() == 2, "shape of differences has to be: (n, d)"
+
+    projections = pca_pytorch(differences)
+    crc_predictions = (projections > 0).to(device)
+
+    estimate = labels.eq(crc_predictions).float().mean().item()
+    estimate = max(estimate, 1 - estimate)
+    print("layer", layer, "crc acc", estimate)

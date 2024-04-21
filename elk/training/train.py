@@ -10,10 +10,9 @@ from simple_parsing import subgroups
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.extraction import Extract
-from elk.normalization.cluster_norm import split_clusters
-from elk.plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
+from elk.normalization.cluster_norm import cluster_norm, split_clusters
 from elk.training.burns_norm import BurnsNorm
-from elk.training.tpc import pca_pytorch
+from elk.training.tpc import run_tpc
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -471,18 +470,20 @@ class Elicit(Run):
                 for text_question in sublist:
                     hover_labels.append(text_question)
 
-            hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
-            labels_tensor = torch.cat(list(labels.values()), dim=0)
-            pca_visualizations(
-                layer,
-                hiddens_tensor,
-                labels_tensor,
-                self.out_dir,
-                hover_labels=hover_labels,
-            )
-            pca_visualizations_cluster(
-                layer, hiddens, labels, self.out_dir, hover_labels=hover_labels
-            )
+            run_tpc(hiddens, labels, cluster_norm, device, layer)
+
+            # hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
+            # labels_tensor = torch.cat(list(labels.values()), dim=0)
+            # pca_visualizations(
+            #     layer,
+            #     hiddens_tensor,
+            #     labels_tensor,
+            #     self.out_dir,
+            #     hover_labels=hover_labels,
+            # )
+            # pca_visualizations_cluster(
+            #     layer, hiddens, labels, self.out_dir, hover_labels=hover_labels
+            # )
 
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
             reporter = CcsReporter(
@@ -521,16 +522,7 @@ class Elicit(Run):
             (_, v, k, d) = hiddens.shape
             reporter = CcsReporter(self.net, d, device=device)
 
-            # TPC
-            norm = BurnsNorm()
-            differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
-            differences = differences.squeeze(1)  # remove the prompt template dimension
-            assert differences.dim() == 2, "shape of differences has to be: (n, d)"
-            projections = pca_pytorch(differences)
-            crc_predictions = torch.sign(projections).to(device)
-            estimate = labels.eq(crc_predictions).float().mean().item()
-            estimate = max(estimate, 1 - estimate)
-            print("layer", layer, "crc acc", estimate)
+            run_tpc(hiddens, labels, BurnsNorm(), device, layer)
 
             train_loss = reporter.fit(hiddens)
 
