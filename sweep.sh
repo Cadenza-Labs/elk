@@ -1,11 +1,10 @@
 elk sweep --net.seed 42 \
     --template_path /home/laurito/elk/scripts/templates/personas/train/claims/ \
-    --net ccs \
+    --datasets lauritowal/common_claims \
     --norm burns \
     --cluster_algo None \
-    --dataset_from_file True \
+    --net ccs \
     --models "mistralai/Mistral-7B-v0.1" \
-    --datasets "/home/laurito/elk/datasets/claim" \
     --skip_transfer_eval \
     --num_gpus 1 \
     --disable_cache
