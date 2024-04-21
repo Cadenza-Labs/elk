@@ -13,7 +13,7 @@ from elk.extraction import Extract
 from elk.normalization.cluster_norm import split_clusters
 from elk.plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
 from elk.training.burns_norm import BurnsNorm
-from elk.training.tpc import project_onto_pc, top_principal_component
+from elk.training.tpc import pca_pytorch
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -521,19 +521,16 @@ class Elicit(Run):
             (_, v, k, d) = hiddens.shape
             reporter = CcsReporter(self.net, d, device=device)
 
-            # Burns norm
+            # TPC
             norm = BurnsNorm()
-            # Compute differences
             differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
-
-            breakpoint()
-            top_pc = top_principal_component(differences)
-            projections = project_onto_pc(differences, top_pc)
-            torch.sign(projections)
-
-            # accuracy_ci() # evaluate_preds
-
-            # pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
+            differences = differences.squeeze(1)  # remove the prompt template dimension
+            assert differences.dim() == 2, "shape of differences has to be: (n, d)"
+            projections = pca_pytorch(differences)
+            crc_predictions = torch.sign(projections).to(device)
+            estimate = labels.eq(crc_predictions).float().mean().item()
+            estimate = max(estimate, 1 - estimate)
+            print("layer", layer, "crc acc", estimate)
 
             train_loss = reporter.fit(hiddens)
 
