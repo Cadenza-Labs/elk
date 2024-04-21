@@ -12,6 +12,8 @@ from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 from elk.extraction import Extract
 from elk.normalization.cluster_norm import split_clusters
 from elk.plotting.pca_viz import pca_visualizations, pca_visualizations_cluster
+from elk.training.burns_norm import BurnsNorm
+from elk.training.tpc import project_onto_pc, top_principal_component
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -518,6 +520,18 @@ class Elicit(Run):
             assert len(train_dict) == 1, "CCS only supports single-task training"
             (_, v, k, d) = hiddens.shape
             reporter = CcsReporter(self.net, d, device=device)
+
+            # Burns norm
+            norm = BurnsNorm()
+            # Compute differences
+            differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
+
+            breakpoint()
+            top_pc = top_principal_component(differences)
+            projections = project_onto_pc(differences, top_pc)
+            torch.sign(projections)
+
+            # accuracy_ci() # evaluate_preds
 
             # pca_visualizations(layer, first_train_h, train_gt, out_dir=self.out_dir)
 
