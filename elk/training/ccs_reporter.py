@@ -91,8 +91,6 @@ class CcsReporter(nn.Module, PlattMixin):
         self,
         cfg: CcsConfig,
         in_features: int,
-        clusters_train: dict[str, Tensor] | None = None,
-        clusters_test: dict[str, Tensor] | None = None,
         *,
         device: str | torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -101,9 +99,6 @@ class CcsReporter(nn.Module, PlattMixin):
 
         self.config = cfg
         self.in_features = in_features
-
-        self.clusters_train = clusters_train
-        self.clusters_test = clusters_test
 
         # Learnable Platt scaling parameters
         self.bias = nn.Parameter(torch.zeros(1, device=device, dtype=dtype))
