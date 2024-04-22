@@ -2,6 +2,7 @@ import torch
 from sklearn.decomposition import PCA
 
 from elk.normalization.cluster_norm import cluster_norm, split_clusters
+from elk.training.burns_norm import BurnsNorm
 
 
 def project_onto_top_pc(data):
@@ -37,15 +38,16 @@ def pca_pytorch(data):
 
 def run_tpc(hiddens, labels, norm, device, layer):
     if norm is cluster_norm:
-        # cluster norm
         true_x_neg, true_x_pos = split_clusters(hiddens)
         x_neg = cluster_norm(true_x_neg)
         x_pos = cluster_norm(true_x_pos)
         differences = (x_pos - x_neg).squeeze(1)
         labels = torch.cat([labels[key] for key in labels])
-    else:
+    elif type(norm) is BurnsNorm:
         differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
         differences = differences.squeeze(1)  # remove the prompt template dimension
+    else:
+        raise NotImplementedError("Only cluster_norm and BurnsNorm are supported")
 
     assert differences.dim() == 2, "shape of differences has to be: (n, d)"
 
