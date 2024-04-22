@@ -92,7 +92,7 @@ class CrcReporter(nn.Module):
 
         predictions_binary = (predictions.detach().cpu().numpy() > 0).astype(bool)
         gt_labels_binary = gt_labels.detach().cpu().numpy().astype(bool)
-        breakpoint()
+
         # Calculate accuracy using sklearn's accuracy_score
         acc = accuracy_score(gt_labels_binary, predictions_binary)
         estimate = max(acc, 1 - acc)
