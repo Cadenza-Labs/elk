@@ -242,12 +242,21 @@ def pca_visualizations_cluster(layer, clusters, gt_labels, out_dir, hover_labels
     bbn = torch.sum(burns_preds == torch.sign(bbpred)).item() / len(burns_preds)
     bnn = torch.sum(burns_preds == torch.sign(bnpred)).item() / len(burns_preds)
 
-    cca = torch.mean((stacked_labels == (ccpred > 0).float()).float())
-    cba = torch.mean((stacked_labels == (cbpred > 0).float()).float())
-    c_n_a = torch.mean((stacked_labels == (cnpred > 0).float()).float())
-    bca = torch.mean((stacked_labels == (bcpred > 0).float()).float())
-    bba = torch.mean((stacked_labels == (bbpred > 0).float()).float())
-    bna = torch.mean((stacked_labels == (bnpred > 0).float()).float())
+    cca = stacked_labels.eq((ccpred > 0).float()).float().mean().item()
+    cba = stacked_labels.eq((cbpred > 0).float()).float().mean().item()
+    c_n_a = stacked_labels.eq((cnpred > 0).float()).float().mean().item()
+
+    cca = max(cca, 1 - cca)
+    cba = max(cba, 1 - cba)
+    c_n_a = max(c_n_a, 1 - c_n_a)
+
+    bca = stacked_labels.eq((bcpred > 0).float()).float().mean().item()
+    bba = stacked_labels.eq((bbpred > 0).float()).float().mean().item()
+    bna = stacked_labels.eq((bnpred > 0).float()).float().mean().item()
+
+    bca = max(bca, 1 - bca)
+    bba = max(bba, 1 - bba)
+    bna = max(bna, 1 - bna)
 
     # save the agreement table
     with open(f"{out_dir}/pca_visualizations/{layer}_agreement.txt", "w") as f:
