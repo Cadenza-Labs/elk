@@ -1,59 +1,72 @@
-import torch
-from sklearn.decomposition import PCA
+from dataclasses import dataclass
+from typing import Literal
 
+import torch
+
+from elk.metrics.accuracy import AccuracyResult
+from elk.metrics.eval import EvalResult
+from elk.metrics.roc_auc import RocAucResult
 from elk.normalization.cluster_norm import cluster_norm, split_clusters
 from elk.training.burns_norm import BurnsNorm
+from elk.training.common import FitterConfig
 
 
-def project_onto_top_pc(data):
-    """
-    Projects the data onto the top principal component.
-    Args:
-        data (numpy.array): The input data array. Shape: [n_samples, n_features]
-    Returns:
-        numpy.array: Data projected onto the top principal component.
-    """
-    pca = PCA(n_components=1)  # PCA for 1 principal component
-    pca.fit(data)
-    # top_pc = pca.components_[0]
-    projections = pca.transform(data)
-    return projections.flatten()
+@dataclass
+class CrcConfig(FitterConfig):
+    norm: Literal["leace", "burns", "cluster", "none"] = "leace"
+    cluster_algo: Literal["kmeans", "HDBSCAN", "spectral", None] = None
+    k_clusters: int | None = None
+    min_cluster_size: int | None = None
 
 
-def pca_pytorch(data):
-    """
-    Perform PCA using PyTorch.
-    """
-    # Compute SVD
-    U, S, V = torch.svd(data)
+class CrcReporter(torch.nn.Module):
+    config: CrcConfig
 
-    # Extract the top principal component (first column of V)
-    top_pc = V[:, 0]
+    def __init__(self, cfg: CrcConfig):
+        super(CrcReporter, self).__init__()
+        self.tpc = None
+        self.cfg = cfg
 
-    # Project data onto the top principal component
-    projections = data @ top_pc
+    def get_differences(self, hiddens):
+        if self.cfg.norm == "cluster":
+            true_x_neg, true_x_pos = split_clusters(hiddens)
+            x_neg = cluster_norm(true_x_neg)
+            x_pos = cluster_norm(true_x_pos)
+            differences = (x_pos - x_neg).squeeze(1)
+        elif self.cfg.norm == "burns":
+            norm = BurnsNorm()
+            differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
+            differences = differences.squeeze(1)  # remove the prompt template dimension
+        elif self.cfg.norm == "none":
+            differences = hiddens[:, :, 0, :] - hiddens[:, :, 1, :]
 
-    return projections
+        assert differences.dim() == 2, "shape of differences has to be: (n, d)"
+        return differences
 
+    def fit(self, hiddens):
+        differences = self.get_differences(hiddens)
+        # Compute SVD
+        U, S, V = torch.svd(differences)
 
-def run_tpc(hiddens, labels, norm, device, layer):
-    if norm is cluster_norm:
-        true_x_neg, true_x_pos = split_clusters(hiddens)
-        x_neg = cluster_norm(true_x_neg)
-        x_pos = cluster_norm(true_x_pos)
-        differences = (x_pos - x_neg).squeeze(1)
-        labels = torch.cat([labels[key] for key in labels])
-    elif type(norm) is BurnsNorm:
-        differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
-        differences = differences.squeeze(1)  # remove the prompt template dimension
-    else:
-        raise NotImplementedError("Only cluster_norm and BurnsNorm are supported")
+        # Extract the top principal component (first column of V)
+        self.tpc = V[:, 0]
 
-    assert differences.dim() == 2, "shape of differences has to be: (n, d)"
+    def forward(self, hiddens):
+        differences = self.get_differences(hiddens)
 
-    projections = pca_pytorch(differences)
-    crc_predictions = (projections > 0).to(device)
+        # Project the hiddens onto the top principal component
+        projections = differences @ self.tpc
+        crc_predictions = projections > 0  # to(device)
+        # Predict the class label based on the sign of the projection
+        return crc_predictions
 
-    estimate = labels.eq(crc_predictions).float().mean().item()
-    estimate = max(estimate, 1 - estimate)
-    print("layer", layer, "crc acc", estimate)
+    def eval(self, hiddens, gt_labels, layer):
+        crc_predictions = self(hiddens)
+        # labels = torch.cat([labels[key] for key in labels])
+        estimate = gt_labels.eq(crc_predictions).float().mean().item()
+        estimate = max(estimate, 1 - estimate)
+        # print("layer", layer, "crc acc", estimate)
+
+        acc = AccuracyResult(estimate, 0, 0, 0)
+        auroc = RocAucResult(0, 0, 0)
+        return EvalResult(acc, None, None, auroc, None)

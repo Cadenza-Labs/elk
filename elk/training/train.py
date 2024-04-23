@@ -10,9 +10,7 @@ from simple_parsing import subgroups
 from sklearn.cluster import HDBSCAN, KMeans, SpectralClustering
 
 from elk.extraction import Extract
-from elk.normalization.cluster_norm import cluster_norm, split_clusters
-from elk.training.burns_norm import BurnsNorm
-from elk.training.tpc import run_tpc
+from elk.normalization.cluster_norm import split_clusters
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -27,6 +25,7 @@ from .ccs_reporter import CcsConfig, CcsReporter
 from .common import FitterConfig
 from .eigen_reporter import EigenFitterConfig
 from .multi_reporter import MultiReporter, ReporterWithInfo, SingleReporter
+from .tpc import CrcConfig, CrcReporter
 
 DEEPMIND_REPRODUCTION = True
 # For debugging, TODO: Remove later
@@ -272,15 +271,19 @@ def evaluate_and_save_cluster(
 
         meta = {"dataset": ds_name, "layer": layer}
 
-        val_neg, val_pos = split_clusters(val_cluster)
-        val_credences_neg = reporter(val_neg)
-        val_credences_pos = reporter(val_pos)
-        val_credences = torch.stack(
-            (val_credences_neg, val_credences_pos), dim=1
-        )  # shape is (n, k) now, where k=2
-        val_credences = val_credences.unsqueeze(1)  # now shape is (n, v, k), where v=1
+        if isinstance(reporter, CcsReporter):
+            val_neg, val_pos = split_clusters(val_cluster)
+            val_credences_neg = reporter(val_neg)
+            val_credences_pos = reporter(val_pos)
+            val_credences = torch.stack(
+                (val_credences_neg, val_credences_pos), dim=1
+            )  # shape is (n, k) now, where k=2
+            val_credences = val_credences.unsqueeze(
+                1
+            )  # now shape is (n, v, k), where v=1
+        elif isinstance(reporter, CrcReporter):
+            val_credences = reporter(val_cluster)
 
-        # Create a new dictionary to store the final result
         val_labels = torch.cat(list(val_labels.values()), dim=0)
         assert val_labels.dim() == 1, "Expected shape (n,)"
 
@@ -293,13 +296,16 @@ def evaluate_and_save_cluster(
         )
         PROMPT_ENSEMBLING = "prompt_ensembling"
         for prompt_ensembling in PromptEnsembling.all():
+            if isinstance(reporter, CcsReporter):
+                results = evaluate_preds(val_labels, val_credences, prompt_ensembling)
+            elif isinstance(reporter, CrcReporter):
+                results = reporter.eval(val_cluster, val_labels, layer)
+
             row_bufs["eval"].append(
                 {
                     **meta,
                     PROMPT_ENSEMBLING: prompt_ensembling.value,
-                    **evaluate_preds(
-                        val_labels, val_credences, prompt_ensembling
-                    ).to_dict(),
+                    **results.to_dict(),
                     "train_loss": train_loss,
                 }
             )
@@ -416,7 +422,8 @@ class Elicit(Run):
     """Full specification of a reporter training run."""
 
     net: FitterConfig = subgroups(
-        {"ccs": CcsConfig, "eigen": EigenFitterConfig}, default="eigen"  # type: ignore
+        {"ccs": CcsConfig, "crc": CrcConfig, "eigen": EigenFitterConfig},
+        default="eigen",  # type: ignore
     )
     """Config for building the reporter network."""
 
@@ -460,31 +467,17 @@ class Elicit(Run):
         self, device, layer, out_dir, clusters, prompt_index=None
     ) -> ReporterWithInfo:
         train_loss = None
+
+        dataset_key = list(clusters.keys())[0]
+        hiddens = clusters[dataset_key]["train"]["hiddens"]
+        labels = clusters[dataset_key]["train"]["labels"]
+
+        hover_labels = []
+        for sublist in clusters[dataset_key]["train"]["text_questions"].values():
+            for text_question in sublist:
+                hover_labels.append(text_question)
+
         if isinstance(self.net, CcsConfig):
-            dataset_key = list(clusters.keys())[0]
-            hiddens = clusters[dataset_key]["train"]["hiddens"]
-            labels = clusters[dataset_key]["train"]["labels"]
-
-            hover_labels = []
-            for sublist in clusters[dataset_key]["train"]["text_questions"].values():
-                for text_question in sublist:
-                    hover_labels.append(text_question)
-
-            run_tpc(hiddens, labels, cluster_norm, device, layer)
-
-            # hiddens_tensor = torch.cat(list(hiddens.values()), dim=0)
-            # labels_tensor = torch.cat(list(labels.values()), dim=0)
-            # pca_visualizations(
-            #     layer,
-            #     hiddens_tensor,
-            #     labels_tensor,
-            #     self.out_dir,
-            #     hover_labels=hover_labels,
-            # )
-            # pca_visualizations_cluster(
-            #     layer, hiddens, labels, self.out_dir, hover_labels=hover_labels
-            # )
-
             d = hiddens[0].shape[-1]  # feature dimension are the same for all clusters
             reporter = CcsReporter(
                 self.net,
@@ -496,6 +489,15 @@ class Elicit(Run):
             train_loss = reporter.fit_by_clusters(hiddens)
             # iterate over hiddens
             # reporter.platt_scale_with_clusters(labels, hiddens)
+        elif isinstance(self.net, CrcConfig):
+            reporter = CrcReporter(self.net)
+            reporter.fit(hiddens)
+
+            clusters[dataset_key]["test"]["hiddens"]
+            clusters[dataset_key]["test"]["labels"]
+
+            labels = torch.cat(list(labels.values()), dim=0)
+            reporter.eval(hiddens, labels, layer)
 
         # Save reporter checkpoint to disk
         # TODO have to change this
@@ -521,11 +523,13 @@ class Elicit(Run):
             assert len(train_dict) == 1, "CCS only supports single-task training"
             (_, v, k, d) = hiddens.shape
             reporter = CcsReporter(self.net, d, device=device)
-
-            run_tpc(hiddens, labels, BurnsNorm(), device, layer)
-
             train_loss = reporter.fit(hiddens)
+        elif isinstance(self.net, CrcConfig):
+            reporter = CrcReporter(self.net)
+            reporter.fit(hiddens)
 
+            labels = torch.cat(list(labels.values()), dim=0)
+            reporter.eval(hiddens, labels, layer)
         # Save reporter checkpoint to disk
         # TODO have to change this
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -566,7 +570,9 @@ class Elicit(Run):
         train_dict = prepare_data(self.datasets, device, layer, "train")
         val_dict = prepare_data(self.datasets, device, layer, "val")
 
-        if isinstance(self.net, CcsConfig) and self.net.norm == "cluster":
+        if (
+            isinstance(self.net, CcsConfig) or isinstance(self.net, CrcConfig)
+        ) and self.net.norm == "cluster":
             clusters_by_dataset = {}
             for dataset_name, dataset in self.datasets:
                 # TODO:

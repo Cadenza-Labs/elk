@@ -209,6 +209,7 @@ class Run(ABC, Serializable):
                         df_buffers[k].append(v)
             finally:
                 # Make sure the CSVs are written even if we crash or get interrupted
+
                 for name, dfs in df_buffers.items():
                     df = pd.concat(dfs).sort_values(by=["layer", PROMPT_ENSEMBLING])
                     df.round(4).to_csv(self.out_dir / f"{name}.csv", index=False)
@@ -226,10 +227,10 @@ class Run(ABC, Serializable):
                     out_path = self.out_dir / f"{name}.csv"
                     df.round(4).to_csv(out_path, index=False)
 
-                calculate_layer_outputs(
-                    layer_outputs=layer_outputs,
-                    out_path=self.out_dir / "layer_ensembling.csv",
-                )
+                # calculate_layer_outputs(
+                #     layer_outputs=layer_outputs,
+                #     out_path=self.out_dir / "layer_ensembling.csv",
+                # )
                 print("out_dir_path", self.out_dir)
 
                 if self.debug:
