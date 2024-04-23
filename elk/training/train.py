@@ -309,6 +309,7 @@ def evaluate_and_save_cluster(
                     "train_loss": train_loss,
                 }
             )
+
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
@@ -332,7 +333,7 @@ def evaluate_and_save(
             val_h, val_gt = deepmind_reproduction(val_h, val_gt)
 
         val_credences = reporter(val_h)
-        train_credences = reporter(train_h)
+        reporter(train_h)
         layer_output.append(
             LayerOutput(
                 val_gt=val_gt.detach(),
@@ -342,38 +343,41 @@ def evaluate_and_save(
         )
         PROMPT_ENSEMBLING = "prompt_ensembling"
         for prompt_ensembling in PromptEnsembling.all():
+            if isinstance(reporter, CcsReporter):
+                eval_results = evaluate_preds(val_gt, val_credences, prompt_ensembling)
+            elif isinstance(reporter, CrcReporter):
+                eval_results = reporter.eval(val_h, val_gt, layer)
+
             row_bufs["eval"].append(
                 {
                     **meta,
                     PROMPT_ENSEMBLING: prompt_ensembling.value,
-                    **evaluate_preds(
-                        val_gt, val_credences, prompt_ensembling
-                    ).to_dict(),
+                    **eval_results.to_dict(),
                     "train_loss": train_loss,
                 }
             )
 
-            row_bufs["train_eval"].append(
-                {
-                    **meta,
-                    PROMPT_ENSEMBLING: prompt_ensembling.value,
-                    **evaluate_preds(
-                        train_gt, train_credences, prompt_ensembling
-                    ).to_dict(),
-                    "train_loss": train_loss,
-                }
-            )
+            # row_bufs["train_eval"].append(
+            #     {
+            #         **meta,
+            #         PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #         **evaluate_preds(
+            #             train_gt, train_credences, prompt_ensembling
+            #         ).to_dict(),
+            #         "train_loss": train_loss,
+            #     }
+            # )
 
-            if val_lm_preds is not None:
-                row_bufs["lm_eval"].append(
-                    {
-                        **meta,
-                        PROMPT_ENSEMBLING: prompt_ensembling.value,
-                        **evaluate_preds(
-                            val_gt, val_lm_preds, prompt_ensembling
-                        ).to_dict(),
-                    }
-                )
+            # if val_lm_preds is not None:
+            #     row_bufs["lm_eval"].append(
+            #         {
+            #             **meta,
+            #             PROMPT_ENSEMBLING: prompt_ensembling.value,
+            #             **evaluate_preds(
+            #                 val_gt, val_lm_preds, prompt_ensembling
+            #             ).to_dict(),
+            #         }
+            #     )
 
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
@@ -470,7 +474,7 @@ class Elicit(Run):
 
         dataset_key = list(clusters.keys())[0]
         hiddens = clusters[dataset_key]["train"]["hiddens"]
-        labels = clusters[dataset_key]["train"]["labels"]
+        clusters[dataset_key]["train"]["labels"]
 
         hover_labels = []
         for sublist in clusters[dataset_key]["train"]["text_questions"].values():
@@ -492,13 +496,6 @@ class Elicit(Run):
         elif isinstance(self.net, CrcConfig):
             reporter = CrcReporter(self.net)
             reporter.fit(hiddens)
-
-            clusters[dataset_key]["test"]["hiddens"]
-            clusters[dataset_key]["test"]["labels"]
-
-            labels = torch.cat(list(labels.values()), dim=0)
-            reporter.eval(hiddens, labels, layer)
-
         # Save reporter checkpoint to disk
         # TODO have to change this
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -528,8 +525,6 @@ class Elicit(Run):
             reporter = CrcReporter(self.net)
             reporter.fit(hiddens)
 
-            labels = torch.cat(list(labels.values()), dim=0)
-            reporter.eval(hiddens, labels, layer)
         # Save reporter checkpoint to disk
         # TODO have to change this
         out_dir.mkdir(parents=True, exist_ok=True)
