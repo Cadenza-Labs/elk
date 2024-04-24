@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import torch
+from einops import rearrange
 
 from elk.metrics.accuracy import AccuracyResult
 from elk.metrics.eval import EvalResult
@@ -20,25 +21,29 @@ class CrcConfig(FitterConfig):
 
 
 class CrcReporter(torch.nn.Module):
-    config: CrcConfig
+    config = CrcConfig
 
-    def __init__(self, cfg: CrcConfig):
-        super(CrcReporter, self).__init__()
+    def __init__(self, config: CrcConfig):
+        super().__init__()
+        self.config = config
         self.tpc = None
-        self.cfg = cfg
+
+    def set_norm(self, norm):
+        self.config.norm = norm
 
     def get_differences(self, hiddens):
-        if self.cfg.norm == "cluster":
+        if self.config.norm == "cluster":
             true_x_neg, true_x_pos = split_clusters(hiddens)
             x_neg = cluster_norm(true_x_neg)
             x_pos = cluster_norm(true_x_pos)
             differences = (x_pos - x_neg).squeeze(1)
-        elif self.cfg.norm == "burns":
+        elif self.config.norm == "burns":
             norm = BurnsNorm()
             differences = norm(hiddens[:, :, 0, :]) - norm(hiddens[:, :, 1, :])
             differences = differences.squeeze(1)  # remove the prompt template dimension
-        elif self.cfg.norm == "none":
+        elif self.config.norm == "none":
             differences = hiddens[:, :, 0, :] - hiddens[:, :, 1, :]
+            differences = rearrange(differences, "n v d -> (n v) d")
 
         assert differences.dim() == 2, "shape of differences has to be: (n, d)"
         return differences
@@ -61,6 +66,9 @@ class CrcReporter(torch.nn.Module):
         return crc_predictions
 
     def eval(self, hiddens, gt_labels, layer):
+        if hiddens.dim() == 4:
+            gt_labels = gt_labels.repeat_interleave(hiddens.shape[1])
+
         crc_predictions = self(hiddens)
 
         estimate = gt_labels.eq(crc_predictions).float().mean().item()

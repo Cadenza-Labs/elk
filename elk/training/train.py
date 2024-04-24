@@ -382,7 +382,6 @@ def evaluate_and_save(
     return LayerApplied(layer_output, {k: pd.DataFrame(v) for k, v in row_bufs.items()})
 
 
-# TODO: Make work for more than 2 templates
 def deepmind_reproduction(hiddens, gt_labels):
     assert hiddens.dim() == 4, "shape of hiddens has to be: (n, v, k, d)"
     n, v, k, d = hiddens.shape
@@ -391,7 +390,7 @@ def deepmind_reproduction(hiddens, gt_labels):
     indices = torch.randperm(n)
 
     # Split the indices for each template
-    split_indices = torch.split(indices, n // v)
+    split_indices = torch.chunk(indices, v)
 
     # Convert split indices into a flat list
     flat_indices = [index.item() for split in split_indices for index in split]

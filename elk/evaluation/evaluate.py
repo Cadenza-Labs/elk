@@ -7,6 +7,7 @@ import torch
 from simple_parsing.helpers import field
 
 from elk.training.ccs_reporter import CcsReporter
+from elk.training.tpc import CrcReporter
 from elk.utils.data_utils import prepare_data
 from elk.utils.gpu_utils import get_device
 
@@ -60,7 +61,9 @@ class Eval(Run):
 
         reporter = load_reporter()
 
-        if not self.norm and type(reporter) == CcsReporter:
+        if not self.norm and (
+            type(reporter) == CcsReporter or type(reporter) == CrcReporter
+        ):
             reporter.config.norm = "none"
 
         row_bufs = defaultdict(list)
@@ -78,13 +81,18 @@ class Eval(Run):
 
                 layer_outputs.append(LayerOutput(val_gt, val_credences, meta))
                 for prompt_ensembling in PromptEnsembling.all():
+                    if isinstance(reporter, CcsReporter):
+                        eval_results = evaluate_preds(
+                            val_gt, val_credences, prompt_ensembling
+                        )
+                    elif isinstance(reporter, CrcReporter):
+                        eval_results = reporter.eval(val_h, val_gt, layer)
+
                     row_bufs["eval"].append(
                         {
                             **meta,
                             PROMPT_ENSEMBLING: prompt_ensembling.value,
-                            **evaluate_preds(
-                                val_gt, val_credences, prompt_ensembling
-                            ).to_dict(),
+                            **eval_results.to_dict(),
                         }
                     )
 
