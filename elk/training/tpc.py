@@ -46,8 +46,8 @@ class CrcReporter(torch.nn.Module):
     def fit(self, hiddens):
         differences = self.get_differences(hiddens)
         # Compute SVD
-        U, S, V = torch.svd(differences)
-
+        # U, S, V = torch.svd(differences)
+        U, S, V = torch.pca_lowrank(differences, niter=10, q=1)
         # Extract the top principal component (first column of V)
         self.tpc = V[:, 0]
 
@@ -56,17 +56,19 @@ class CrcReporter(torch.nn.Module):
 
         # Project the hiddens onto the top principal component
         projections = differences @ self.tpc
-        crc_predictions = projections > 0  # to(device)
+        crc_predictions = projections > 0
         # Predict the class label based on the sign of the projection
         return crc_predictions
 
     def eval(self, hiddens, gt_labels, layer):
         crc_predictions = self(hiddens)
-        # labels = torch.cat([labels[key] for key in labels])
+
         estimate = gt_labels.eq(crc_predictions).float().mean().item()
         estimate = max(estimate, 1 - estimate)
         # print("layer", layer, "crc acc", estimate)
 
-        acc = AccuracyResult(estimate, 0, 0, 0)
+        acc = AccuracyResult(
+            estimate, 0, 0, 0
+        )  # we just need the accuracy ... just put 0s for the rest
         auroc = RocAucResult(0, 0, 0)
         return EvalResult(acc, None, None, auroc, None)

@@ -359,7 +359,7 @@ def evaluate_and_save(
 
             # row_bufs["train_eval"].append(
             #     {
-            #         **meta,
+            #         **meta,k
             #         PROMPT_ENSEMBLING: prompt_ensembling.value,
             #         **evaluate_preds(
             #             train_gt, train_credences, prompt_ensembling
