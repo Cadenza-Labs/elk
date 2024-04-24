@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Literal
 
 import torch
-from einops import rearrange
 
 from elk.metrics.accuracy import AccuracyResult
 from elk.metrics.eval import EvalResult
@@ -43,7 +42,7 @@ class CrcReporter(torch.nn.Module):
             differences = differences.squeeze(1)  # remove the prompt template dimension
         elif self.config.norm == "none":
             differences = hiddens[:, :, 0, :] - hiddens[:, :, 1, :]
-            differences = rearrange(differences, "n v d -> (n v) d")
+            # differences = rearrange(differences, "n v d -> (n v) d")
 
         assert differences.dim() == 2, "shape of differences has to be: (n, d)"
         return differences
@@ -66,8 +65,8 @@ class CrcReporter(torch.nn.Module):
         return crc_predictions
 
     def eval(self, hiddens, gt_labels, layer):
-        if hiddens.dim() == 4:
-            gt_labels = gt_labels.repeat_interleave(hiddens.shape[1])
+        # if hiddens.dim() == 4:
+        #     gt_labels = gt_labels.repeat_interleave(hiddens.shape[1])
 
         crc_predictions = self(hiddens)
 
