@@ -42,6 +42,9 @@ class CrcReporter(torch.nn.Module):
             differences = differences.squeeze(1)  # remove the prompt template dimension
         elif self.config.norm == "none":
             differences = hiddens[:, :, 0, :] - hiddens[:, :, 1, :]
+
+            # uncomment for elk eval command
+            # from einops import rearrange
             # differences = rearrange(differences, "n v d -> (n v) d")
 
         assert differences.dim() == 2, "shape of differences has to be: (n, d)"
@@ -65,6 +68,7 @@ class CrcReporter(torch.nn.Module):
         return crc_predictions
 
     def eval(self, hiddens, gt_labels, layer):
+        # uncomment for elk eval command
         # if hiddens.dim() == 4:
         #     gt_labels = gt_labels.repeat_interleave(hiddens.shape[1])
 
