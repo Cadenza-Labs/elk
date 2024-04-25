@@ -542,6 +542,7 @@ class Elicit(Run):
             out_dir.mkdir(parents=True, exist_ok=True)
             with open(out_dir / f"layer_{layer}.pt", "wb") as file:
                 torch.save(lr_models, file)
+                print("save lr model to", out_dir / f"layer_{layer}.pt")
         else:
             lr_models = []
 
@@ -665,6 +666,7 @@ class Elicit(Run):
                 train_loss = reporter_train_result.train_loss
 
             # TODO: Normalize by cluster for the lr_models too
+            # breakpoint()
             lr_models = self.train_lr_model(
                 train_dict, device, layer, self.out_dir / "lr_models"
             )
