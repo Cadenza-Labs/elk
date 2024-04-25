@@ -1,0 +1,33 @@
+dataset: boolq
+templates:
+  id-default-bool: !Template
+    answer_choices: false ||| true
+    id: id-default-bool
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: default-bool
+    reference: ''
+  id-alice-bool: !Template
+    answer_choices: false ||| true
+    id: id-alice-bool
+    jinja: 'Alice is an expert at classifying the sentiment of movie reviews.
+    Everyone agrees with her, and they always copy her answers.
+    Passage:  '''''' {{passage}}  ''''''
+    Alice thinks it is {{ answer_choices|random }}.
+    After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}'
+    metadata: !TemplateMetadata
+      choices_in_prompt: true
+      languages:
+      - en
+      metrics:
+      - Accuracy
+      original_task: true
+    name: alice-bool
+    reference: ''
