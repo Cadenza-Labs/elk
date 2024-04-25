@@ -1,0 +1,226 @@
+dataset: boolq
+templates:
+  id-16_togetheriness_0: !Template
+    answer_choices: false ||| true
+    id: id-16_togetheriness_0
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. togetheriness'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_togetheriness_0
+    reference: ''
+  id-16_ultrasimian_1: !Template
+    answer_choices: false ||| true
+    id: id-16_ultrasimian_1
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. ultrasimian'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_ultrasimian_1
+    reference: ''
+  id-16_sope_2: !Template
+    answer_choices: false ||| true
+    id: id-16_sope_2
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. sope'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_sope_2
+    reference: ''
+  id-16_undecreed_3: !Template
+    answer_choices: false ||| true
+    id: id-16_undecreed_3
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. undecreed'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_undecreed_3
+    reference: ''
+  id-16_Tareq_4: !Template
+    answer_choices: false ||| true
+    id: id-16_Tareq_4
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. Tareq'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_Tareq_4
+    reference: ''
+  id-16_flushness_5: !Template
+    answer_choices: false ||| true
+    id: id-16_flushness_5
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. flushness'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_flushness_5
+    reference: ''
+  id-16_weal_6: !Template
+    answer_choices: false ||| true
+    id: id-16_weal_6
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. weal'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_weal_6
+    reference: ''
+  id-16_yamp_7: !Template
+    answer_choices: false ||| true
+    id: id-16_yamp_7
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. yamp'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_yamp_7
+    reference: ''
+  id-16_indignity_8: !Template
+    answer_choices: false ||| true
+    id: id-16_indignity_8
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. indignity'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_indignity_8
+    reference: ''
+  id-16_crystallogeny_9: !Template
+    answer_choices: false ||| true
+    id: id-16_crystallogeny_9
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. crystallogeny'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_crystallogeny_9
+    reference: ''
+  id-16_truckmaster_10: !Template
+    answer_choices: false ||| true
+    id: id-16_truckmaster_10
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. truckmaster'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_truckmaster_10
+    reference: ''
+  id-16_versette_11: !Template
+    answer_choices: false ||| true
+    id: id-16_versette_11
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. versette'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_versette_11
+    reference: ''
+  id-16_tinselweaver_12: !Template
+    answer_choices: false ||| true
+    id: id-16_tinselweaver_12
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. tinselweaver'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_tinselweaver_12
+    reference: ''
+  id-16_caudalward_13: !Template
+    answer_choices: false ||| true
+    id: id-16_caudalward_13
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. caudalward'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_caudalward_13
+    reference: ''
+  id-16_cannonade_14: !Template
+    answer_choices: false ||| true
+    id: id-16_cannonade_14
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. cannonade'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_cannonade_14
+    reference: ''
+  id-16_Halecomorphi_15: !Template
+    answer_choices: false ||| true
+    id: id-16_Halecomorphi_15
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. Halecomorphi'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 16_Halecomorphi_15
+    reference: ''

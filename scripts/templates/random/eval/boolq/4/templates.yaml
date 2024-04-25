@@ -1,0 +1,58 @@
+dataset: boolq
+templates:
+  id-4_togetheriness_0: !Template
+    answer_choices: false ||| true
+    id: id-4_togetheriness_0
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. togetheriness'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 4_togetheriness_0
+    reference: ''
+  id-4_ultrasimian_1: !Template
+    answer_choices: false ||| true
+    id: id-4_ultrasimian_1
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. ultrasimian'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 4_ultrasimian_1
+    reference: ''
+  id-4_sope_2: !Template
+    answer_choices: false ||| true
+    id: id-4_sope_2
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. sope'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 4_sope_2
+    reference: ''
+  id-4_undecreed_3: !Template
+    answer_choices: false ||| true
+    id: id-4_undecreed_3
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. undecreed'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 4_undecreed_3
+    reference: ''

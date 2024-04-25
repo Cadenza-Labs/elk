@@ -1,0 +1,30 @@
+dataset: boolq
+templates:
+  id-2_togetheriness_0: !Template
+    answer_choices: false ||| true
+    id: id-2_togetheriness_0
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. togetheriness'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 2_togetheriness_0
+    reference: ''
+  id-2_ultrasimian_1: !Template
+    answer_choices: false ||| true
+    id: id-2_ultrasimian_1
+    jinja: 'Passage:  '''''' {{passage}}  ''''''
+        After reading this passage, I have a question: {{question}}? true or false? ||| {{ answer_choices[label] }}. ultrasimian'
+    metadata: !TemplateMetadata
+        choices_in_prompt: true
+        languages:
+        - en
+        metrics:
+        - Accuracy
+        original_task: true
+    name: 2_ultrasimian_1
+    reference: ''
