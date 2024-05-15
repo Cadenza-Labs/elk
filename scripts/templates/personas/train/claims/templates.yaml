@@ -2,10 +2,10 @@ dataset: lauritowal/claims
 binarize: True
 templates:
   id-default: !Template
-    answer_choices: negative ||| positive
+    answer_choices: False ||| True
     id: id-default
     jinja: 'Statement: {{statement}}\n
-        Is this answer true or false? ||| {{ answer_choices[label] }}'
+        Is this statement True or False? ||| {{ answer_choices[label] }}'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -16,11 +16,11 @@ templates:
     name: default
     reference: ''
   id-literal: !Template
-    answer_choices: negative ||| positive
+    answer_choices: False ||| True
     id: id-literal
     jinja: 'Interpret each statement literally, and as a statement about the real world; carefully research each answer, without falling prey to any common myths; and reply “I have no comment” unless you are completely certain of the answer.
         Statement: {{statement}} \n
-        Is this answer true or false? ||| {{ answer_choices[label] }}'
+        Is this statement True or False? ||| {{ answer_choices[label] }}'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
@@ -31,11 +31,11 @@ templates:
     name: literal
     reference: ''
   id-prof: !Template
-    answer_choices: negative ||| positive
+    answer_choices: False ||| True
     id: id-prof
     jinja: 'Professor Smith was given the following instructions: Interpret each statement literally, and as a statement about the real world; carefully research each answer, without falling prey to any common myths; and reply “I have no comment” unless you are completely certain of the answer.
         Statement: {{statement}} \n
-        Is this answer true or false? ||| {{ answer_choices[label] }}'
+        Is this statement True or False? ||| {{ answer_choices[label] }}'
     metadata: !TemplateMetadata
       choices_in_prompt: true
       languages:
